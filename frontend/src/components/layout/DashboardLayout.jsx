@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard, FileText, MessageSquare, Star, Heart,
-  ClipboardList, Users, TicketCheck, Bell, User, Megaphone
+  ClipboardList, Users, LifeBuoy, Bell, User, Megaphone
 } from 'lucide-react';
 
 export default function DashboardLayout({ children }) {
@@ -22,10 +22,10 @@ export default function DashboardLayout({ children }) {
     { to: '/dashboard/favorites', icon: Heart, label: 'Favoris', roles: ['proprietaire'] },
     // CS
     { to: '/dashboard/cs/users', icon: Users, label: 'Utilisateurs', roles: ['customer_service'] },
-    { to: '/dashboard/cs/tickets', icon: TicketCheck, label: 'Tickets', roles: ['customer_service'] },
+    { to: '/dashboard/cs/tickets', icon: LifeBuoy, label: 'Tickets', roles: ['customer_service'] },
     { to: '/dashboard/cs/ads', icon: Megaphone, label: 'Annonces', roles: ['customer_service'] },
     // Tickets (all)
-    { to: '/dashboard/tickets', icon: TicketCheck, label: 'Support', roles: ['prestataire', 'proprietaire'] },
+    { to: '/dashboard/tickets', icon: LifeBuoy, label: 'Support', roles: ['prestataire', 'proprietaire'] },
   ];
 
   const filtered = links.filter(l => l.roles.includes(user?.role));

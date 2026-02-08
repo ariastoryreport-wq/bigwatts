@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { authAPI } from '../../services/api';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Card, LoadingSpinner } from '../../components/ui';
-import { Megaphone, FileText, MessageSquare, Star, Heart, Users, TicketCheck, TrendingUp, ClipboardList } from 'lucide-react';
+import { Megaphone, FileText, MessageSquare, Star, Heart, Users, LifeBuoy, TrendingUp, ClipboardList } from 'lucide-react';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -80,7 +80,7 @@ export default function Dashboard() {
               <StatCard icon={Users} label="Utilisateurs" value={stats?.total_users} color="primary" to="/dashboard/cs/users" />
               <StatCard icon={Megaphone} label="Prestataires" value={stats?.total_prestataires} color="green" />
               <StatCard icon={Users} label="Propriétaires" value={stats?.total_proprietaires} color="blue" />
-              <StatCard icon={TicketCheck} label="Tickets ouverts" value={stats?.open_tickets} color="red" to="/dashboard/cs/tickets" />
+              <StatCard icon={LifeBuoy} label="Tickets ouverts" value={stats?.open_tickets} color="red" to="/dashboard/cs/tickets" />
               <StatCard icon={ClipboardList} label="Tickets en cours" value={stats?.in_progress_tickets} color="yellow" />
               <StatCard icon={FileText} label="Mes tickets" value={stats?.my_tickets} color="purple" to="/dashboard/cs/tickets" />
             </>
