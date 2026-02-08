@@ -2,24 +2,27 @@
 
 Plateforme de mise en relation entre prestataires de services d'énergie verte et propriétaires.
 
+🔗 **Démo live** : [https://bigwatts.vercel.app](https://bigwatts.vercel.app)
+
 ## Architecture
 
 ```
 bigwatts/
-├── backend/        Django 4.2 + DRF (API REST)
-└── frontend/       React 18 + Vite 5 + Tailwind CSS
+├── backend/        Django 4.2 + DRF (API REST) → Render.com
+├── frontend/       React 18 + Vite 5 + Tailwind CSS → Vercel
+└── database        PostgreSQL → Neon.tech
 ```
 
 ## Stack technique
 
-| Couche | Technologie |
-|--------|-------------|
-| Backend | Django 4.2, Django REST Framework 3.14, SimpleJWT |
-| Frontend | React 18, Vite 5, Tailwind CSS 3.4, React Router 6 |
-| Base de données | SQLite (dev) / PostgreSQL (prod) |
-| Auth | JWT (access 2h / refresh 7d) |
-| Icônes | Lucide React |
-| Notifications UI | react-hot-toast |
+| Couche | Technologie | Hébergement |
+|--------|-------------|-------------|
+| Backend | Django 4.2, Django REST Framework 3.14, SimpleJWT | [Render.com](https://render.com) (Free) |
+| Frontend | React 18, Vite 5, Tailwind CSS 3.4, React Router 6 | [Vercel](https://vercel.com) (Free) |
+| Base de données | PostgreSQL | [Neon.tech](https://neon.tech) (Free) |
+| Auth | JWT (access 2h / refresh 7d) | — |
+| Icônes | Lucide React | — |
+| Notifications UI | react-hot-toast | — |
 
 ---
 
@@ -62,55 +65,82 @@ Le frontend écoute sur `http://localhost:5173` (proxy `/api` → backend)
 | Prestataire | solarpro | demo1234 |
 | Prestataire | ecocharge | demo1234 |
 | Prestataire | thermexpert | demo1234 |
-| Propriétaire | proprietaire1 | demo1234 |
-| Propriétaire | proprietaire2 | demo1234 |
+| Prestataire | isoconfort | demo1234 |
+| Prestataire | greenenergy | demo1234 |
+| Prestataire | voltamaison | demo1234 |
+| Prestataire | eolvert | demo1234 |
+| Prestataire | heatpump_pro | demo1234 |
+| Propriétaire | alice_leroy | demo1234 |
+| Propriétaire | thomas_moreau | demo1234 |
+| Propriétaire | camille_duval | demo1234 |
+| Propriétaire | emma_lambert | demo1234 |
+| Propriétaire | hugo_simon | demo1234 |
+
+### Charger les données de démonstration
+
+```bash
+# En local
+cd backend
+python manage.py load_fixtures
+
+# En production (Render Shell)
+python manage.py load_fixtures
+```
 
 ---
 
-## Déploiement gratuit (Free Tier)
+## Déploiement (Free Tier)
 
-### Backend → Render.com
+Le projet est déployé sur 3 services gratuits :
+
+### 1. Base de données → Neon.tech
+
+1. Créez un compte sur [neon.tech](https://neon.tech)
+2. **Create Project** → Nom : `bigwatts`, Region : `EU (Frankfurt)`
+3. Copiez la **Connection string** (`postgres://neondb_owner:...@...neon.tech/neondb?sslmode=require`)
+
+### 2. Backend → Render.com
 
 1. Créez un compte sur [render.com](https://render.com)
-2. New → Web Service → Connectez votre repo GitHub
+2. **New** → **Web Service** → Connectez votre repo GitHub
 3. Settings :
    - **Root Directory** : `backend`
-   - **Build Command** : `pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate`
-   - **Start Command** : `gunicorn bigwatts.wsgi:application`
+   - **Dockerfile Path** : `backend/Dockerfile`
+   - **Docker Build Context** : `backend/`
 4. Variables d'environnement :
    ```
-   SECRET_KEY=<générez-une-clé-longue>
+   SECRET_KEY=<générez-un-uuid-ou-clé-longue>
    DEBUG=False
    ALLOWED_HOSTS=votre-app.onrender.com
-   DATABASE_URL=<fourni-par-render-postgres>
+   DATABASE_URL=<connection-string-de-neon>
    CORS_ALLOWED_ORIGINS=https://votre-frontend.vercel.app
    ```
-5. Ajoutez un PostgreSQL gratuit dans Render Dashboard
+   > ⚠️ Pas de `/` à la fin de `CORS_ALLOWED_ORIGINS`
+5. Le `entrypoint.sh` exécute automatiquement les migrations et collectstatic au démarrage
 
-### Frontend → Vercel
+### 3. Frontend → Vercel
 
 1. Créez un compte sur [vercel.com](https://vercel.com)
-2. Import project → Sélectionnez le repo
+2. **Add New Project** → Importez le repo GitHub
 3. Settings :
    - **Root Directory** : `frontend`
-   - **Build Command** : `npm run build`
-   - **Output Directory** : `dist`
-4. Variables d'environnement :
+   - **Framework Preset** : Vite
+4. Variable d'environnement :
    ```
    VITE_API_URL=https://votre-backend.onrender.com
    ```
-5. Ajoutez un fichier `vercel.json` dans `frontend/` (déjà créé)
+5. Deploy !
 
-### Alternatives gratuites
+### Charger les fixtures en production
 
-| Service | Backend | Frontend | DB |
-|---------|---------|----------|----|
-| Render | ✅ Web Service | ✅ Static Site | ✅ PostgreSQL |
-| Railway | ✅ | ✅ | ✅ |
-| Vercel | ❌ | ✅ | ❌ |
-| Netlify | ❌ | ✅ | ❌ |
-| Supabase | ❌ | ❌ | ✅ PostgreSQL |
-| Neon | ❌ | ❌ | ✅ PostgreSQL |
+Sur Render → **Shell** (si disponible) :
+```bash
+python manage.py load_fixtures
+```
+
+Ou ajoutez `python manage.py load_fixtures` dans `entrypoint.sh` (avant le démarrage Gunicorn) pour un chargement automatique au déploiement.
+
+> 💡 **Note** : Le plan gratuit Render met le service en veille après 15 min d'inactivité. Le premier chargement prend ~30-60 secondes.
 
 ---
 
