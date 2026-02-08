@@ -79,9 +79,9 @@ Le frontend écoute sur `http://localhost:5173` (proxy `/api` → backend)
    - **Start Command** : `gunicorn bigwatts.wsgi:application`
 4. Variables d'environnement :
    ```
-   DJANGO_SECRET_KEY=<générez-une-clé-longue>
-   DJANGO_DEBUG=False
-   DJANGO_ALLOWED_HOSTS=votre-app.onrender.com
+   SECRET_KEY=<générez-une-clé-longue>
+   DEBUG=False
+   ALLOWED_HOSTS=votre-app.onrender.com
    DATABASE_URL=<fourni-par-render-postgres>
    CORS_ALLOWED_ORIGINS=https://votre-frontend.vercel.app
    ```
