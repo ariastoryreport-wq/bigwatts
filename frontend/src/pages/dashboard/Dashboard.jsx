@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { authAPI } from '../../services/api';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Card, LoadingSpinner } from '../../components/ui';
-import { Megaphone, FileText, MessageSquare, Star, Heart, Users, LifeBuoy, TrendingUp, ClipboardList } from 'lucide-react';
+import { Megaphone, FileText, MessageSquare, Star, Heart, Users, LifeBuoy, TrendingUp, ClipboardList, Briefcase, CreditCard } from 'lucide-react';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -47,7 +47,7 @@ export default function Dashboard() {
     <DashboardLayout>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-black dark:text-white">
-          Bonjour {user?.first_name || user?.username} 👋
+          Bonjour {user?.first_name || user?.username}
         </h1>
         <p className="text-gray-500 dark:text-gray-400">Voici un aperçu de votre activité</p>
       </div>
@@ -63,6 +63,7 @@ export default function Dashboard() {
               <StatCard icon={ClipboardList} label="Demandes reçues" value={stats?.total_quote_requests} color="blue" to="/dashboard/quotes/received" />
               <StatCard icon={FileText} label="En attente" value={stats?.pending_requests} color="yellow" to="/dashboard/quotes/received" />
               <StatCard icon={Star} label="Avis reçus" value={stats?.total_reviews} color="purple" to="/dashboard/reviews" />
+              <StatCard icon={Briefcase} label="Réservations" value={stats?.total_bookings} color="blue" to="/dashboard/bookings" />
               <StatCard icon={MessageSquare} label="Messages non lus" value={stats?.unread_messages} color="red" to="/dashboard/messages" />
             </>
           )}
@@ -71,6 +72,7 @@ export default function Dashboard() {
               <StatCard icon={FileText} label="Mes demandes" value={stats?.total_requests} color="primary" to="/dashboard/quotes" />
               <StatCard icon={ClipboardList} label="En attente" value={stats?.pending_requests} color="yellow" />
               <StatCard icon={TrendingUp} label="Acceptées" value={stats?.accepted_requests} color="green" />
+              <StatCard icon={Briefcase} label="Réservations" value={stats?.total_bookings} color="blue" to="/dashboard/bookings" />
               <StatCard icon={Heart} label="Favoris" value={stats?.total_favorites} color="red" to="/dashboard/favorites" />
               <StatCard icon={MessageSquare} label="Messages non lus" value={stats?.unread_messages} color="blue" to="/dashboard/messages" />
             </>

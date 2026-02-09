@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { authAPI } from '../../services/api';
+import { authAPI, notificationsAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { PageHeader, LoadingSpinner } from '../../components/ui';
@@ -11,6 +11,7 @@ export default function Profile() {
   const [profileForm, setProfileForm] = useState({});
   const [loading, setLoading] = useState(false);
   const [passwords, setPasswords] = useState({ old_password: '', new_password: '', new_password2: '' });
+  const [notifPrefs, setNotifPrefs] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -42,6 +43,10 @@ export default function Profile() {
           budget_range: user.proprietaire_profile.budget_range || '',
         });
       }
+      // Load notification preferences
+      notificationsAPI.getPreferences()
+        .then(({ data }) => setNotifPrefs(data))
+        .catch(() => {});
     }
   }, [user]);
 
@@ -49,7 +54,7 @@ export default function Profile() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await authAPI.updateProfile(form);
+      const { data } = await authAPI.updateMe(form);
       updateUser(data);
       toast.success('Profil mis à jour');
     } catch { toast.error('Erreur lors de la mise à jour'); }
@@ -218,6 +223,48 @@ export default function Profile() {
           Modifier le mot de passe
         </button>
       </form>
+
+      {/* Notification Preferences */}
+      {notifPrefs && (
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 mt-6">
+          <h3 className="text-lg font-semibold mb-4">Préférences de notification</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Choisissez les notifications que vous souhaitez recevoir.</p>
+          <div className="space-y-3">
+            {[
+              { key: 'email_quotes', label: 'Devis', desc: 'Demandes et réponses de devis' },
+              { key: 'email_messages', label: 'Messages', desc: 'Nouveaux messages reçus' },
+              { key: 'email_reviews', label: 'Avis', desc: 'Nouveaux avis sur votre profil' },
+              { key: 'email_favorites', label: 'Favoris', desc: 'Quand quelqu\'un vous ajoute en favori' },
+              { key: 'email_system', label: 'Système', desc: 'Badges, mises à jour et annonces' },
+            ].map(({ key, label, desc }) => (
+              <label key={key} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition">
+                <div>
+                  <p className="text-sm font-medium text-black dark:text-white">{label}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{desc}</p>
+                </div>
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs[key]}
+                    onChange={async () => {
+                      const updated = { ...notifPrefs, [key]: !notifPrefs[key] };
+                      setNotifPrefs(updated);
+                      try {
+                        await notificationsAPI.updatePreferences({ [key]: updated[key] });
+                      } catch {
+                        setNotifPrefs(notifPrefs);
+                      }
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-10 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-brand-300 transition-colors" />
+                  <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform" />
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

@@ -27,6 +27,22 @@ export default function ConversationView() {
   };
 
   useEffect(() => { fetchConversation(); }, [id]);
+  // Poll for new messages every 5 seconds for real-time chat feel
+  useEffect(() => {
+    if (!id) return;
+    const interval = setInterval(() => {
+      messagingAPI.getConversation(id)
+        .then(({ data }) => {
+          const newMsgs = data.messages || [];
+          if (newMsgs.length !== messages.length) {
+            setConversation(data);
+            setMessages(newMsgs);
+          }
+        })
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [id, messages.length]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const sendMessage = async (e) => {

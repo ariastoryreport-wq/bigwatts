@@ -1,22 +1,31 @@
 import { useState, useEffect } from 'react';
-import { adsAPI } from '../../services/api';
+import { adsAPI, bookingsAPI } from '../../services/api';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Card, PageHeader, LoadingSpinner, StatusBadge, EmptyState } from '../../components/ui';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, Briefcase, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export default function ReceivedQuotes() {
   const [quotes, setQuotes] = useState([]);
+  const [bookings, setBookings] = useState({});
   const [loading, setLoading] = useState(true);
   const [responding, setResponding] = useState(null);
   const [response, setResponse] = useState({ status: '', provider_response: '', quoted_price: '' });
 
-  const fetchQuotes = () => {
+  const fetchQuotes = async () => {
     setLoading(true);
-    adsAPI.getReceivedQuotes()
-      .then(({ data }) => setQuotes(data.results || data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    try {
+      const [qRes, bRes] = await Promise.all([
+        adsAPI.getReceivedQuotes(),
+        bookingsAPI.getBookings(),
+      ]);
+      setQuotes(qRes.data.results || qRes.data);
+      const bMap = {};
+      (bRes.data.results || bRes.data).forEach(b => { bMap[b.quote] = b; });
+      setBookings(bMap);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
   };
 
   useEffect(() => { fetchQuotes(); }, []);
@@ -103,7 +112,16 @@ export default function ReceivedQuotes() {
                     </button>
                   )
                 )}
-              </div>
+                {/* Booking status if exists */}
+                {bookings[q.id] && (
+                  <div className="border-t border-gray-200 dark:border-gray-800 pt-3 mt-1">
+                    <Link to="/dashboard/bookings" className="inline-flex items-center gap-2 text-sm text-brand-600 dark:text-brand-400 hover:underline">
+                      <Briefcase className="h-4 w-4" />
+                      Réservation : <StatusBadge status={bookings[q.id].status} />
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                )}              </div>
             </Card>
           ))}
         </div>

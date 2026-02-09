@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { notificationsAPI } from '../../services/api';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { PageHeader, LoadingSpinner, EmptyState } from '../../components/ui';
-import { Bell, Check, MessageSquare, Star, FileText, AlertCircle, Settings } from 'lucide-react';
+import { Bell, Check, MessageSquare, Star, FileText, AlertCircle, Settings, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const ICONS = {
   new_message: MessageSquare,
@@ -12,12 +13,47 @@ const ICONS = {
   quote_response: FileText,
   ticket_update: AlertCircle,
   system: Settings,
+  favorite: Heart,
 };
+
+// Map notification links to the closest valid route for the current user role
+function resolveLink(notification, userRole) {
+  const link = notification.link || '';
+  const type = notification.notification_type;
+
+  // If the link is a valid dashboard route, use it
+  // Messages links are always valid
+  if (link.startsWith('/dashboard/messages/')) return link;
+
+  // Quote links: proprietaire → /dashboard/quotes, prestataire → /dashboard/quotes/received
+  if (link.startsWith('/dashboard/quotes/') || type === 'quote_request' || type === 'quote_response') {
+    if (userRole === 'proprietaire') return '/dashboard/quotes';
+    if (userRole === 'prestataire') return '/dashboard/quotes/received';
+    return link;
+  }
+
+  // Review links → prestataire reviews
+  if (type === 'new_review') return '/dashboard/reviews';
+
+  // Favorite links
+  if (type === 'favorite') return '/dashboard';
+
+  // Ticket links
+  if (type === 'ticket_update') {
+    if (userRole === 'customer_service') return '/dashboard/cs/tickets';
+    return '/dashboard/tickets';
+  }
+
+  // System notifications
+  if (link) return link;
+  return '/dashboard';
+}
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     notificationsAPI.getNotifications()
@@ -32,13 +68,14 @@ export default function Notifications() {
   };
 
   const markAllRead = async () => {
-    await notificationsAPI.markAllRead();
+    await notificationsAPI.markRead([]);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
 
   const handleClick = (n) => {
     if (!n.is_read) markRead(n.id);
-    if (n.link) navigate(n.link);
+    const dest = resolveLink(n, user?.role);
+    if (dest) navigate(dest);
   };
 
   return (
@@ -57,7 +94,7 @@ export default function Notifications() {
       ) : (
         <div className="divide-y divide-gray-200 dark:divide-gray-800 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
           {notifications.map((n) => {
-            const Icon = ICONS[n.type] || Bell;
+            const Icon = ICONS[n.notification_type] || Bell;
             return (
               <div
                 key={n.id}

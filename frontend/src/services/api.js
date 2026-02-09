@@ -134,6 +134,8 @@ export const notificationsAPI = {
   getUnreadCount: () => api.get('/notifications/unread-count/'),
   markRead: (ids) => api.post('/notifications/mark-read/', { ids }),
   markSingleRead: (id) => api.post(`/notifications/${id}/read/`),
+  getPreferences: () => api.get('/notifications/preferences/'),
+  updatePreferences: (data) => api.patch('/notifications/preferences/', data),
 };
 
 // ---- Tickets API ----
@@ -145,4 +147,18 @@ export const ticketsAPI = {
   // CS
   csGetTickets: (params) => api.get('/tickets/cs/all/', { params }),
   csUpdateTicket: (id, data) => api.patch(`/tickets/cs/${id}/update/`, data),
+};
+
+// ---- Bookings API ----
+export const bookingsAPI = {
+  // Availability slots
+  getSlots: (params) => api.get('/bookings/slots/', { params }),
+  createSlot: (data) => api.post('/bookings/slots/', data),
+  deleteSlot: (id) => api.delete(`/bookings/slots/${id}/`),
+  // Bookings
+  getBookings: (params) => api.get('/bookings/', { params }),
+  createBooking: (data) => api.post('/bookings/create/', data),
+  updateBooking: (id, data) => api.patch(`/bookings/${id}/`, data),
+  // Payments
+  payDeposit: (bookingId) => api.post(`/bookings/${bookingId}/pay-deposit/`),
 };

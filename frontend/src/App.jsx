@@ -30,6 +30,8 @@ import Profile from './pages/dashboard/Profile';
 import MyTickets from './pages/dashboard/MyTickets';
 import Analytics from './pages/dashboard/Analytics';
 import Appointments from './pages/dashboard/Appointments';
+import Bookings from './pages/dashboard/Bookings';
+import Availability from './pages/dashboard/Availability';
 
 // CS pages
 import CSUsers from './pages/dashboard/cs/CSUsers';
@@ -85,6 +87,7 @@ export default function App() {
           <Route path="/dashboard/tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
           <Route path="/dashboard/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/dashboard/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
+          <Route path="/dashboard/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
 
           {/* Prestataire */}
           <Route path="/dashboard/ads" element={<ProtectedRoute roles={['prestataire']}><MyAds /></ProtectedRoute>} />
@@ -92,6 +95,7 @@ export default function App() {
           <Route path="/dashboard/ads/:id/edit" element={<ProtectedRoute roles={['prestataire']}><AdForm /></ProtectedRoute>} />
           <Route path="/dashboard/quotes/received" element={<ProtectedRoute roles={['prestataire']}><ReceivedQuotes /></ProtectedRoute>} />
           <Route path="/dashboard/reviews" element={<ProtectedRoute roles={['prestataire']}><MyReviews /></ProtectedRoute>} />
+          <Route path="/dashboard/availability" element={<ProtectedRoute roles={['prestataire']}><Availability /></ProtectedRoute>} />
 
           {/* Propriétaire */}
           <Route path="/dashboard/quotes" element={<ProtectedRoute roles={['proprietaire']}><MyQuotes /></ProtectedRoute>} />

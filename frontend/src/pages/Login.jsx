@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Zap, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Login() {
@@ -35,8 +35,7 @@ export default function Login() {
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2 mb-6">
-            <Zap className="h-10 w-10 text-brand-600 dark:text-brand-300" />
+          <Link to="/" className="inline-block mb-6">
             <span className="text-2xl font-bold text-black dark:text-white">Big<span className="text-brand-600 dark:text-brand-300">Watts</span></span>
           </Link>
           <h1 className="text-2xl font-display font-bold text-black dark:text-white">Connexion</h1>
@@ -90,7 +89,7 @@ export default function Login() {
             <div className="grid grid-cols-1 gap-2 text-xs">
               {[
                 { label: 'Prestataire', user: 'solarpro', pw: 'demo1234' },
-                { label: 'Propriétaire', user: 'proprietaire1', pw: 'demo1234' },
+                { label: 'Propriétaire', user: 'alice_leroy', pw: 'demo1234' },
                 { label: 'Support', user: 'support', pw: 'support123' },
               ].map((demo) => (
                 <button

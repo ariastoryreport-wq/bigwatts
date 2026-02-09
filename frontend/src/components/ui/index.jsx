@@ -44,6 +44,7 @@ export function StatusBadge({ status }) {
     declined: { label: 'Refusée', variant: 'danger' },
     completed: { label: 'Terminée', variant: 'primary' },
     cancelled: { label: 'Annulée', variant: 'default' },
+    deposit_paid: { label: 'Acompte payé', variant: 'success' },
     open: { label: 'Ouvert', variant: 'info' },
     in_progress: { label: 'En cours', variant: 'warning' },
     waiting: { label: 'En attente', variant: 'warning' },

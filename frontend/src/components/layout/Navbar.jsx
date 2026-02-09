@@ -15,11 +15,18 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isAuthenticated) return;
+    // Fetch immediately
+    notificationsAPI.getUnreadCount()
+      .then(({ data }) => setUnreadCount(data.unread_count))
+      .catch(() => {});
+    // Poll every 15 seconds for real-time feel
+    const interval = setInterval(() => {
       notificationsAPI.getUnreadCount()
         .then(({ data }) => setUnreadCount(data.unread_count))
         .catch(() => {});
-    }
+    }, 15000);
+    return () => clearInterval(interval);
   }, [isAuthenticated]);
 
   const handleLogout = async () => {
@@ -31,8 +38,7 @@ export default function Navbar() {
     const base = [
       { to: '/dashboard', label: 'Tableau de bord' },
       { to: '/dashboard/messages', label: 'Messages' },
-      { to: '/dashboard/analytics', label: 'Analytics' },
-      { to: '/dashboard/appointments', label: 'Rendez-vous' },
+
       { to: '/dashboard/profile', label: 'Mon profil' },
     ];
     if (user?.role === 'prestataire') {
@@ -40,6 +46,8 @@ export default function Navbar() {
         ...base,
         { to: '/dashboard/ads', label: 'Mes annonces' },
         { to: '/dashboard/quotes/received', label: 'Demandes reçues' },
+        { to: '/dashboard/bookings', label: 'Réservations' },
+        { to: '/dashboard/availability', label: 'Disponibilités' },
         { to: '/dashboard/reviews', label: 'Mes avis' },
       ];
     }
@@ -47,6 +55,7 @@ export default function Navbar() {
       return [
         ...base,
         { to: '/dashboard/quotes', label: 'Mes demandes' },
+        { to: '/dashboard/bookings', label: 'Réservations' },
         { to: '/dashboard/favorites', label: 'Favoris' },
       ];
     }

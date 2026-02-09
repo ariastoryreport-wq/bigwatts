@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard, FileText, MessageSquare, Star, Heart,
   ClipboardList, Users, LifeBuoy, Bell, User, Megaphone,
-  BarChart3, Calendar
+  BarChart3, Calendar, Briefcase, CalendarDays, CreditCard
 } from 'lucide-react';
 
 export default function DashboardLayout({ children }) {
@@ -14,11 +14,12 @@ export default function DashboardLayout({ children }) {
     { to: '/dashboard/profile', icon: User, label: 'Mon profil', roles: ['prestataire', 'proprietaire', 'customer_service'] },
     { to: '/dashboard/messages', icon: MessageSquare, label: 'Messages', roles: ['prestataire', 'proprietaire'] },
     { to: '/dashboard/notifications', icon: Bell, label: 'Notifications', roles: ['prestataire', 'proprietaire', 'customer_service'] },
-    { to: '/dashboard/analytics', icon: BarChart3, label: 'Analytics', roles: ['prestataire', 'proprietaire', 'customer_service'] },
-    { to: '/dashboard/appointments', icon: Calendar, label: 'Rendez-vous', roles: ['prestataire', 'proprietaire'] },
+
     // Prestataire
     { to: '/dashboard/ads', icon: Megaphone, label: 'Mes annonces', roles: ['prestataire'] },
     { to: '/dashboard/quotes/received', icon: ClipboardList, label: 'Demandes reçues', roles: ['prestataire'] },
+    { to: '/dashboard/bookings', icon: Briefcase, label: 'Réservations', roles: ['prestataire', 'proprietaire'] },
+    { to: '/dashboard/availability', icon: CalendarDays, label: 'Disponibilités', roles: ['prestataire'] },
     { to: '/dashboard/reviews', icon: Star, label: 'Mes avis', roles: ['prestataire'] },
     // Propriétaire
     { to: '/dashboard/quotes', icon: FileText, label: 'Mes demandes', roles: ['proprietaire'] },
