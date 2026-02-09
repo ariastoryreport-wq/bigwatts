@@ -20,7 +20,7 @@ export default function Dashboard() {
 
   const StatCard = ({ icon: Icon, label, value, color = 'primary', to }) => {
     const colors = {
-      primary: 'bg-navy-800 text-primary-400',
+      primary: 'bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300',
       blue: 'bg-blue-100 text-blue-600',
       yellow: 'bg-yellow-100 text-yellow-600',
       red: 'bg-red-100 text-red-600',
@@ -34,8 +34,8 @@ export default function Dashboard() {
             <Icon className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-white">{value ?? '—'}</p>
-            <p className="text-sm text-dark-400">{label}</p>
+            <p className="text-2xl font-bold text-black dark:text-white">{value ?? '—'}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
           </div>
         </div>
       </Card>
@@ -46,10 +46,10 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">
+        <h1 className="text-2xl font-bold text-black dark:text-white">
           Bonjour {user?.first_name || user?.username} 👋
         </h1>
-        <p className="text-dark-400">Voici un aperçu de votre activité</p>
+        <p className="text-gray-500 dark:text-gray-400">Voici un aperçu de votre activité</p>
       </div>
 
       {loading ? (

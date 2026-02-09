@@ -8,8 +8,8 @@ export function StarRating({ rating, max = 5, size = 16, interactive = false, on
           key={i}
           size={size}
           className={`${
-            i < Math.round(rating) ? 'fill-primary-400 text-primary-400' : 'text-dark-600'
-          } ${interactive ? 'cursor-pointer hover:text-primary-400' : ''}`}
+            i < Math.round(rating) ? 'fill-brand-300 text-brand-300' : 'text-gray-300 dark:text-gray-600'
+          } ${interactive ? 'cursor-pointer hover:text-brand-300' : ''}`}
           onClick={() => interactive && onChange?.(i + 1)}
         />
       ))}
@@ -19,12 +19,12 @@ export function StarRating({ rating, max = 5, size = 16, interactive = false, on
 
 export function Badge({ children, variant = 'default', className = '' }) {
   const variants = {
-    default: 'bg-dark-700 text-dark-200 border border-dark-600',
-    primary: 'bg-primary-400/10 text-primary-400 border border-primary-400/20',
-    success: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-    warning: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
-    danger: 'bg-red-500/10 text-red-400 border border-red-500/20',
-    info: 'bg-sky-500/10 text-sky-400 border border-sky-500/20',
+    default: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700',
+    primary: 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800',
+    success: 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800',
+    warning: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
+    danger: 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800',
+    info: 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800',
   };
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${variants[variant]} ${className}`}>
@@ -57,7 +57,7 @@ export function StatusBadge({ status }) {
 export function LoadingSpinner({ className = '' }) {
   return (
     <div className={`flex justify-center py-12 ${className}`}>
-      <div className="animate-spin rounded-full h-10 w-10 border-2 border-dark-600 border-t-primary-400"></div>
+      <div className="animate-spin rounded-full h-10 w-10 border-2 border-gray-200 dark:border-gray-700 border-t-brand-300"></div>
     </div>
   );
 }
@@ -65,9 +65,9 @@ export function LoadingSpinner({ className = '' }) {
 export function EmptyState({ icon: Icon, title, description, action }) {
   return (
     <div className="text-center py-12">
-      {Icon && <Icon className="mx-auto h-12 w-12 text-dark-500 mb-4" />}
-      <h3 className="text-lg font-medium text-white mb-2">{title}</h3>
-      {description && <p className="text-dark-400 mb-6">{description}</p>}
+      {Icon && <Icon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600 mb-4" />}
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{title}</h3>
+      {description && <p className="text-gray-500 dark:text-gray-400 mb-6">{description}</p>}
       {action}
     </div>
   );
@@ -75,7 +75,7 @@ export function EmptyState({ icon: Icon, title, description, action }) {
 
 export function Card({ children, className = '', ...props }) {
   return (
-    <div className={`bg-dark-800 rounded-lg border border-dark-700 ${className}`} {...props}>
+    <div className={`bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 ${className}`} {...props}>
       {children}
     </div>
   );
@@ -85,8 +85,8 @@ export function PageHeader({ title, description, action }) {
   return (
     <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-white">{title}</h1>
-        {description && <p className="text-dark-400 mt-1">{description}</p>}
+        <h1 className="text-2xl font-bold text-black dark:text-white">{title}</h1>
+        {description && <p className="text-gray-500 dark:text-gray-400 mt-1">{description}</p>}
       </div>
       {action}
     </div>
@@ -94,10 +94,10 @@ export function PageHeader({ title, description, action }) {
 }
 
 export function PriceDisplay({ price, priceType }) {
-  if (!price && priceType === 'quote') return <span className="text-primary-400 font-semibold">Sur devis</span>;
-  if (!price && priceType === 'free_estimate') return <span className="text-primary-400 font-semibold">Estimation gratuite</span>;
-  if (!price) return <span className="text-dark-400">Prix non renseigné</span>;
+  if (!price && priceType === 'quote') return <span className="text-brand-600 dark:text-brand-300 font-semibold">Sur devis</span>;
+  if (!price && priceType === 'free_estimate') return <span className="text-brand-600 dark:text-brand-300 font-semibold">Estimation gratuite</span>;
+  if (!price) return <span className="text-gray-400">Prix non renseigné</span>;
   const formatted = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price);
   const suffix = priceType === 'hourly' ? '/h' : '';
-  return <span className="text-primary-400 font-bold text-lg">{formatted}{suffix}</span>;
+  return <span className="text-black dark:text-white font-bold text-lg">{formatted}{suffix}</span>;
 }

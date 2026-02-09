@@ -50,6 +50,8 @@ class Ad(models.Model):
     city = models.CharField(max_length=100)
     postal_code = models.CharField(max_length=10, blank=True)
     service_area = models.CharField(max_length=200, blank=True, help_text="Zone d'intervention")
+    latitude = models.FloatField(null=True, blank=True, help_text="Latitude GPS")
+    longitude = models.FloatField(null=True, blank=True, help_text="Longitude GPS")
     
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     

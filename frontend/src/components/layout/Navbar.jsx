@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Menu, X, Bell, User, LogOut, Zap, ChevronDown } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
+import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun } from 'lucide-react';
 import { notificationsAPI } from '../../services/api';
 import { useEffect } from 'react';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
+  const { dark, toggle } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -29,6 +31,8 @@ export default function Navbar() {
     const base = [
       { to: '/dashboard', label: 'Tableau de bord' },
       { to: '/dashboard/messages', label: 'Messages' },
+      { to: '/dashboard/analytics', label: 'Analytics' },
+      { to: '/dashboard/appointments', label: 'Rendez-vous' },
       { to: '/dashboard/profile', label: 'Mon profil' },
     ];
     if (user?.role === 'prestataire') {
@@ -58,31 +62,44 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-dark-900/95 backdrop-blur-md border-b border-dark-700 sticky top-0 z-50">
+    <nav className="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <Zap className="h-8 w-8 text-primary-400" />
-              <span className="text-xl font-bold text-white">Big<span className="text-primary-400">Watts</span></span>
+              <img
+                src={dark ? '/logo-dark.png' : '/logo-light.png'}
+                alt="BigWatts"
+                className="h-9 w-auto"
+              />
             </Link>
             {/* Desktop links */}
             <div className="hidden md:flex ml-10 space-x-6">
-              <Link to="/services" className="text-dark-300 hover:text-primary-400 transition font-medium">Services</Link>
-              <Link to="/providers" className="text-dark-300 hover:text-primary-400 transition font-medium">Prestataires</Link>
+              <Link to="/services" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Services</Link>
+              <Link to="/providers" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Prestataires</Link>
+              <Link to="/map" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Carte</Link>
             </div>
           </div>
 
           {/* Right side */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
+            {/* Dark mode toggle */}
+            <button
+              onClick={toggle}
+              className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              title={dark ? 'Mode clair' : 'Mode sombre'}
+            >
+              {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+
             {isAuthenticated ? (
               <>
                 {/* Notifications */}
-                <Link to="/dashboard/notifications" className="relative p-2 text-dark-400 hover:text-primary-400 transition">
+                <Link to="/dashboard/notifications" className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition">
                   <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary-400 text-dark-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-brand-300 text-black text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -92,10 +109,10 @@ export default function Navbar() {
                 <div className="relative">
                   <button
                     onClick={() => setProfileOpen(!profileOpen)}
-                    className="flex items-center space-x-2 text-dark-300 hover:text-primary-400 transition"
+                    className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-navy-800 border border-dark-600 flex items-center justify-center">
-                      <User className="h-4 w-4 text-primary-400" />
+                    <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center">
+                      <User className="h-4 w-4 text-brand-700 dark:text-brand-300" />
                     </div>
                     <span className="hidden md:block text-sm font-medium">{user.first_name || user.username}</span>
                     <ChevronDown className="h-4 w-4" />
@@ -104,25 +121,25 @@ export default function Navbar() {
                   {profileOpen && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setProfileOpen(false)} />
-                      <div className="absolute right-0 mt-2 w-56 bg-dark-800 rounded-lg border border-dark-700 z-20 py-2 shadow-xl">
-                        <div className="px-4 py-2 border-b border-dark-700">
-                          <p className="text-sm font-medium text-white">{user.first_name} {user.last_name}</p>
-                          <p className="text-xs text-dark-400 capitalize">{user.role?.replace('_', ' ')}</p>
+                      <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 z-20 py-2 shadow-xl">
+                        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">
+                          <p className="text-sm font-medium text-black dark:text-white">{user.first_name} {user.last_name}</p>
+                          <p className="text-xs text-gray-500 capitalize">{user.role?.replace('_', ' ')}</p>
                         </div>
                         {dashboardLinks().map((link) => (
                           <Link
                             key={link.to}
                             to={link.to}
                             onClick={() => setProfileOpen(false)}
-                            className="block px-4 py-2 text-sm text-dark-300 hover:bg-dark-700 hover:text-primary-400 transition"
+                            className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-black dark:hover:text-white transition"
                           >
                             {link.label}
                           </Link>
                         ))}
-                        <hr className="my-1 border-dark-700" />
+                        <hr className="my-1 border-gray-200 dark:border-gray-800" />
                         <button
                           onClick={handleLogout}
-                          className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-dark-700 flex items-center space-x-2"
+                          className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2"
                         >
                           <LogOut className="h-4 w-4" />
                           <span>Déconnexion</span>
@@ -134,15 +151,15 @@ export default function Navbar() {
               </>
             ) : (
               <div className="hidden md:flex items-center space-x-3">
-                <Link to="/login" className="text-dark-300 hover:text-primary-400 font-medium transition">Connexion</Link>
-                <Link to="/register" className="bg-primary-400 text-dark-900 px-4 py-2 rounded-lg hover:bg-primary-300 transition font-bold">
+                <Link to="/login" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white font-medium transition">Connexion</Link>
+                <Link to="/register" className="bg-black dark:bg-white text-white dark:text-black px-5 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition font-bold">
                   Inscription
                 </Link>
               </div>
             )}
 
             {/* Mobile menu button */}
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-dark-400">
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-gray-500">
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
@@ -151,23 +168,24 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-dark-800 border-t border-dark-700">
+        <div className="md:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
           <div className="px-4 py-3 space-y-2">
-            <Link to="/services" onClick={() => setMobileOpen(false)} className="block py-2 text-dark-300 hover:text-primary-400">Services</Link>
-            <Link to="/providers" onClick={() => setMobileOpen(false)} className="block py-2 text-dark-300 hover:text-primary-400">Prestataires</Link>
+            <Link to="/services" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Services</Link>
+            <Link to="/providers" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Prestataires</Link>
+            <Link to="/map" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Carte</Link>
             {isAuthenticated ? (
               <>
                 {dashboardLinks().map((link) => (
-                  <Link key={link.to} to={link.to} onClick={() => setMobileOpen(false)} className="block py-2 text-dark-300 hover:text-primary-400">
+                  <Link key={link.to} to={link.to} onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
                     {link.label}
                   </Link>
                 ))}
-                <button onClick={handleLogout} className="block py-2 text-red-400">Déconnexion</button>
+                <button onClick={handleLogout} className="block py-2 text-red-500">Déconnexion</button>
               </>
             ) : (
               <>
-                <Link to="/login" onClick={() => setMobileOpen(false)} className="block py-2 text-dark-300">Connexion</Link>
-                <Link to="/register" onClick={() => setMobileOpen(false)} className="block py-2 text-primary-400 font-bold">Inscription</Link>
+                <Link to="/login" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400">Connexion</Link>
+                <Link to="/register" onClick={() => setMobileOpen(false)} className="block py-2 font-bold text-black dark:text-white">Inscription</Link>
               </>
             )}
           </div>

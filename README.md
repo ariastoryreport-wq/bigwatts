@@ -1,4 +1,4 @@
-# BigWatts — Marketplace Énergie Verte 🌱⚡
+# BigWatts — Marketplace Énergie Verte
 
 Plateforme de mise en relation entre prestataires de services d'énergie verte et propriétaires.
 
@@ -276,3 +276,29 @@ Internet → Nginx (reverse proxy + SSL) → Docker
 ## Licence
 
 Projet privé — Tous droits réservés.
+
+---
+
+## Développement frontend : workflow rapide
+
+**Comment travailler efficacement sur le frontend sans pousser à chaque fois :**
+
+1. Démarrez le serveur de développement Vite :
+   ```bash
+   cd frontend
+   npm install         # (une seule fois)
+   npx vite --host
+   ```
+   Le site sera accessible sur [http://localhost:5173](http://localhost:5173) (ou un autre port si déjà utilisé).
+
+2. Les appels API sont automatiquement redirigés vers le backend de production (`bigwatts.onrender.com`) grâce au fichier `.env.development`.
+
+3. **Hot-reload** : chaque modification d’un fichier `.jsx` ou `.css` s’affiche instantanément dans le navigateur (pas besoin de recharger la page).
+
+4. **Cycle de travail :**
+   - Modifiez le code dans `frontend/`
+   - Visualisez le résultat en direct sur `localhost:5173`
+   - Répétez jusqu’à satisfaction
+   - **Poussez (`git push`) uniquement quand vous êtes prêt**
+
+5. Vous pouvez ouvrir le site local dans un navigateur externe ou dans l’extension Simple Browser de VS Code.

@@ -41,18 +41,18 @@ export default function Favorites() {
               <div className="flex items-center justify-between">
                 <div>
                   {fav.provider && (
-                    <Link to={`/providers/${fav.provider}`} className="font-medium text-white hover:text-primary-400">
+                    <Link to={`/providers/${fav.provider}`} className="font-medium text-black dark:text-white hover:text-brand-600 dark:hover:text-brand-300">
                       {fav.provider_name || fav.provider_username}
                     </Link>
                   )}
                   {fav.ad && (
-                    <Link to={`/services/${fav.ad}`} className="font-medium text-white hover:text-primary-400">
+                    <Link to={`/services/${fav.ad}`} className="font-medium text-black dark:text-white hover:text-brand-600 dark:hover:text-brand-300">
                       {fav.ad_title}
                     </Link>
                   )}
-                  <p className="text-xs text-dark-500 mt-1">{new Date(fav.created_at).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-xs text-gray-400 mt-1">{new Date(fav.created_at).toLocaleDateString('fr-FR')}</p>
                 </div>
-                <button onClick={() => removeFav(fav.id)} className="p-2 text-dark-500 hover:text-red-400 transition">
+                <button onClick={() => removeFav(fav.id)} className="p-2 text-gray-400 hover:text-red-400 transition">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>

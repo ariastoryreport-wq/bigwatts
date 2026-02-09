@@ -41,35 +41,35 @@ export default function MyReviews() {
             <Card key={rev.id} className="p-5">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <p className="font-medium text-white">{rev.author_name || rev.author_username}</p>
+                  <p className="font-medium text-black dark:text-white">{rev.author_name || rev.author_username}</p>
                   <StarRating rating={rev.rating} size={16} />
                 </div>
-                <span className="text-xs text-dark-500">{new Date(rev.created_at).toLocaleDateString('fr-FR')}</span>
+                <span className="text-xs text-gray-400">{new Date(rev.created_at).toLocaleDateString('fr-FR')}</span>
               </div>
               {rev.title && <p className="font-medium text-sm mb-1">{rev.title}</p>}
-              <p className="text-sm text-dark-300">{rev.comment}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{rev.comment}</p>
 
               {rev.provider_response ? (
-                <div className="mt-3 ml-4 pl-4 border-l-2 border-primary-400/30">
-                  <p className="text-sm text-dark-300"><span className="font-medium">Votre réponse :</span> {rev.provider_response}</p>
+                <div className="mt-3 ml-4 pl-4 border-l-2 border-brand-200 dark:border-brand-800">
+                  <p className="text-sm text-gray-600 dark:text-gray-400"><span className="font-medium">Votre réponse :</span> {rev.provider_response}</p>
                 </div>
               ) : (
                 responding === rev.id ? (
                   <div className="mt-3 space-y-2">
                     <textarea
-                      rows={3} className="w-full px-4 py-2.5 border border-dark-700 rounded-lg outline-none text-sm bg-dark-700 text-white"
+                      rows={3} className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-lg outline-none text-sm bg-gray-100 dark:bg-gray-800 text-black dark:text-white"
                       placeholder="Votre réponse..." value={responseText}
                       onChange={(e) => setResponseText(e.target.value)}
                     />
                     <div className="flex gap-2">
-                      <button onClick={() => setResponding(null)} className="px-4 py-1.5 border border-dark-700 rounded-lg text-sm text-dark-300">Annuler</button>
-                      <button onClick={() => handleRespond(rev.id)} className="px-4 py-1.5 bg-primary-400 text-dark-900 rounded-lg text-sm">Publier</button>
+                      <button onClick={() => setResponding(null)} className="px-4 py-1.5 border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-600 dark:text-gray-400">Annuler</button>
+                      <button onClick={() => handleRespond(rev.id)} className="px-4 py-1.5 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm">Publier</button>
                     </div>
                   </div>
                 ) : (
                   <button
                     onClick={() => { setResponding(rev.id); setResponseText(''); }}
-                    className="mt-3 text-sm text-primary-400 hover:text-primary-300 font-medium"
+                    className="mt-3 text-sm text-brand-600 dark:text-brand-300 hover:text-brand-500 dark:hover:text-brand-200 font-medium"
                   >
                     Répondre à cet avis
                   </button>

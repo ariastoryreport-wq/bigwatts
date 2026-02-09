@@ -83,15 +83,15 @@ export default function CSTickets() {
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
-            className="w-full pl-10 pr-4 py-2.5 border border-dark-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400/50"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-300"
             placeholder="Rechercher par sujet ou n° ticket..."
             value={search} onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <select
-          className="px-4 py-2.5 border border-dark-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400/50"
+          className="px-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-300"
           value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
         >
           {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
@@ -103,13 +103,13 @@ export default function CSTickets() {
       ) : (
         <div className="space-y-3">
           {filtered.map((t) => (
-            <div key={t.id} className="bg-dark-800 rounded-lg border border-dark-700 overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-dark-700" onClick={() => toggleExpand(t.id)}>
+            <div key={t.id} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => toggleExpand(t.id)}>
                 <div className="flex items-center gap-3">
                   <StatusBadge status={t.status} />
                   <div>
-                    <p className="font-medium text-sm text-white">{t.subject}</p>
-                    <p className="text-xs text-dark-500">
+                    <p className="font-medium text-sm text-black dark:text-white">{t.subject}</p>
+                    <p className="text-xs text-gray-400">
                       #{t.id} · par {t.created_by_name || `User #${t.created_by}`} · {new Date(t.created_at).toLocaleDateString('fr-FR')}
                     </p>
                   </div>
@@ -124,11 +124,11 @@ export default function CSTickets() {
 
               {expanded === t.id && detail && (
                 <div className="border-t px-5 py-4 space-y-4">
-                  <p className="text-sm text-dark-200">{detail.description}</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">{detail.description}</p>
 
                   {/* Status update */}
                   <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium text-dark-300">Statut :</label>
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Statut :</label>
                     <select
                       className="px-3 py-1.5 border rounded-lg text-sm outline-none"
                       value={statusUpdate} onChange={(e) => setStatusUpdate(e.target.value)}
@@ -137,7 +137,7 @@ export default function CSTickets() {
                         <option key={s.value} value={s.value}>{s.label}</option>
                       ))}
                     </select>
-                    <button onClick={() => handleStatusChange(t.id)} className="px-3 py-1.5 bg-dark-700 text-white rounded-lg text-sm hover:bg-dark-800">
+                    <button onClick={() => handleStatusChange(t.id)} className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-black dark:text-white rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700">
                       Mettre à jour
                     </button>
                   </div>
@@ -145,14 +145,14 @@ export default function CSTickets() {
                   {/* Responses */}
                   {detail.responses?.length > 0 && (
                     <div className="space-y-3">
-                      <p className="text-xs font-medium text-dark-400 uppercase">Conversation</p>
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Conversation</p>
                       {detail.responses.map((r) => (
-                        <div key={r.id} className={`p-3 rounded-lg text-sm ${r.is_internal ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-dark-700'}`}>
+                        <div key={r.id} className={`p-3 rounded-lg text-sm ${r.is_internal ? 'bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800' : 'bg-gray-100 dark:bg-gray-800'}`}>
                           <div className="flex justify-between mb-1">
-                            <span className="font-medium text-dark-200">{r.author_name || 'Utilisateur'}</span>
-                            <span className="text-xs text-dark-500">{new Date(r.created_at).toLocaleDateString('fr-FR')}</span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">{r.author_name || 'Utilisateur'}</span>
+                            <span className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString('fr-FR')}</span>
                           </div>
-                          <p className="text-dark-300">{r.content}</p>
+                          <p className="text-gray-600 dark:text-gray-400">{r.content}</p>
                         </div>
                       ))}
                     </div>
@@ -161,13 +161,13 @@ export default function CSTickets() {
                   {/* Respond */}
                   <div className="flex gap-2">
                     <input
-                      className="flex-1 px-4 py-2.5 border border-dark-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400/50"
+                      className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-300"
                       placeholder="Répondre au ticket..."
                       value={responseText}
                       onChange={(e) => setResponseText(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleRespond(t.id)}
                     />
-                    <button onClick={() => handleRespond(t.id)} className="p-2.5 bg-primary-400 text-dark-900 rounded-lg hover:bg-primary-300">
+                    <button onClick={() => handleRespond(t.id)} className="p-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200">
                       <Send size={16} />
                     </button>
                   </div>

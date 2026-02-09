@@ -28,22 +28,22 @@ export default function MyQuotes() {
               <div className="flex flex-col sm:flex-row justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <h3 className="font-semibold text-white">{q.ad_title}</h3>
+                    <h3 className="font-semibold text-black dark:text-white">{q.ad_title}</h3>
                     <StatusBadge status={q.status} />
                   </div>
-                  <p className="text-sm text-dark-300 line-clamp-2">{q.message}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{q.message}</p>
                   {q.quoted_price && (
-                    <p className="text-sm mt-2 text-primary-400 font-medium">
+                    <p className="text-sm mt-2 text-brand-600 dark:text-brand-300 font-medium">
                       Devis: {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(q.quoted_price)}
                     </p>
                   )}
                   {q.provider_response && (
-                    <div className="mt-2 p-3 bg-dark-700 rounded-lg text-sm text-dark-300">
+                    <div className="mt-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm text-gray-600 dark:text-gray-400">
                       <span className="font-medium">Réponse:</span> {q.provider_response}
                     </div>
                   )}
                 </div>
-                <div className="text-xs text-dark-500 shrink-0">
+                <div className="text-xs text-gray-400 shrink-0">
                   {new Date(q.created_at).toLocaleDateString('fr-FR')}
                 </div>
               </div>

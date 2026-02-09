@@ -71,46 +71,46 @@ export default function MyTickets() {
     } catch { toast.error('Erreur'); }
   };
 
-  const inputClass = 'w-full px-4 py-2.5 border border-dark-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-400/50 focus:border-transparent outline-none';
+  const inputClass = 'w-full px-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-brand-300 focus:border-transparent outline-none';
 
   return (
     <DashboardLayout>
       <div className="flex items-center justify-between mb-6">
         <PageHeader title="Mes tickets" description="Support et assistance" />
-        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2.5 bg-primary-400 text-dark-900 rounded-lg text-sm font-medium hover:bg-primary-300">
+        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-200">
           <Plus size={16} /> Nouveau ticket
         </button>
       </div>
 
       {/* Create form */}
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-dark-800 rounded-lg border border-dark-700 p-6 mb-6">
+        <form onSubmit={handleCreate} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 mb-6">
           <h3 className="text-lg font-semibold mb-4">Créer un ticket</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-dark-200 mb-1">Sujet</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sujet</label>
               <input className={inputClass} value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-dark-200 mb-1">Catégorie</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie</label>
               <select className={inputClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
                 {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-dark-200 mb-1">Priorité</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priorité</label>
               <select className={inputClass} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
                 {PRIORITIES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-dark-200 mb-1">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
               <textarea rows={4} className={inputClass} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
             </div>
           </div>
           <div className="flex gap-2">
             <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 border rounded-lg text-sm">Annuler</button>
-            <button type="submit" className="px-6 py-2 bg-primary-400 text-dark-900 rounded-lg text-sm font-medium hover:bg-primary-300">Créer</button>
+            <button type="submit" className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-200">Créer</button>
           </div>
         </form>
       )}
@@ -120,13 +120,13 @@ export default function MyTickets() {
       ) : (
         <div className="space-y-3">
           {tickets.map((t) => (
-            <div key={t.id} className="bg-dark-800 rounded-lg border border-dark-700 overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-dark-700" onClick={() => toggleExpand(t.id)}>
+            <div key={t.id} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => toggleExpand(t.id)}>
                 <div className="flex items-center gap-3">
                   <StatusBadge status={t.status} />
                   <div>
-                    <p className="font-medium text-sm text-white">{t.subject}</p>
-                    <p className="text-xs text-dark-500">#{t.id} · {new Date(t.created_at).toLocaleDateString('fr-FR')}</p>
+                    <p className="font-medium text-sm text-black dark:text-white">{t.subject}</p>
+                    <p className="text-xs text-gray-400">#{t.id} · {new Date(t.created_at).toLocaleDateString('fr-FR')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -139,18 +139,18 @@ export default function MyTickets() {
 
               {expanded === t.id && detail && (
                 <div className="border-t px-5 py-4">
-                  <p className="text-sm text-dark-200 mb-4">{detail.description}</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">{detail.description}</p>
 
                   {detail.responses?.length > 0 && (
                     <div className="space-y-3 mb-4">
-                      <p className="text-xs font-medium text-dark-400 uppercase">Conversation</p>
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Conversation</p>
                       {detail.responses.map((r) => (
-                        <div key={r.id} className={`p-3 rounded-lg text-sm ${r.is_internal ? 'bg-amber-500/10 border-amber-500/20 border' : 'bg-dark-700'}`}>
+                        <div key={r.id} className={`p-3 rounded-lg text-sm ${r.is_internal ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 border' : 'bg-gray-100 dark:bg-gray-800'}`}>
                           <div className="flex justify-between mb-1">
-                            <span className="font-medium text-dark-200">{r.author_name || 'Support'}</span>
-                            <span className="text-xs text-dark-500">{new Date(r.created_at).toLocaleDateString('fr-FR')}</span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">{r.author_name || 'Support'}</span>
+                            <span className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString('fr-FR')}</span>
                           </div>
-                          <p className="text-dark-300">{r.content}</p>
+                          <p className="text-gray-600 dark:text-gray-400">{r.content}</p>
                         </div>
                       ))}
                     </div>
@@ -165,7 +165,7 @@ export default function MyTickets() {
                         onChange={(e) => setResponseText(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleRespond(t.id)}
                       />
-                      <button onClick={() => handleRespond(t.id)} className="p-2.5 bg-primary-400 text-dark-900 rounded-lg hover:bg-primary-300">
+                      <button onClick={() => handleRespond(t.id)} className="p-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200">
                         <Send size={16} />
                       </button>
                     </div>

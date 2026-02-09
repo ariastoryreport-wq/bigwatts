@@ -17,6 +17,8 @@ class User(AbstractUser):
     postal_code = models.CharField(max_length=10, blank=True)
     address = models.TextField(blank=True)
     bio = models.TextField(blank=True)
+    latitude = models.FloatField(null=True, blank=True, help_text="Latitude GPS")
+    longitude = models.FloatField(null=True, blank=True, help_text="Longitude GPS")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_verified = models.BooleanField(default=False)
@@ -83,3 +85,85 @@ class ProprietaireProfile(models.Model):
 
     def __str__(self):
         return f"Profil propriétaire: {self.user.username}"
+
+
+class ProviderBadge(models.Model):
+    """Badges and certifications that can be assigned to providers."""
+
+    class BadgeType(models.TextChoices):
+        CERTIFICATION = 'certification', 'Certification'
+        ACHIEVEMENT = 'achievement', 'Réalisation'
+        QUALITY = 'quality', 'Qualité'
+        TRUST = 'trust', 'Confiance'
+
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    badge_type = models.CharField(max_length=20, choices=BadgeType.choices, default=BadgeType.CERTIFICATION)
+    icon = models.CharField(max_length=50, default='award', help_text="Lucide icon name")
+    color = models.CharField(max_length=20, default='brand', help_text="Color theme: brand, gold, blue, green")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class UserBadge(models.Model):
+    """Many-to-many: badges assigned to providers."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='badges')
+    badge = models.ForeignKey(ProviderBadge, on_delete=models.CASCADE, related_name='holders')
+    awarded_at = models.DateTimeField(auto_now_add=True)
+    awarded_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='badges_awarded', limit_choices_to={'role': 'customer_service'}
+    )
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ['user', 'badge']
+        ordering = ['-awarded_at']
+
+    def __str__(self):
+        return f"{self.user.username} — {self.badge.name}"
+
+
+class Appointment(models.Model):
+    """Appointments between providers and property owners."""
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'En attente'
+        CONFIRMED = 'confirmed', 'Confirmé'
+        CANCELLED = 'cancelled', 'Annulé'
+        COMPLETED = 'completed', 'Terminé'
+
+    provider = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='provider_appointments',
+        limit_choices_to={'role': 'prestataire'}
+    )
+    owner = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='owner_appointments',
+        limit_choices_to={'role': 'proprietaire'}
+    )
+    quote_request = models.ForeignKey(
+        'ads.QuoteRequest', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='appointments'
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    location = models.CharField(max_length=300, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['date', 'start_time']
+
+    def __str__(self):
+        return f"{self.title} — {self.date} {self.start_time}"

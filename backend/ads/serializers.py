@@ -28,7 +28,8 @@ class AdListSerializer(serializers.ModelSerializer):
         model = Ad
         fields = [
             'id', 'title', 'slug', 'short_description', 'price', 'price_type',
-            'city', 'status', 'image_1', 'image_url', 'category', 'category_name',
+            'city', 'latitude', 'longitude', 'status', 'image_1', 'image_url',
+            'category', 'category_name',
             'provider', 'provider_name', 'provider_username', 'provider_avatar',
             'provider_rating', 'views_count', 'created_at'
         ]
@@ -54,6 +55,7 @@ class AdCreateUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'title', 'slug', 'category', 'description', 'short_description',
             'price', 'price_type', 'city', 'postal_code', 'service_area',
+            'latitude', 'longitude',
             'status', 'image_1', 'image_2', 'image_3', 'image_url',
             'duration_estimate', 'warranty_info', 'requirements'
         ]

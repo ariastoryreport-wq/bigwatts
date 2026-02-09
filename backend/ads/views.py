@@ -119,6 +119,9 @@ class QuoteRequestCreateView(generics.CreateAPIView):
             message=f'{quote.owner.get_full_name() or quote.owner.username} a demandé un devis pour "{quote.ad.title}".',
             link=f'/dashboard/quotes/{quote.pk}'
         )
+        # Send email notification
+        from notifications.emails import notify_new_quote_request
+        notify_new_quote_request(quote)
 
 
 class MyQuoteRequestsView(generics.ListAPIView):
@@ -174,6 +177,9 @@ class QuoteRespondView(generics.UpdateAPIView):
             message=f'Votre demande pour "{quote.ad.title}" a été mise à jour: {status_labels.get(quote.status, quote.status)}.',
             link=f'/dashboard/quotes/{quote.pk}'
         )
+        # Send email notification
+        from notifications.emails import notify_quote_response
+        notify_quote_response(quote)
 
 
 # --- CS Views ---

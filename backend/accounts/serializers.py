@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from .models import PrestaireProfile, ProprietaireProfile
+from .models import PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge, Appointment
 
 User = get_user_model()
 
@@ -23,17 +23,32 @@ class ProprietaireProfileSerializer(serializers.ModelSerializer):
         fields = ['property_type', 'property_surface', 'energy_interests', 'budget_range']
 
 
+class ProviderBadgeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProviderBadge
+        fields = ['id', 'name', 'slug', 'description', 'badge_type', 'icon', 'color']
+
+
+class UserBadgeSerializer(serializers.ModelSerializer):
+    badge = ProviderBadgeSerializer(read_only=True)
+
+    class Meta:
+        model = UserBadge
+        fields = ['id', 'badge', 'awarded_at', 'notes']
+
+
 class UserSerializer(serializers.ModelSerializer):
     prestataire_profile = PrestaireProfileSerializer(read_only=True)
     proprietaire_profile = ProprietaireProfileSerializer(read_only=True)
-    
+    badges = UserBadgeSerializer(many=True, read_only=True)
+
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'role', 'phone', 'avatar', 'city', 'postal_code',
-            'address', 'bio', 'is_verified', 'created_at',
-            'prestataire_profile', 'proprietaire_profile'
+            'address', 'bio', 'is_verified', 'latitude', 'longitude',
+            'created_at', 'prestataire_profile', 'proprietaire_profile', 'badges'
         ]
         read_only_fields = ['id', 'role', 'is_verified', 'created_at']
 
@@ -41,13 +56,15 @@ class UserSerializer(serializers.ModelSerializer):
 class UserPublicSerializer(serializers.ModelSerializer):
     """Public-facing user info (no sensitive data)."""
     prestataire_profile = PrestaireProfileSerializer(read_only=True)
-    
+    badges = UserBadgeSerializer(many=True, read_only=True)
+
     class Meta:
         model = User
         fields = [
             'id', 'username', 'first_name', 'last_name',
             'role', 'avatar', 'city', 'bio', 'is_verified',
-            'created_at', 'prestataire_profile'
+            'latitude', 'longitude',
+            'created_at', 'prestataire_profile', 'badges'
         ]
 
 
@@ -95,5 +112,31 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'first_name', 'last_name', 'phone', 'avatar',
-            'city', 'postal_code', 'address', 'bio'
+            'city', 'postal_code', 'address', 'bio',
+            'latitude', 'longitude'
         ]
+
+
+class AppointmentSerializer(serializers.ModelSerializer):
+    provider_name = serializers.CharField(source='provider.get_full_name', read_only=True)
+    owner_name = serializers.CharField(source='owner.get_full_name', read_only=True)
+
+    class Meta:
+        model = Appointment
+        fields = [
+            'id', 'provider', 'owner', 'provider_name', 'owner_name',
+            'quote_request', 'title', 'description',
+            'date', 'start_time', 'end_time', 'location',
+            'status', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def create(self, validated_data):
+        validated_data.setdefault('provider', self.context['request'].user)
+        return super().create(validated_data)
+
+
+class AppointmentUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Appointment
+        fields = ['status', 'date', 'start_time', 'end_time', 'location', 'description']

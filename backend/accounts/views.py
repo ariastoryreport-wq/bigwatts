@@ -4,15 +4,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import Q, Avg, Count, Sum
+from django.utils import timezone
+from datetime import timedelta
 
 from .serializers import (
     RegisterSerializer, UserSerializer, UserUpdateSerializer,
     UserPublicSerializer, ChangePasswordSerializer,
-    PrestaireProfileSerializer, ProprietaireProfileSerializer
+    PrestaireProfileSerializer, ProprietaireProfileSerializer,
+    ProviderBadgeSerializer, UserBadgeSerializer,
+    AppointmentSerializer, AppointmentUpdateSerializer,
 )
 from .permissions import IsCustomerService, IsOwnerOrReadOnly
-from .models import PrestaireProfile, ProprietaireProfile
+from .models import PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge, Appointment
 
 User = get_user_model()
 
@@ -240,4 +244,207 @@ class DashboardStatsView(APIView):
                 'my_tickets': Ticket.objects.filter(assigned_to=user).exclude(status='closed').count(),
             })
         
+        return Response(data)
+
+
+# ──────────────────── Badges ────────────────────
+
+class BadgeListView(generics.ListAPIView):
+    """GET /api/auth/badges/ - All available badges."""
+    queryset = ProviderBadge.objects.filter(is_active=True)
+    serializer_class = ProviderBadgeSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
+
+
+class UserBadgesView(generics.ListAPIView):
+    """GET /api/auth/users/<id>/badges/ - Badges for a user."""
+    serializer_class = UserBadgeSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
+
+    def get_queryset(self):
+        return UserBadge.objects.filter(user_id=self.kwargs['pk']).select_related('badge')
+
+
+class AssignBadgeView(APIView):
+    """POST /api/auth/cs/badges/assign/ - CS assigns a badge to a user."""
+    permission_classes = [IsCustomerService]
+
+    def post(self, request):
+        user_id = request.data.get('user_id')
+        badge_id = request.data.get('badge_id')
+        notes = request.data.get('notes', '')
+
+        try:
+            target_user = User.objects.get(pk=user_id)
+            badge = ProviderBadge.objects.get(pk=badge_id, is_active=True)
+        except (User.DoesNotExist, ProviderBadge.DoesNotExist):
+            return Response({'error': 'Utilisateur ou badge introuvable.'}, status=status.HTTP_404_NOT_FOUND)
+
+        ub, created = UserBadge.objects.get_or_create(
+            user=target_user, badge=badge,
+            defaults={'awarded_by': request.user, 'notes': notes}
+        )
+        if not created:
+            return Response({'error': 'Ce badge est déjà attribué.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create notification
+        from notifications.models import Notification
+        Notification.objects.create(
+            recipient=target_user,
+            notification_type='system',
+            title='Nouveau badge obtenu !',
+            message=f'Vous avez reçu le badge "{badge.name}". Félicitations !',
+            link='/dashboard/profile'
+        )
+
+        return Response(UserBadgeSerializer(ub).data, status=status.HTTP_201_CREATED)
+
+
+# ──────────────────── Appointments ────────────────────
+
+class AppointmentListView(generics.ListAPIView):
+    """GET /api/auth/appointments/ - User's appointments."""
+    serializer_class = AppointmentSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = Appointment.objects.filter(Q(provider=user) | Q(owner=user))
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs.select_related('provider', 'owner')
+
+
+class AppointmentCreateView(generics.CreateAPIView):
+    """POST /api/auth/appointments/ - Create an appointment."""
+    serializer_class = AppointmentSerializer
+
+    def perform_create(self, serializer):
+        appointment = serializer.save()
+        # Notify the other party
+        from notifications.models import Notification
+        other = appointment.owner if self.request.user == appointment.provider else appointment.provider
+        Notification.objects.create(
+            recipient=other,
+            notification_type='system',
+            title='Nouveau rendez-vous',
+            message=f'{self.request.user.get_full_name() or self.request.user.username} a proposé un rendez-vous : "{appointment.title}" le {appointment.date}.',
+            link='/dashboard/appointments'
+        )
+
+
+class AppointmentUpdateView(generics.UpdateAPIView):
+    """PATCH /api/auth/appointments/<id>/ - Update appointment status."""
+    serializer_class = AppointmentUpdateSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return Appointment.objects.filter(Q(provider=user) | Q(owner=user))
+
+    def perform_update(self, serializer):
+        appointment = serializer.save()
+        from notifications.models import Notification
+        other = appointment.owner if self.request.user == appointment.provider else appointment.provider
+        status_labels = dict(Appointment.Status.choices)
+        Notification.objects.create(
+            recipient=other,
+            notification_type='system',
+            title='Rendez-vous mis à jour',
+            message=f'Le rendez-vous "{appointment.title}" a été mis à jour : {status_labels.get(appointment.status, appointment.status)}.',
+            link='/dashboard/appointments'
+        )
+
+
+# ──────────────────── Analytics ────────────────────
+
+class AnalyticsView(APIView):
+    """GET /api/auth/analytics/ - Provider analytics data."""
+
+    def get(self, request):
+        user = request.user
+
+        if user.is_prestataire:
+            from ads.models import Ad, QuoteRequest
+            from reviews.models import Review
+
+            ads = Ad.objects.filter(provider=user)
+            quotes = QuoteRequest.objects.filter(ad__provider=user)
+            reviews = Review.objects.filter(provider=user)
+
+            # Views over time (last 6 months, grouped by month)
+            now = timezone.now()
+            six_months_ago = now - timedelta(days=180)
+
+            monthly_quotes = []
+            for i in range(6):
+                month_start = (now - timedelta(days=30 * (5 - i))).replace(day=1)
+                if i < 5:
+                    month_end = (now - timedelta(days=30 * (4 - i))).replace(day=1)
+                else:
+                    month_end = now + timedelta(days=1)
+                count = quotes.filter(created_at__gte=month_start, created_at__lt=month_end).count()
+                monthly_quotes.append({
+                    'month': month_start.strftime('%b %Y'),
+                    'count': count
+                })
+
+            # Quote conversion rate
+            total_quotes = quotes.count()
+            accepted_quotes = quotes.filter(status='accepted').count()
+            completed_quotes = quotes.filter(status='completed').count()
+
+            # Rating distribution
+            rating_dist = list(
+                reviews.values('rating').annotate(count=Count('id')).order_by('rating')
+            )
+
+            data = {
+                'total_views': ads.aggregate(total=Sum('views_count'))['total'] or 0,
+                'total_inquiries': ads.aggregate(total=Sum('inquiries_count'))['total'] or 0,
+                'total_ads': ads.count(),
+                'active_ads': ads.filter(status='active').count(),
+                'total_quotes': total_quotes,
+                'accepted_quotes': accepted_quotes,
+                'completed_quotes': completed_quotes,
+                'conversion_rate': round((accepted_quotes / total_quotes * 100), 1) if total_quotes > 0 else 0,
+                'average_rating': float(reviews.aggregate(avg=Avg('rating'))['avg'] or 0),
+                'total_reviews': reviews.count(),
+                'monthly_quotes': monthly_quotes,
+                'rating_distribution': rating_dist,
+                'top_ads': list(ads.filter(status='active').order_by('-views_count')[:5].values(
+                    'id', 'title', 'views_count', 'inquiries_count'
+                )),
+            }
+        elif user.is_proprietaire:
+            from ads.models import QuoteRequest
+            quotes = QuoteRequest.objects.filter(owner=user)
+            data = {
+                'total_requests': quotes.count(),
+                'pending': quotes.filter(status='pending').count(),
+                'accepted': quotes.filter(status='accepted').count(),
+                'completed': quotes.filter(status='completed').count(),
+                'declined': quotes.filter(status='declined').count(),
+                'total_favorites': user.favorites.count(),
+            }
+        elif user.is_customer_service:
+            from ads.models import Ad, QuoteRequest
+            from tickets.models import Ticket
+            from reviews.models import Review
+            data = {
+                'total_users': User.objects.count(),
+                'total_providers': User.objects.filter(role='prestataire').count(),
+                'total_owners': User.objects.filter(role='proprietaire').count(),
+                'verified_providers': User.objects.filter(role='prestataire', is_verified=True).count(),
+                'total_ads': Ad.objects.count(),
+                'active_ads': Ad.objects.filter(status='active').count(),
+                'total_quotes': QuoteRequest.objects.count(),
+                'total_reviews': Review.objects.count(),
+                'open_tickets': Ticket.objects.filter(status='open').count(),
+                'avg_rating': float(Review.objects.aggregate(avg=Avg('rating'))['avg'] or 0),
+            }
+        else:
+            data = {}
+
         return Response(data)

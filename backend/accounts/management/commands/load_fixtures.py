@@ -5,14 +5,14 @@ Usage: python manage.py load_fixtures
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from ads.models import ServiceCategory, Ad
-from accounts.models import PrestaireProfile, ProprietaireProfile
+from accounts.models import PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge
 from reviews.models import Review
 
 User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = 'Load demo fixtures: categories, users, ads, and reviews'
+    help = 'Load demo fixtures: categories, users, ads, reviews, and badges'
 
     def handle(self, *args, **options):
         self.stdout.write('🌱 Chargement des fixtures BigWatts...\n')
@@ -22,6 +22,7 @@ class Command(BaseCommand):
         owners = self._owners()
         self._ads(providers)
         self._reviews(providers, owners)
+        self._badges(providers)
         self.stdout.write(self.style.SUCCESS('\n🎉 Fixtures chargées avec succès!'))
         self._print_accounts()
 
@@ -158,10 +159,22 @@ class Command(BaseCommand):
             },
         ]
 
+        # City coordinates for providers
+        PROV_COORDS = {
+            'Lyon': (45.7640, 4.8357), 'Paris': (48.8566, 2.3522),
+            'Marseille': (43.2965, 5.3698), 'Toulouse': (43.6047, 1.4442),
+            'Bordeaux': (44.8378, -0.5792), 'Nice': (43.7102, 7.2620),
+            'Nantes': (47.2184, -1.5536), 'Strasbourg': (48.5734, 7.7521),
+        }
+
         providers = []
         for pdata in providers_data:
             user_data = pdata['user']
             profile_data = pdata['profile']
+            # Add coordinates
+            city = user_data.get('city', '')
+            if city in PROV_COORDS:
+                user_data['latitude'], user_data['longitude'] = PROV_COORDS[city]
             user, created = User.objects.get_or_create(
                 username=user_data['username'],
                 defaults={**user_data, 'role': 'prestataire'}
@@ -170,6 +183,11 @@ class Command(BaseCommand):
                 user.set_password('demo1234')
                 user.save()
                 PrestaireProfile.objects.create(user=user, **profile_data)
+            else:
+                # Update coordinates for existing users
+                if city in PROV_COORDS and not user.latitude:
+                    user.latitude, user.longitude = PROV_COORDS[city]
+                    user.save(update_fields=['latitude', 'longitude'])
             providers.append(user)
         self.stdout.write(f'  ✅ {len(providers)} prestataires')
         return providers
@@ -240,6 +258,18 @@ class Command(BaseCommand):
 
     def _ads(self, providers):
         cats = {c.slug: c for c in ServiceCategory.objects.all()}
+
+        # City coordinates (lat, lng) for geo features
+        COORDS = {
+            'Lyon': (45.7640, 4.8357),
+            'Paris': (48.8566, 2.3522),
+            'Marseille': (43.2965, 5.3698),
+            'Toulouse': (43.6047, 1.4442),
+            'Bordeaux': (44.8378, -0.5792),
+            'Nice': (43.7102, 7.2620),
+            'Nantes': (47.2184, -1.5536),
+            'Strasbourg': (48.5734, 7.7521),
+        }
 
         # Unsplash image URLs — green energy theme (free, hotlinkable)
         IMG = {
@@ -431,12 +461,22 @@ class Command(BaseCommand):
              'duration_estimate': '3-4 jours', 'warranty_info': 'Garantie 5 ans pièces et MO'},
         ]
 
-        count = 0
+        created_count = 0
+        updated_count = 0
         for ad_data in ads_data:
-            _, created = Ad.objects.get_or_create(slug=ad_data['slug'], defaults=ad_data)
+            slug = ad_data['slug']
+            # Add coordinates based on city
+            city = ad_data.get('city', '')
+            if city in COORDS and 'latitude' not in ad_data:
+                lat, lng = COORDS[city]
+                ad_data['latitude'] = lat + (hash(slug) % 100 - 50) * 0.002  # slight jitter
+                ad_data['longitude'] = lng + (hash(slug) % 100 - 50) * 0.002
+            _, created = Ad.objects.update_or_create(slug=slug, defaults=ad_data)
             if created:
-                count += 1
-        self.stdout.write(f'  ✅ {count} annonces créées ({len(ads_data)} total)')
+                created_count += 1
+            else:
+                updated_count += 1
+        self.stdout.write(f'  ✅ {created_count} annonces créées, {updated_count} mises à jour ({len(ads_data)} total)')
 
     # ──────────────────── Avis ────────────────────
 
@@ -489,6 +529,70 @@ class Command(BaseCommand):
             if created:
                 count += 1
         self.stdout.write(f'  ✅ {count} avis créés')
+
+    # ──────────────────── Badges ────────────────────
+
+    def _badges(self, providers):
+        badges_data = [
+            {'name': 'RGE Certifié', 'slug': 'rge-certifie', 'badge_type': 'certification',
+             'description': 'Reconnu Garant de l\'Environnement — certification officielle pour les travaux de rénovation énergétique.',
+             'icon': 'shield-check', 'color': 'green'},
+            {'name': 'Expert Confirmé', 'slug': 'expert-confirme', 'badge_type': 'achievement',
+             'description': 'Plus de 100 projets réalisés avec succès sur BigWatts.',
+             'icon': 'trophy', 'color': 'gold'},
+            {'name': 'Top Avis', 'slug': 'top-avis', 'badge_type': 'quality',
+             'description': 'Note moyenne supérieure à 4.5/5 avec au moins 5 avis.',
+             'icon': 'star', 'color': 'brand'},
+            {'name': 'Réponse Rapide', 'slug': 'reponse-rapide', 'badge_type': 'trust',
+             'description': 'Répond aux demandes de devis en moins de 24h.',
+             'icon': 'zap', 'color': 'blue'},
+            {'name': 'Qualibat', 'slug': 'qualibat', 'badge_type': 'certification',
+             'description': 'Certification Qualibat pour la qualité des travaux de construction.',
+             'icon': 'award', 'color': 'green'},
+            {'name': 'Partenaire Vérifié', 'slug': 'partenaire-verifie', 'badge_type': 'trust',
+             'description': 'Identité et documents professionnels vérifiés par BigWatts.',
+             'icon': 'check-circle', 'color': 'brand'},
+        ]
+
+        created_badges = []
+        for bd in badges_data:
+            badge, _ = ProviderBadge.objects.get_or_create(slug=bd['slug'], defaults=bd)
+            created_badges.append(badge)
+
+        # Assign badges to some providers
+        admin = User.objects.filter(username='admin').first()
+        assignments = [
+            # SolarPro: RGE, Expert, Top Avis, Partenaire Vérifié
+            (providers[0], [0, 1, 2, 5]),
+            # EcoCharge: Réponse Rapide, Top Avis, Partenaire Vérifié
+            (providers[1], [3, 2, 5]),
+            # ThermExpert: RGE, Expert, Qualibat
+            (providers[2], [0, 1, 4]),
+            # IsoConfort: RGE, Expert, Qualibat, Partenaire Vérifié
+            (providers[3], [0, 1, 4, 5]),
+            # GreenEnergy: Top Avis, Réponse Rapide, Partenaire Vérifié
+            (providers[4], [2, 3, 5]),
+            # VoltaMaison: Réponse Rapide, Partenaire Vérifié
+            (providers[5], [3, 5]),
+            # ÉolVert: RGE
+            (providers[6], [0]),
+            # HeatPump Pro: RGE, Qualibat
+            (providers[7], [0, 4]),
+        ]
+
+        badge_count = 0
+        for provider, badge_indices in assignments:
+            provider.is_verified = True
+            provider.save(update_fields=['is_verified'])
+            for idx in badge_indices:
+                _, created = UserBadge.objects.get_or_create(
+                    user=provider, badge=created_badges[idx],
+                    defaults={'awarded_by': admin, 'notes': 'Attribué automatiquement (démo)'}
+                )
+                if created:
+                    badge_count += 1
+
+        self.stdout.write(f'  ✅ {len(badges_data)} badges, {badge_count} attributions')
 
     # ──────────────────── Summary ────────────────────
 

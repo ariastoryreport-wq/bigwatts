@@ -65,12 +65,20 @@ export const authAPI = {
   updatePrestataireProfile: (data) => api.patch('/auth/prestataire-profile/', data),
   updateProprietaireProfile: (data) => api.patch('/auth/proprietaire-profile/', data),
   getDashboard: () => api.get('/auth/dashboard/'),
+  getAnalytics: () => api.get('/auth/analytics/'),
   getProviders: (params) => api.get('/auth/providers/', { params }),
   getUser: (id) => api.get(`/auth/users/${id}/`),
+  getUserBadges: (id) => api.get(`/auth/users/${id}/badges/`),
+  getBadges: () => api.get('/auth/badges/'),
+  // Appointments
+  getAppointments: (params) => api.get('/auth/appointments/', { params }),
+  createAppointment: (data) => api.post('/auth/appointments/create/', data),
+  updateAppointment: (id, data) => api.patch(`/auth/appointments/${id}/`, data),
   // CS
   csGetUsers: (params) => api.get('/auth/cs/users/', { params }),
   csGetUser: (id) => api.get(`/auth/cs/users/${id}/`),
   csUpdateUser: (id, data) => api.patch(`/auth/cs/users/${id}/`, data),
+  csAssignBadge: (data) => api.post('/auth/cs/badges/assign/', data),
 };
 
 // ---- Ads API ----

@@ -13,6 +13,7 @@ import AdList from './pages/AdList';
 import AdDetail from './pages/AdDetail';
 import ProviderList from './pages/ProviderList';
 import ProviderDetail from './pages/ProviderDetail';
+import MapView from './pages/MapView';
 
 // Dashboard
 import Dashboard from './pages/dashboard/Dashboard';
@@ -27,6 +28,8 @@ import MyReviews from './pages/dashboard/MyReviews';
 import Notifications from './pages/dashboard/Notifications';
 import Profile from './pages/dashboard/Profile';
 import MyTickets from './pages/dashboard/MyTickets';
+import Analytics from './pages/dashboard/Analytics';
+import Appointments from './pages/dashboard/Appointments';
 
 // CS pages
 import CSUsers from './pages/dashboard/cs/CSUsers';
@@ -43,7 +46,7 @@ function ProtectedRoute({ children, roles }) {
 
 function Spinner() {
   return (
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-300"></div>
   );
 }
 
@@ -71,6 +74,7 @@ export default function App() {
           <Route path="/services/:id" element={<AdDetail />} />
           <Route path="/providers" element={<ProviderList />} />
           <Route path="/providers/:id" element={<ProviderDetail />} />
+          <Route path="/map" element={<MapView />} />
 
           {/* Dashboard - All authenticated */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -79,6 +83,8 @@ export default function App() {
           <Route path="/dashboard/messages/:id" element={<ProtectedRoute><ConversationView /></ProtectedRoute>} />
           <Route path="/dashboard/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           <Route path="/dashboard/tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
+          <Route path="/dashboard/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/dashboard/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
 
           {/* Prestataire */}
           <Route path="/dashboard/ads" element={<ProtectedRoute roles={['prestataire']}><MyAds /></ProtectedRoute>} />

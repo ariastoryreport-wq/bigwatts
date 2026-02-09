@@ -13,6 +13,16 @@ urlpatterns = [
     path('prestataire-profile/', views.PrestataireProfileUpdateView.as_view(), name='prestataire-profile'),
     path('proprietaire-profile/', views.ProprietaireProfileUpdateView.as_view(), name='proprietaire-profile'),
     path('dashboard/', views.DashboardStatsView.as_view(), name='dashboard'),
+    path('analytics/', views.AnalyticsView.as_view(), name='analytics'),
+    
+    # Badges
+    path('badges/', views.BadgeListView.as_view(), name='badge-list'),
+    path('users/<int:pk>/badges/', views.UserBadgesView.as_view(), name='user-badges'),
+    
+    # Appointments
+    path('appointments/', views.AppointmentListView.as_view(), name='appointment-list'),
+    path('appointments/create/', views.AppointmentCreateView.as_view(), name='appointment-create'),
+    path('appointments/<int:pk>/', views.AppointmentUpdateView.as_view(), name='appointment-update'),
     
     # Public
     path('providers/', views.ProviderListView.as_view(), name='provider-list'),
@@ -21,4 +31,5 @@ urlpatterns = [
     # Customer Service
     path('cs/users/', views.CSUserListView.as_view(), name='cs-user-list'),
     path('cs/users/<int:pk>/', views.CSUserDetailView.as_view(), name='cs-user-detail'),
+    path('cs/badges/assign/', views.AssignBadgeView.as_view(), name='cs-badge-assign'),
 ]
