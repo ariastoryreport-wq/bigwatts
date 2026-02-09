@@ -41,35 +41,35 @@ export default function MyReviews() {
             <Card key={rev.id} className="p-5">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <p className="font-medium text-gray-900">{rev.author_name || rev.author_username}</p>
+                  <p className="font-medium text-white">{rev.author_name || rev.author_username}</p>
                   <StarRating rating={rev.rating} size={16} />
                 </div>
-                <span className="text-xs text-gray-400">{new Date(rev.created_at).toLocaleDateString('fr-FR')}</span>
+                <span className="text-xs text-dark-500">{new Date(rev.created_at).toLocaleDateString('fr-FR')}</span>
               </div>
               {rev.title && <p className="font-medium text-sm mb-1">{rev.title}</p>}
-              <p className="text-sm text-gray-600">{rev.comment}</p>
+              <p className="text-sm text-dark-300">{rev.comment}</p>
 
               {rev.provider_response ? (
-                <div className="mt-3 ml-4 pl-4 border-l-2 border-primary-200">
-                  <p className="text-sm text-gray-600"><span className="font-medium">Votre réponse :</span> {rev.provider_response}</p>
+                <div className="mt-3 ml-4 pl-4 border-l-2 border-primary-400/30">
+                  <p className="text-sm text-dark-300"><span className="font-medium">Votre réponse :</span> {rev.provider_response}</p>
                 </div>
               ) : (
                 responding === rev.id ? (
                   <div className="mt-3 space-y-2">
                     <textarea
-                      rows={3} className="w-full px-4 py-2.5 border rounded-lg outline-none text-sm"
+                      rows={3} className="w-full px-4 py-2.5 border border-dark-700 rounded-lg outline-none text-sm bg-dark-700 text-white"
                       placeholder="Votre réponse..." value={responseText}
                       onChange={(e) => setResponseText(e.target.value)}
                     />
                     <div className="flex gap-2">
-                      <button onClick={() => setResponding(null)} className="px-4 py-1.5 border rounded-lg text-sm">Annuler</button>
-                      <button onClick={() => handleRespond(rev.id)} className="px-4 py-1.5 bg-primary-600 text-white rounded-lg text-sm">Publier</button>
+                      <button onClick={() => setResponding(null)} className="px-4 py-1.5 border border-dark-700 rounded-lg text-sm text-dark-300">Annuler</button>
+                      <button onClick={() => handleRespond(rev.id)} className="px-4 py-1.5 bg-primary-400 text-dark-900 rounded-lg text-sm">Publier</button>
                     </div>
                   </div>
                 ) : (
                   <button
                     onClick={() => { setResponding(rev.id); setResponseText(''); }}
-                    className="mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium"
+                    className="mt-3 text-sm text-primary-400 hover:text-primary-300 font-medium"
                   >
                     Répondre à cet avis
                   </button>

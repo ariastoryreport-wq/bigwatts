@@ -51,19 +51,19 @@ export default function ConversationView() {
       <Card className="flex flex-col h-[calc(100vh-220px)] min-h-[500px]">
         {/* Header */}
         <div className="p-4 border-b flex items-center gap-3">
-          <Link to="/dashboard/messages" className="text-gray-500 hover:text-gray-700">
+          <Link to="/dashboard/messages" className="text-dark-400 hover:text-dark-200">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-            <span className="text-sm font-bold text-primary-600">
+          <div className="w-8 h-8 rounded-full bg-navy-800 flex items-center justify-center">
+            <span className="text-sm font-bold text-primary-400">
               {(other?.first_name?.[0] || '?').toUpperCase()}
             </span>
           </div>
           <div>
-            <p className="font-medium text-gray-900">
+            <p className="font-medium text-white">
               {other?.first_name ? `${other.first_name} ${other.last_name}` : other?.username}
             </p>
-            {conversation?.ad_title && <p className="text-xs text-gray-500">Re: {conversation.ad_title}</p>}
+            {conversation?.ad_title && <p className="text-xs text-dark-400">Re: {conversation.ad_title}</p>}
           </div>
         </div>
 
@@ -75,11 +75,11 @@ export default function ConversationView() {
               <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl ${
                   isMine
-                    ? 'bg-primary-600 text-white rounded-br-md'
-                    : 'bg-gray-100 text-gray-900 rounded-bl-md'
+                    ? 'bg-primary-400 text-dark-900 rounded-br-md'
+                    : 'bg-dark-700 text-white rounded-bl-md'
                 }`}>
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                  <p className={`text-xs mt-1 ${isMine ? 'text-primary-200' : 'text-gray-400'}`}>
+                  <p className={`text-xs mt-1 ${isMine ? 'text-primary-300' : 'text-dark-500'}`}>
                     {new Date(msg.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -93,14 +93,14 @@ export default function ConversationView() {
         <form onSubmit={sendMessage} className="p-4 border-t flex gap-3">
           <input
             type="text"
-            className="flex-1 px-4 py-2.5 border rounded-full focus:ring-2 focus:ring-primary-500 outline-none"
+            className="flex-1 px-4 py-2.5 border border-dark-700 rounded-full focus:ring-2 focus:ring-primary-400/50 outline-none bg-dark-700 text-white"
             placeholder="Votre message..."
             value={newMsg}
             onChange={(e) => setNewMsg(e.target.value)}
           />
           <button
             type="submit" disabled={sending || !newMsg.trim()}
-            className="bg-primary-600 text-white p-3 rounded-full hover:bg-primary-700 disabled:opacity-50 transition"
+            className="bg-primary-400 text-dark-900 p-3 rounded-full hover:bg-primary-300 disabled:opacity-50 transition"
           >
             <Send className="h-4 w-4" />
           </button>

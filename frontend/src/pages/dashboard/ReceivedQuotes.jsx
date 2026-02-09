@@ -46,18 +46,18 @@ export default function ReceivedQuotes() {
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center gap-3 mb-1">
-                      <h3 className="font-semibold text-gray-900">{q.ad_title}</h3>
+                      <h3 className="font-semibold text-white">{q.ad_title}</h3>
                       <StatusBadge status={q.status} />
                     </div>
-                    <p className="text-sm text-gray-500">De: {q.owner_name || q.owner_username}</p>
+                    <p className="text-sm text-dark-400">De: {q.owner_name || q.owner_username}</p>
                   </div>
-                  <span className="text-xs text-gray-400">{new Date(q.created_at).toLocaleDateString('fr-FR')}</span>
+                  <span className="text-xs text-dark-500">{new Date(q.created_at).toLocaleDateString('fr-FR')}</span>
                 </div>
 
-                <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{q.message}</p>
+                <p className="text-sm text-dark-300 bg-dark-700 p-3 rounded-lg">{q.message}</p>
 
-                {q.budget_indication && <p className="text-sm text-gray-500">Budget indicatif: {q.budget_indication}</p>}
-                {q.preferred_date && <p className="text-sm text-gray-500">Date souhaitée: {new Date(q.preferred_date).toLocaleDateString('fr-FR')}</p>}
+                {q.budget_indication && <p className="text-sm text-dark-400">Budget indicatif: {q.budget_indication}</p>}
+                {q.preferred_date && <p className="text-sm text-dark-400">Date souhaitée: {new Date(q.preferred_date).toLocaleDateString('fr-FR')}</p>}
 
                 {q.status === 'pending' && (
                   responding === q.id ? (
@@ -84,11 +84,11 @@ export default function ReceivedQuotes() {
                         onChange={(e) => setResponse({ ...response, provider_response: e.target.value })}
                       />
                       <div className="flex gap-3">
-                        <button onClick={() => setResponding(null)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Annuler</button>
+                        <button onClick={() => setResponding(null)} className="px-4 py-2 border rounded-lg hover:bg-dark-700">Annuler</button>
                         <button
                           onClick={() => handleRespond(q.id)}
                           disabled={!response.status}
-                          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+                          className="px-4 py-2 bg-primary-400 text-dark-900 rounded-lg hover:bg-primary-300 disabled:opacity-50"
                         >
                           Envoyer
                         </button>
@@ -97,7 +97,7 @@ export default function ReceivedQuotes() {
                   ) : (
                     <button
                       onClick={() => { setResponding(q.id); setResponse({ status: '', provider_response: '', quoted_price: '' }); }}
-                      className="self-start px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
+                      className="self-start px-4 py-2 bg-primary-400 text-dark-900 rounded-lg hover:bg-primary-300 text-sm"
                     >
                       Répondre
                     </button>

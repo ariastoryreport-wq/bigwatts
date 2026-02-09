@@ -80,7 +80,7 @@ export default function Profile() {
     } catch { toast.error('Erreur'); }
   };
 
-  const inputClass = 'w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none';
+  const inputClass = 'w-full px-4 py-2.5 border border-dark-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-400/50 focus:border-transparent outline-none';
 
   if (!user) return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
 
@@ -89,46 +89,46 @@ export default function Profile() {
       <PageHeader title="Mon profil" description="Gérez vos informations personnelles" />
 
       {/* General Info */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+      <form onSubmit={handleSubmit} className="bg-dark-800 rounded-lg border border-dark-700 p-6 mb-6">
         <h3 className="text-lg font-semibold mb-4">Informations générales</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+            <label className="block text-sm font-medium text-dark-200 mb-1">Prénom</label>
             <input className={inputClass} value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+            <label className="block text-sm font-medium text-dark-200 mb-1">Nom</label>
             <input className={inputClass} value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+            <label className="block text-sm font-medium text-dark-200 mb-1">Téléphone</label>
             <input className={inputClass} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ville</label>
+            <label className="block text-sm font-medium text-dark-200 mb-1">Ville</label>
             <input className={inputClass} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Code postal</label>
+            <label className="block text-sm font-medium text-dark-200 mb-1">Code postal</label>
             <input className={inputClass} value={form.postal_code} onChange={(e) => setForm({ ...form, postal_code: e.target.value })} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+            <label className="block text-sm font-medium text-dark-200 mb-1">Adresse</label>
             <input className={inputClass} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+            <label className="block text-sm font-medium text-dark-200 mb-1">Bio</label>
             <textarea rows={3} className={inputClass} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
           </div>
         </div>
-        <button type="submit" disabled={loading} className="mt-4 px-6 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50">
+        <button type="submit" disabled={loading} className="mt-4 px-6 py-2.5 bg-primary-400 text-dark-900 rounded-lg text-sm font-medium hover:bg-primary-300 disabled:opacity-50">
           Enregistrer
         </button>
       </form>
 
       {/* Role-specific profile */}
       {(isPrestataire || isProprietaire) && (
-        <form onSubmit={handleProfileSubmit} className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+        <form onSubmit={handleProfileSubmit} className="bg-dark-800 rounded-lg border border-dark-700 p-6 mb-6">
           <h3 className="text-lg font-semibold mb-4">
             {isPrestataire ? 'Profil prestataire' : 'Profil propriétaire'}
           </h3>
@@ -136,31 +136,31 @@ export default function Profile() {
             {isPrestataire && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom entreprise</label>
+                  <label className="block text-sm font-medium text-dark-200 mb-1">Nom entreprise</label>
                   <input className={inputClass} value={profileForm.company_name || ''} onChange={(e) => setProfileForm({ ...profileForm, company_name: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">SIRET</label>
+                  <label className="block text-sm font-medium text-dark-200 mb-1">SIRET</label>
                   <input className={inputClass} value={profileForm.siret || ''} onChange={(e) => setProfileForm({ ...profileForm, siret: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Site web</label>
+                  <label className="block text-sm font-medium text-dark-200 mb-1">Site web</label>
                   <input className={inputClass} value={profileForm.website || ''} onChange={(e) => setProfileForm({ ...profileForm, website: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Années d'expérience</label>
+                  <label className="block text-sm font-medium text-dark-200 mb-1">Années d'expérience</label>
                   <input type="number" className={inputClass} value={profileForm.years_experience || ''} onChange={(e) => setProfileForm({ ...profileForm, years_experience: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Rayon d'intervention (km)</label>
+                  <label className="block text-sm font-medium text-dark-200 mb-1">Rayon d'intervention (km)</label>
                   <input type="number" className={inputClass} value={profileForm.service_radius_km || ''} onChange={(e) => setProfileForm({ ...profileForm, service_radius_km: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Certifications</label>
+                  <label className="block text-sm font-medium text-dark-200 mb-1">Certifications</label>
                   <input className={inputClass} value={profileForm.certifications || ''} onChange={(e) => setProfileForm({ ...profileForm, certifications: e.target.value })} placeholder="QualiPV, RGE..." />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Spécialités</label>
+                  <label className="block text-sm font-medium text-dark-200 mb-1">Spécialités</label>
                   <input className={inputClass} value={profileForm.specialties || ''} onChange={(e) => setProfileForm({ ...profileForm, specialties: e.target.value })} placeholder="Solaire, Thermodynamique..." />
                 </div>
               </>
@@ -168,7 +168,7 @@ export default function Profile() {
             {isProprietaire && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type de propriété</label>
+                  <label className="block text-sm font-medium text-dark-200 mb-1">Type de propriété</label>
                   <select className={inputClass} value={profileForm.property_type || ''} onChange={(e) => setProfileForm({ ...profileForm, property_type: e.target.value })}>
                     <option value="house">Maison</option>
                     <option value="apartment">Appartement</option>
@@ -177,44 +177,44 @@ export default function Profile() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Surface (m²)</label>
+                  <label className="block text-sm font-medium text-dark-200 mb-1">Surface (m²)</label>
                   <input type="number" className={inputClass} value={profileForm.property_surface || ''} onChange={(e) => setProfileForm({ ...profileForm, property_surface: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Intérêts énergétiques</label>
+                  <label className="block text-sm font-medium text-dark-200 mb-1">Intérêts énergétiques</label>
                   <input className={inputClass} value={profileForm.energy_interests || ''} onChange={(e) => setProfileForm({ ...profileForm, energy_interests: e.target.value })} placeholder="Solaire, Borne de recharge..." />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Budget envisagé</label>
+                  <label className="block text-sm font-medium text-dark-200 mb-1">Budget envisagé</label>
                   <input className={inputClass} value={profileForm.budget_range || ''} onChange={(e) => setProfileForm({ ...profileForm, budget_range: e.target.value })} placeholder="5 000 - 15 000 €" />
                 </div>
               </>
             )}
           </div>
-          <button type="submit" disabled={loading} className="mt-4 px-6 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50">
+          <button type="submit" disabled={loading} className="mt-4 px-6 py-2.5 bg-primary-400 text-dark-900 rounded-lg text-sm font-medium hover:bg-primary-300 disabled:opacity-50">
             Enregistrer
           </button>
         </form>
       )}
 
       {/* Password */}
-      <form onSubmit={handlePasswordChange} className="bg-white rounded-xl shadow-sm border p-6">
+      <form onSubmit={handlePasswordChange} className="bg-dark-800 rounded-lg border border-dark-700 p-6">
         <h3 className="text-lg font-semibold mb-4">Changer le mot de passe</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ancien mot de passe</label>
+            <label className="block text-sm font-medium text-dark-200 mb-1">Ancien mot de passe</label>
             <input type="password" className={inputClass} value={passwords.old_password} onChange={(e) => setPasswords({ ...passwords, old_password: e.target.value })} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
+            <label className="block text-sm font-medium text-dark-200 mb-1">Nouveau mot de passe</label>
             <input type="password" className={inputClass} value={passwords.new_password} onChange={(e) => setPasswords({ ...passwords, new_password: e.target.value })} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmer</label>
+            <label className="block text-sm font-medium text-dark-200 mb-1">Confirmer</label>
             <input type="password" className={inputClass} value={passwords.new_password2} onChange={(e) => setPasswords({ ...passwords, new_password2: e.target.value })} />
           </div>
         </div>
-        <button type="submit" className="mt-4 px-6 py-2.5 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900">
+        <button type="submit" className="mt-4 px-6 py-2.5 bg-dark-700 text-white rounded-lg text-sm font-medium hover:bg-dark-800">
           Modifier le mot de passe
         </button>
       </form>

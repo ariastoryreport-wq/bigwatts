@@ -36,20 +36,20 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-2 mb-6">
-            <Zap className="h-10 w-10 text-primary-600" />
-            <span className="text-2xl font-bold">Big<span className="text-primary-600">Watts</span></span>
+            <Zap className="h-10 w-10 text-primary-400" />
+            <span className="text-2xl font-bold text-white">Big<span className="text-primary-400">Watts</span></span>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Connexion</h1>
-          <p className="text-gray-500 mt-2">Accédez à votre espace BigWatts</p>
+          <h1 className="text-2xl font-bold text-white">Connexion</h1>
+          <p className="text-dark-400 mt-2">Accédez à votre espace BigWatts</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border p-8">
+        <div className="bg-dark-800 rounded-lg border border-dark-700 p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email ou nom d'utilisateur</label>
+              <label className="block text-sm font-medium text-dark-300 mb-1">Email ou nom d'utilisateur</label>
               <input
                 type="text" required
-                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                className="w-full px-4 py-3 bg-dark-900 border border-dark-600 rounded-lg text-white placeholder-dark-500 focus:ring-2 focus:ring-primary-400/50 focus:border-primary-400 outline-none"
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
                 placeholder="votre@email.fr"
@@ -57,11 +57,11 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+              <label className="block text-sm font-medium text-dark-300 mb-1">Mot de passe</label>
               <div className="relative">
                 <input
                   type={showPw ? 'text' : 'password'} required
-                  className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none pr-12"
+                  className="w-full px-4 py-3 bg-dark-900 border border-dark-600 rounded-lg text-white placeholder-dark-500 focus:ring-2 focus:ring-primary-400/50 focus:border-primary-400 outline-none pr-12"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder="••••••••"
@@ -69,7 +69,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-300"
                 >
                   {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -78,15 +78,15 @@ export default function Login() {
 
             <button
               type="submit" disabled={loading}
-              className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-semibold disabled:opacity-50"
+              className="w-full bg-primary-400 text-dark-900 py-3 rounded-lg hover:bg-primary-300 transition font-bold disabled:opacity-50"
             >
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
           </form>
 
           {/* Demo accounts */}
-          <div className="mt-6 pt-6 border-t">
-            <p className="text-xs text-gray-500 text-center mb-3">Comptes de démo :</p>
+          <div className="mt-6 pt-6 border-t border-dark-700">
+            <p className="text-xs text-dark-500 text-center mb-3">Comptes de démo :</p>
             <div className="grid grid-cols-1 gap-2 text-xs">
               {[
                 { label: 'Prestataire', user: 'solarpro', pw: 'demo1234' },
@@ -96,19 +96,19 @@ export default function Login() {
                 <button
                   key={demo.user}
                   onClick={() => { setForm({ username: demo.user, password: demo.pw }); }}
-                  className="text-left bg-gray-50 p-2 rounded-lg hover:bg-gray-100 transition"
+                  className="text-left bg-dark-700 p-2 rounded-lg hover:bg-dark-600 transition border border-dark-600"
                 >
-                  <span className="font-medium text-gray-700">{demo.label}:</span>{' '}
-                  <span className="text-gray-500">{demo.user} / {demo.pw}</span>
+                  <span className="font-medium text-dark-200">{demo.label}:</span>{' '}
+                  <span className="text-dark-400">{demo.user} / {demo.pw}</span>
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        <p className="text-center mt-6 text-gray-600">
+        <p className="text-center mt-6 text-dark-400">
           Pas encore de compte ?{' '}
-          <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
+          <Link to="/register" className="text-primary-400 hover:text-primary-300 font-medium">
             S'inscrire
           </Link>
         </p>

@@ -35,10 +35,10 @@ export default function DashboardLayout({ children }) {
       <div className="flex flex-col md:flex-row gap-8">
         {/* Sidebar */}
         <aside className="w-full md:w-64 shrink-0">
-          <div className="bg-white rounded-xl shadow-sm border p-4">
-            <div className="mb-4 pb-4 border-b">
-              <p className="font-semibold text-gray-900">{user?.first_name} {user?.last_name}</p>
-              <p className="text-sm text-gray-500 capitalize">{user?.role?.replace('_', ' ')}</p>
+          <div className="bg-dark-800 rounded-lg border border-dark-700 p-4">
+            <div className="mb-4 pb-4 border-b border-dark-700">
+              <p className="font-semibold text-white">{user?.first_name} {user?.last_name}</p>
+              <p className="text-sm text-dark-400 capitalize">{user?.role?.replace('_', ' ')}</p>
             </div>
             <nav className="space-y-1">
               {filtered.map((link) => (
@@ -49,8 +49,8 @@ export default function DashboardLayout({ children }) {
                   className={({ isActive }) =>
                     `flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
                       isActive
-                        ? 'bg-primary-50 text-primary-700'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-primary-400/10 text-primary-400 border border-primary-400/20'
+                        : 'text-dark-300 hover:bg-dark-700 hover:text-white'
                     }`
                   }
                 >

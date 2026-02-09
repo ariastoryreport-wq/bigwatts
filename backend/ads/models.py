@@ -57,6 +57,7 @@ class Ad(models.Model):
     image_1 = models.ImageField(upload_to='ads/', blank=True, null=True)
     image_2 = models.ImageField(upload_to='ads/', blank=True, null=True)
     image_3 = models.ImageField(upload_to='ads/', blank=True, null=True)
+    image_url = models.URLField(max_length=500, blank=True, help_text="External image URL (e.g. Unsplash)")
     
     # Details
     duration_estimate = models.CharField(max_length=100, blank=True, help_text="Durée estimée des travaux")

@@ -35,7 +35,7 @@ export default function MyAds() {
         title="Mes annonces"
         description="Gérez vos services publiés"
         action={
-          <Link to="/dashboard/ads/new" className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition flex items-center gap-2">
+          <Link to="/dashboard/ads/new" className="bg-primary-400 text-dark-900 px-4 py-2 rounded-lg hover:bg-primary-300 transition flex items-center gap-2">
             <Plus className="h-4 w-4" /> Nouvelle annonce
           </Link>
         }
@@ -49,7 +49,7 @@ export default function MyAds() {
           title="Aucune annonce"
           description="Créez votre première annonce pour commencer à recevoir des demandes."
           action={
-            <Link to="/dashboard/ads/new" className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 inline-flex items-center gap-2">
+            <Link to="/dashboard/ads/new" className="bg-primary-400 text-dark-900 px-6 py-2 rounded-lg hover:bg-primary-300 inline-flex items-center gap-2">
               <Plus className="h-4 w-4" /> Créer une annonce
             </Link>
           }
@@ -61,22 +61,22 @@ export default function MyAds() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
-                    <Link to={`/services/${ad.id}`} className="font-semibold text-gray-900 hover:text-primary-600 truncate">
+                    <Link to={`/services/${ad.id}`} className="font-semibold text-white hover:text-primary-400 truncate">
                       {ad.title}
                     </Link>
                     <StatusBadge status={ad.status} />
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <div className="flex items-center gap-4 text-sm text-dark-400">
                     <PriceDisplay price={ad.price} priceType={ad.price_type} />
                     <span>{ad.city}</span>
                     <span>{ad.views_count} vues</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Link to={`/dashboard/ads/${ad.id}/edit`} className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition">
+                  <Link to={`/dashboard/ads/${ad.id}/edit`} className="p-2 text-dark-400 hover:text-primary-400 hover:bg-primary-400/10 rounded-lg transition">
                     <Edit className="h-4 w-4" />
                   </Link>
-                  <button onClick={() => deleteAd(ad.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                  <button onClick={() => deleteAd(ad.id)} className="p-2 text-dark-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
