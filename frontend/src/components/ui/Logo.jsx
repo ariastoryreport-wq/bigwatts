@@ -1,19 +1,30 @@
-import { Zap } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 /**
- * BigWatts SVG text logo.
- * Adapts to dark/light mode automatically.
- * No external image dependency — always renders correctly.
+ * BigWatts PNG logo.
+ *
+ * To switch logos, just change the file names below.
+ * All 6 logo PNGs are available in /public/:
+ *   logo-light.png, logo-dark.png
+ *   logo-light-old.png, logo-dark-old.png
+ *   1.png, 2.png
+ *
+ * The ?v= cache-buster forces browsers to reload after a swap.
  */
-export default function Logo({ className = 'h-8' }) {
+const LOGO_LIGHT = '/logo-light.png';
+const LOGO_DARK  = '/logo-dark.png';
+const CACHE_BUST = '?v=3';
+
+export default function Logo({ className = 'h-8', forceDark = false }) {
+  const { dark } = useTheme();
+  const useDark = forceDark || dark;
+  const src = (useDark ? LOGO_DARK : LOGO_LIGHT) + CACHE_BUST;
+
   return (
-    <span className={`inline-flex items-center gap-1.5 ${className}`}>
-      <span className="bg-brand-400 rounded-lg p-1.5 flex items-center justify-center">
-        <Zap className="h-4 w-4 text-black fill-black" />
-      </span>
-      <span className="font-display font-extrabold text-xl tracking-tight text-black dark:text-white">
-        Big<span className="text-brand-500">Watts</span>
-      </span>
-    </span>
+    <img
+      src={src}
+      alt="BigWatts"
+      className={className}
+    />
   );
 }

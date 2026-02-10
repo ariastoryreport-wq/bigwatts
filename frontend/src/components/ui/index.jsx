@@ -40,6 +40,7 @@ export function StatusBadge({ status }) {
     paused: { label: 'En pause', variant: 'warning' },
     archived: { label: 'Archivé', variant: 'default' },
     pending: { label: 'En attente', variant: 'warning' },
+    counter_offer: { label: 'Contre-offre', variant: 'info' },
     accepted: { label: 'Acceptée', variant: 'success' },
     declined: { label: 'Refusée', variant: 'danger' },
     completed: { label: 'Terminée', variant: 'primary' },

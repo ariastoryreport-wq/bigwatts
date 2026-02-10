@@ -182,6 +182,43 @@ class QuoteRespondView(generics.UpdateAPIView):
         notify_quote_response(quote)
 
 
+class OwnerQuoteDecisionView(generics.UpdateAPIView):
+    """PATCH /api/ads/quotes/<id>/decide/ - Owner accepts or declines a counter-offer."""
+    permission_classes = [IsProprietaire]
+
+    def get_queryset(self):
+        return QuoteRequest.objects.filter(owner=self.request.user, status='counter_offer')
+
+    def update(self, request, *args, **kwargs):
+        quote = self.get_object()
+        decision = request.data.get('decision')  # 'accept' or 'decline'
+
+        if decision not in ('accept', 'decline'):
+            return Response(
+                {'error': 'Décision invalide. Utilisez "accept" ou "decline".'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if decision == 'accept':
+            quote.status = 'accepted'
+        else:
+            quote.status = 'declined'
+        quote.save(update_fields=['status', 'updated_at'])
+
+        # Notify provider
+        from notifications.models import Notification
+        action_label = 'accepté' if decision == 'accept' else 'refusé'
+        Notification.objects.create(
+            recipient=quote.ad.provider,
+            notification_type='quote_response',
+            title='Décision sur votre contre-offre',
+            message=f'{quote.owner.get_full_name() or quote.owner.username} a {action_label} votre contre-offre pour "{quote.ad.title}".',
+            link=f'/dashboard/received-quotes'
+        )
+
+        return Response({'status': quote.status})
+
+
 # --- CS Views ---
 
 class CSAdListView(generics.ListAPIView):

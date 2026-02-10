@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { adsAPI, reviewsAPI, favoritesAPI } from '../services/api';
+import { adsAPI, reviewsAPI, favoritesAPI, messagingAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { LoadingSpinner, PriceDisplay, StatusBadge, StarRating, Badge, Card } from '../components/ui';
-import { MapPin, Clock, Shield, Eye, MessageSquare, Heart, Star, Send, ArrowLeft } from 'lucide-react';
+import { MapPin, Clock, Shield, Eye, MessageSquare, Heart, Star, Send, ArrowLeft, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AdDetail() {
@@ -16,6 +16,9 @@ export default function AdDetail() {
   const [isFav, setIsFav] = useState(false);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [quoteForm, setQuoteForm] = useState({ message: '', preferred_date: '', budget_indication: '' });
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [contactMsg, setContactMsg] = useState('');
+  const [sendingContact, setSendingContact] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -200,12 +203,12 @@ export default function AdDetail() {
                 </button>
               )}
               {isAuthenticated && (
-                <Link
-                  to={`/dashboard/messages?to=${provider.id}&ad=${ad.id}`}
+                <button
+                  onClick={() => setShowContactForm(true)}
                   className="w-full border border-brand-300 text-brand-600 dark:text-brand-300 py-3 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/30 transition font-medium flex items-center justify-center gap-2"
                 >
                   <MessageSquare className="h-4 w-4" /> Contacter
-                </Link>
+                </button>
               )}
               {!isAuthenticated && (
                 <Link to="/login" className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition font-semibold text-center block">
@@ -263,6 +266,59 @@ export default function AdDetail() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Contact Modal */}
+      {showContactForm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowContactForm(false)}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-black dark:text-white">Contacter {provider?.company_name || provider?.first_name}</h3>
+              <button onClick={() => setShowContactForm(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              À propos de : <span className="font-medium text-gray-700 dark:text-gray-300">{ad?.title}</span>
+            </p>
+            <textarea
+              className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-300 bg-white dark:bg-gray-800 text-black dark:text-white resize-none"
+              rows={4}
+              placeholder="Écrivez votre message..."
+              value={contactMsg}
+              onChange={e => setContactMsg(e.target.value)}
+            />
+            <div className="flex gap-3 mt-4">
+              <button
+                type="button"
+                onClick={() => setShowContactForm(false)}
+                className="flex-1 border border-gray-200 dark:border-gray-800 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white"
+              >
+                Annuler
+              </button>
+              <button
+                disabled={!contactMsg.trim() || sendingContact}
+                onClick={async () => {
+                  try {
+                    setSendingContact(true);
+                    const { data } = await messagingAPI.sendMessage(provider.id, contactMsg.trim(), ad.id);
+                    setShowContactForm(false);
+                    setContactMsg('');
+                    toast.success('Message envoyé !');
+                    navigate(`/dashboard/messages?conv=${data.conversation_id}`);
+                  } catch {
+                    toast.error("Erreur lors de l'envoi du message");
+                  } finally {
+                    setSendingContact(false);
+                  }
+                }}
+                className="flex-1 bg-black dark:bg-white text-white dark:text-black py-2.5 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Send className="h-4 w-4" /> {sendingContact ? 'Envoi...' : 'Envoyer'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, MapPin, Home, Zap, Euro, CheckCircle2, Sparkles, Sun, Thermometer, Plug, Layers, Battery, Wind } from 'lucide-react';
+import { ArrowRight, ArrowLeft, MapPin, Home, Zap, Euro, CheckCircle2, Sparkles, Sun, Thermometer, Plug, Layers, Battery, Wind, Building2 } from 'lucide-react';
 import { PageHeader } from '../components/ui';
 
 const REGIONS = [
@@ -22,7 +22,7 @@ const INSTALLATION_TYPES = [
 
 const PROPERTY_TYPES = [
   { value: 'house', label: 'Maison individuelle', Icon: Home },
-  { value: 'apartment', label: 'Appartement', Icon: Layers },
+  { value: 'apartment', label: 'Appartement', Icon: Building2 },
   { value: 'commercial', label: 'Local commercial', Icon: Zap },
   { value: 'other', label: 'Autre', Icon: MapPin },
 ];

@@ -85,6 +85,7 @@ class QuoteRequest(models.Model):
     
     class Status(models.TextChoices):
         PENDING = 'pending', 'En attente'
+        COUNTER_OFFER = 'counter_offer', 'Contre-offre'
         ACCEPTED = 'accepted', 'Acceptée'
         DECLINED = 'declined', 'Refusée'
         COMPLETED = 'completed', 'Terminée'

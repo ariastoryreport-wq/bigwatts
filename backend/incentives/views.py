@@ -14,6 +14,7 @@ class IncentiveProgramListView(generics.ListAPIView):
     Public read-only list of active incentive programmes.
     Supports filtering by country, region, installation type.
     """
+    authentication_classes = []
     permission_classes = [AllowAny]
     serializer_class = IncentiveProgramSerializer
     filter_backends = [DjangoFilterBackend]
@@ -33,6 +34,7 @@ class CheckEligibilityView(APIView):
     Returns a ranked list of matching incentive programmes with
     estimated savings and human-readable explanations.
     """
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):

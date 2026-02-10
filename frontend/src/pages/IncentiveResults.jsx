@@ -51,8 +51,9 @@ export default function IncentiveResults() {
         const savings = (data.results || []).reduce((sum, r) => sum + (r.estimated_savings || 0), 0);
         setTotalSavings(savings);
       } catch (err) {
-        console.error(err);
-        setError("Impossible de charger les résultats. Veuillez réessayer.");
+        console.error('Incentive check error:', err.response?.status, err.response?.data || err.message);
+        const detail = err.response?.data?.detail || err.response?.data?.error || err.message;
+        setError(`Impossible de charger les résultats. ${detail ? `(${detail})` : 'Veuillez réessayer.'}`);
       } finally {
         setLoading(false);
       }

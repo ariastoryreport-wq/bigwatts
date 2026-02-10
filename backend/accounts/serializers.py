@@ -57,6 +57,7 @@ class UserPublicSerializer(serializers.ModelSerializer):
     """Public-facing user info (no sensitive data)."""
     prestataire_profile = PrestaireProfileSerializer(read_only=True)
     badges = UserBadgeSerializer(many=True, read_only=True)
+    is_online = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
@@ -64,7 +65,7 @@ class UserPublicSerializer(serializers.ModelSerializer):
             'id', 'username', 'first_name', 'last_name',
             'role', 'avatar', 'city', 'bio', 'is_verified',
             'latitude', 'longitude',
-            'created_at', 'prestataire_profile', 'badges'
+            'created_at', 'prestataire_profile', 'badges', 'is_online'
         ]
 
 

@@ -9,7 +9,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center mb-4">
-              <Logo />
+              <Logo forceDark />
             </div>
             <p className="text-gray-400 max-w-md">
               La marketplace qui connecte les professionnels de l'énergie verte avec les propriétaires. 

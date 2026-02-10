@@ -1,24 +1,59 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare } from 'lucide-react';
+import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare, Check, FileText, Star, AlertCircle, Settings, Heart } from 'lucide-react';
 import { notificationsAPI, messagingAPI } from '../../services/api';
-import { useEffect } from 'react';
 import Logo from '../ui/Logo';
+
+const NOTIF_ICONS = {
+  new_message: MessageSquare,
+  new_review: Star,
+  quote_request: FileText,
+  quote_response: FileText,
+  ticket_update: AlertCircle,
+  system: Settings,
+  favorite: Heart,
+};
+
+function resolveLink(notification, userRole) {
+  const link = notification.link || '';
+  const type = notification.notification_type;
+  if (link.startsWith('/dashboard/messages/')) return link;
+  if (link.startsWith('/dashboard/bookings') || link.includes('booking')) return '/dashboard/bookings';
+  if (link.startsWith('/dashboard/quotes/') || type === 'quote_request' || type === 'quote_response') {
+    if (userRole === 'proprietaire') return '/dashboard/quotes';
+    if (userRole === 'prestataire') return '/dashboard/quotes/received';
+    return link;
+  }
+  if (type === 'new_message') return '/dashboard/messages';
+  if (type === 'new_review') {
+    if (userRole === 'prestataire') return '/dashboard/reviews';
+    return '/dashboard';
+  }
+  if (type === 'favorite') return '/dashboard/favorites';
+  if (type === 'ticket_update') {
+    if (userRole === 'customer_service') return '/dashboard/cs/tickets';
+    return '/dashboard/tickets';
+  }
+  if (link) return link;
+  return '/dashboard';
+}
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const { dark, toggle } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const notifRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    // Fetch notification count
     const fetchCounts = () => {
       notificationsAPI.getUnreadCount()
         .then(({ data }) => setUnreadCount(data.unread_count))
@@ -28,10 +63,52 @@ export default function Navbar() {
         .catch(() => {});
     };
     fetchCounts();
-    // Poll every 10 seconds
     const interval = setInterval(fetchCounts, 10000);
-    return () => clearInterval(interval);
+
+    // Heartbeat for online status
+    messagingAPI.heartbeat().catch(() => {});
+    const hbInterval = setInterval(() => messagingAPI.heartbeat().catch(() => {}), 30000);
+
+    return () => { clearInterval(interval); clearInterval(hbInterval); };
   }, [isAuthenticated]);
+
+  // Fetch notifications when dropdown opens
+  const openNotifDropdown = useCallback(() => {
+    setNotifOpen(prev => {
+      if (!prev) {
+        notificationsAPI.getNotifications()
+          .then(({ data }) => setNotifications((data.results || data).slice(0, 8)))
+          .catch(() => {});
+      }
+      return !prev;
+    });
+    setProfileOpen(false);
+  }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const markAllRead = async () => {
+    await notificationsAPI.markRead([]);
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    setUnreadCount(0);
+  };
+
+  const handleNotifClick = async (n) => {
+    if (!n.is_read) {
+      await notificationsAPI.markSingleRead(n.id).catch(() => {});
+      setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
+    setNotifOpen(false);
+    navigate(resolveLink(n, user?.role));
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -42,7 +119,6 @@ export default function Navbar() {
     const base = [
       { to: '/dashboard', label: 'Tableau de bord' },
       { to: '/dashboard/messages', label: 'Messages' },
-
       { to: '/dashboard/profile', label: 'Mon profil' },
     ];
     if (user?.role === 'prestataire') {
@@ -115,20 +191,81 @@ export default function Navbar() {
                   )}
                 </Link>
 
-                {/* Notifications */}
-                <Link to="/dashboard/notifications" className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition">
-                  <Bell className="h-5 w-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-brand-300 text-black text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
+                {/* Notifications dropdown */}
+                <div className="relative" ref={notifRef}>
+                  <button
+                    onClick={openNotifDropdown}
+                    className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition"
+                  >
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-brand-300 text-black text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {notifOpen && (
+                    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 z-30 shadow-2xl overflow-hidden">
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+                        <h3 className="text-sm font-bold text-black dark:text-white">Notifications</h3>
+                        <div className="flex items-center gap-2">
+                          {unreadCount > 0 && (
+                            <button
+                              onClick={markAllRead}
+                              className="text-xs text-brand-600 dark:text-brand-300 hover:underline flex items-center gap-1"
+                            >
+                              <Check className="h-3 w-3" /> Tout lire
+                            </button>
+                          )}
+                          <Link
+                            to="/dashboard/notifications"
+                            onClick={() => setNotifOpen(false)}
+                            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          >
+                            <Settings className="h-3.5 w-3.5" />
+                          </Link>
+                        </div>
+                      </div>
+
+                      {/* Notification list */}
+                      <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+                        {notifications.length === 0 ? (
+                          <div className="px-4 py-8 text-center text-sm text-gray-400">
+                            Aucune notification
+                          </div>
+                        ) : notifications.map((n) => {
+                          const Icon = NOTIF_ICONS[n.notification_type] || Bell;
+                          return (
+                            <button
+                              key={n.id}
+                              onClick={() => handleNotifClick(n)}
+                              className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition ${!n.is_read ? 'bg-brand-50/50 dark:bg-brand-900/10' : ''}`}
+                            >
+                              <div className={`p-1.5 rounded-full shrink-0 mt-0.5 ${!n.is_read ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>
+                                <Icon className="h-3.5 w-3.5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs leading-snug ${!n.is_read ? 'font-semibold text-black dark:text-white' : 'text-gray-600 dark:text-gray-400'}`}>{n.title}</p>
+                                <p className="text-xs text-gray-400 truncate mt-0.5">{n.message}</p>
+                              </div>
+                              <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">
+                                {new Date(n.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                              </span>
+                              {!n.is_read && <span className="w-2 h-2 rounded-full bg-brand-400 shrink-0 mt-1.5" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
-                </Link>
+                </div>
 
                 {/* Profile dropdown */}
                 <div className="relative">
                   <button
-                    onClick={() => setProfileOpen(!profileOpen)}
+                    onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }}
                     className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition"
                   >
                     <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center">

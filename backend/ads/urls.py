@@ -19,6 +19,7 @@ urlpatterns = [
     path('quotes/received/', views.ReceivedQuoteRequestsView.as_view(), name='received-quotes'),
     path('quotes/<int:pk>/', views.QuoteRequestDetailView.as_view(), name='quote-detail'),
     path('quotes/<int:pk>/respond/', views.QuoteRespondView.as_view(), name='quote-respond'),
+    path('quotes/<int:pk>/decide/', views.OwnerQuoteDecisionView.as_view(), name='quote-decide'),
     
     # CS
     path('cs/all/', views.CSAdListView.as_view(), name='cs-ad-list'),

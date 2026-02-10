@@ -68,6 +68,24 @@ export default function ReceivedQuotes() {
                 {q.budget_indication && <p className="text-sm text-gray-500 dark:text-gray-400">Budget indicatif: {q.budget_indication}</p>}
                 {q.preferred_date && <p className="text-sm text-gray-500 dark:text-gray-400">Date souhaitée: {new Date(q.preferred_date).toLocaleDateString('fr-FR')}</p>}
 
+                {/* Show provider's counter-offer details */}
+                {q.status === 'counter_offer' && q.quoted_price && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                      Votre contre-offre : {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(q.quoted_price)}
+                    </p>
+                    {q.provider_response && <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">{q.provider_response}</p>}
+                    <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">En attente de la réponse du propriétaire</p>
+                  </div>
+                )}
+
+                {/* Show accepted/declined price */}
+                {(q.status === 'accepted' || q.status === 'declined') && q.quoted_price && (
+                  <p className="text-sm text-brand-600 dark:text-brand-300 font-medium">
+                    Prix convenu : {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(q.quoted_price)}
+                  </p>
+                )}
+
                 {q.status === 'pending' && (
                   responding === q.id ? (
                     <div className="border-t pt-4 space-y-3">
@@ -78,6 +96,7 @@ export default function ReceivedQuotes() {
                       >
                         <option value="">Statut...</option>
                         <option value="accepted">Accepter</option>
+                        <option value="counter_offer">Contre-offre</option>
                         <option value="declined">Refuser</option>
                       </select>
                       <input

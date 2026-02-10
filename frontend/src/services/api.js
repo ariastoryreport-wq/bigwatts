@@ -96,6 +96,7 @@ export const adsAPI = {
   getReceivedQuotes: (params) => api.get('/ads/quotes/received/', { params }),
   getQuote: (id) => api.get(`/ads/quotes/${id}/`),
   respondQuote: (id, data) => api.patch(`/ads/quotes/${id}/respond/`, data),
+  decideQuote: (id, decision) => api.patch(`/ads/quotes/${id}/decide/`, { decision }),
   // CS
   csGetAds: (params) => api.get('/ads/cs/all/', { params }),
 };
@@ -109,6 +110,16 @@ export const messagingAPI = {
   sendMessage: (data) => api.post('/messaging/send/', data),
   sendInConversation: (convId, data) => api.post(`/messaging/conversations/${convId}/messages/`, data),
   getUnreadTotal: () => api.get('/messaging/unread-total/'),
+  // Online / Heartbeat
+  heartbeat: () => api.post('/messaging/heartbeat/'),
+  getOnlineStatus: (userId) => api.get(`/messaging/online/${userId}/`),
+  // Block / Report
+  blockUser: (userId) => api.post('/messaging/block/', { user_id: userId }),
+  unblockUser: (userId) => api.post('/messaging/unblock/', { user_id: userId }),
+  getBlockedUsers: () => api.get('/messaging/blocked/'),
+  reportUser: (data) => api.post('/messaging/report/', data),
+  // User search
+  searchUsers: (q) => api.get('/messaging/users/search/', { params: { q } }),
   // CS
   csGetConversations: () => api.get('/messaging/cs/all/'),
 };

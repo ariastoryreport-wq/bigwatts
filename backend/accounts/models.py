@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -19,6 +20,7 @@ class User(AbstractUser):
     bio = models.TextField(blank=True)
     latitude = models.FloatField(null=True, blank=True, help_text="Latitude GPS")
     longitude = models.FloatField(null=True, blank=True, help_text="Longitude GPS")
+    last_seen = models.DateTimeField(null=True, blank=True, help_text="Last activity timestamp")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_verified = models.BooleanField(default=False)
@@ -40,6 +42,13 @@ class User(AbstractUser):
     @property
     def is_customer_service(self):
         return self.role == self.Role.CUSTOMER_SERVICE
+
+    @property
+    def is_online(self):
+        """User is online if last_seen within the last 2 minutes."""
+        if not self.last_seen:
+            return False
+        return (timezone.now() - self.last_seen).total_seconds() < 120
 
 
 class PrestaireProfile(models.Model):
