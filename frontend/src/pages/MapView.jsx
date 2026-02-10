@@ -1,8 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { adsAPI } from '../services/api';
+import { useCountry } from '../context/CountryContext';
 import { LoadingSpinner, PriceDisplay, Badge } from '../components/ui';
 import { MapPin, List, Grid, Star, X } from 'lucide-react';
+
+const COUNTRY_MAP_DEFAULTS = {
+  FR: { center: [46.603354, 1.888334], zoom: 6 },
+  CA: { center: [56.130366, -106.346771], zoom: 4 },
+};
 
 export default function MapView() {
   const [ads, setAds] = useState([]);
@@ -12,16 +18,18 @@ export default function MapView() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markersRef = useRef([]);
+  const { countryCode } = useCountry();
 
   useEffect(() => {
-    adsAPI.getAds({ page_size: 100 })
+    setLoading(true);
+    adsAPI.getAds({ page_size: 100, country: countryCode })
       .then(({ data }) => {
         const results = data.results || data;
         setAds(results.filter(a => a.latitude && a.longitude));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [countryCode]);
 
   useEffect(() => {
     if (viewMode !== 'map' || loading || !mapRef.current || ads.length === 0) return;
@@ -53,7 +61,8 @@ export default function MapView() {
         mapInstance.current = null;
       }
 
-      const map = L.map(mapRef.current).setView([46.603354, 1.888334], 6); // Center of France
+      const defaults = COUNTRY_MAP_DEFAULTS[countryCode] || COUNTRY_MAP_DEFAULTS.FR;
+      const map = L.map(mapRef.current).setView(defaults.center, defaults.zoom);
       mapInstance.current = map;
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -97,7 +106,7 @@ export default function MapView() {
         mapInstance.current = null;
       }
     };
-  }, [ads, loading, viewMode]);
+  }, [ads, loading, viewMode, countryCode]);
 
   if (loading) return (
     <div className="page-padding">

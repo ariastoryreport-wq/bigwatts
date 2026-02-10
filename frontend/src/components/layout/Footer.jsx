@@ -8,8 +8,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center mb-4">
+            <div className="flex items-center gap-2 mb-4">
               <Logo forceDark />
+              <span className="font-display text-3xl font-bold text-white tracking-tight">BIGWATTS</span>
             </div>
             <p className="text-gray-400 max-w-md">
               La marketplace qui connecte les professionnels de l'énergie verte avec les propriétaires. 

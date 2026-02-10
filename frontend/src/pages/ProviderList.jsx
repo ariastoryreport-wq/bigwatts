@@ -13,14 +13,15 @@ export default function ProviderList() {
   const { countryCode } = useCountry();
 
   useEffect(() => {
-    const params = { country: countryCode };
+    const params = {};
+    if (countryCode) params.country = countryCode;
     if (search) params.search = search;
     if (city) params.city = city;
 
     setLoading(true);
     authAPI.getProviders(params)
       .then(({ data }) => setProviders(data.results || data))
-      .catch(() => {})
+      .catch((err) => { console.error('ProviderList fetch error:', err); })
       .finally(() => setLoading(false));
   }, [search, city, countryCode]);
 

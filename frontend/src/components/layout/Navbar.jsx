@@ -157,11 +157,12 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center">
+            <Link to="/" className="flex items-center gap-2">
               <Logo />
+              <span className="font-display text-3xl font-bold text-black dark:text-white tracking-tight">BIGWATTS</span>
             </Link>
             {/* Desktop links */}
-            <div className="hidden md:flex ml-10 space-x-6">
+            <div className="hidden lg:flex ml-10 space-x-6">
               <Link to="/services" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Services</Link>
               <Link to="/providers" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Prestataires</Link>
               <Link to="/map" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Carte</Link>
@@ -180,7 +181,7 @@ export default function Navbar() {
                   title="Changer de pays"
                 >
                   <span className="text-lg leading-none">{currentCountry.flag_emoji}</span>
-                  <span className="hidden sm:inline font-medium">{currentCountry.code}</span>
+                  <span className="hidden lg:inline font-medium">{currentCountry.code}</span>
                   <ChevronDown className="h-3.5 w-3.5" />
                 </button>
                 {countryOpen && (
@@ -304,7 +305,7 @@ export default function Navbar() {
                     <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center">
                       <User className="h-4 w-4 text-brand-700 dark:text-brand-300" />
                     </div>
-                    <span className="hidden md:block text-sm font-medium">{user.first_name || user.username}</span>
+                    <span className="hidden lg:block text-sm font-medium">{user.first_name || user.username}</span>
                     <ChevronDown className="h-4 w-4" />
                   </button>
 
@@ -340,7 +341,7 @@ export default function Navbar() {
                 </div>
               </>
             ) : (
-              <div className="hidden md:flex items-center space-x-3">
+              <div className="hidden lg:flex items-center space-x-3">
                 <Link to="/login" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white font-medium transition">Connexion</Link>
                 <Link to="/register" className="bg-black dark:bg-white text-white dark:text-black px-5 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition font-bold">
                   Inscription
@@ -349,7 +350,7 @@ export default function Navbar() {
             )}
 
             {/* Mobile menu button */}
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-gray-500">
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 text-gray-500">
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
@@ -358,7 +359,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
+        <div className="lg:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
           <div className="px-4 py-3 space-y-2">
             {/* Mobile country switcher */}
             {countries.length > 1 && (
