@@ -361,14 +361,18 @@ export default function Messages() {
   }, []);
 
   const scrollToBottom = useCallback((behavior = 'smooth') => {
-    if (isAtBottomRef.current) {
-      bottomRef.current?.scrollIntoView({ behavior });
-    }
+    bottomRef.current?.scrollIntoView({ behavior });
   }, []);
 
+  // Only scroll on initial load of a conversation (loadingConv transition)
+  const prevLoadingConv = useRef(false);
   useEffect(() => {
-    scrollToBottom(messages.length <= 20 ? 'auto' : 'smooth');
-  }, [messages, scrollToBottom]);
+    if (prevLoadingConv.current && !loadingConv && messages.length > 0) {
+      // Just finished loading conversation — scroll to bottom
+      scrollToBottom('auto');
+    }
+    prevLoadingConv.current = loadingConv;
+  }, [loadingConv, messages.length, scrollToBottom]);
 
   /* ── notification sound ── */
   const playSound = useCallback(() => {
@@ -415,7 +419,10 @@ export default function Messages() {
             });
             const lastNew = data.messages[data.messages.length - 1];
             lastMsgIdRef.current = Math.max(lastMsgIdRef.current, lastNew.id);
-            if (data.messages.some(m => m.sender !== user.id)) playSound();
+            if (data.messages.some(m => m.sender !== user.id)) {
+              playSound();
+              if (isAtBottomRef.current) setTimeout(() => scrollToBottom('smooth'), 50);
+            }
           }
         })
         .catch(() => {});
@@ -443,8 +450,8 @@ export default function Messages() {
 
     setMessages(prev => [...prev, optimisticMsg]);
     setNewMsg('');
-    isAtBottomRef.current = true;
     setSending(true);
+    setTimeout(() => scrollToBottom('smooth'), 50);
 
     try {
       const { data } = await messagingAPI.sendInConversation(activeConvId, { content });

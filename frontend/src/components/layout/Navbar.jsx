@@ -47,7 +47,6 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [unreadMessages, setUnreadMessages] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const notifRef = useRef(null);
   const navigate = useNavigate();
@@ -57,9 +56,6 @@ export default function Navbar() {
     const fetchCounts = () => {
       notificationsAPI.getUnreadCount()
         .then(({ data }) => setUnreadCount(data.unread_count))
-        .catch(() => {});
-      messagingAPI.getUnreadTotal()
-        .then(({ data }) => setUnreadMessages(data.unread_count))
         .catch(() => {});
     };
     fetchCounts();
@@ -181,16 +177,6 @@ export default function Navbar() {
 
             {isAuthenticated ? (
               <>
-                {/* Messages */}
-                <Link to="/dashboard/messages" className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition">
-                  <MessageSquare className="h-5 w-5" />
-                  {unreadMessages > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                      {unreadMessages > 9 ? '9+' : unreadMessages}
-                    </span>
-                  )}
-                </Link>
-
                 {/* Notifications dropdown */}
                 <div className="relative" ref={notifRef}>
                   <button

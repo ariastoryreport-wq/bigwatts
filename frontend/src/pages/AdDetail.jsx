@@ -303,7 +303,7 @@ export default function AdDetail() {
                 onClick={async () => {
                   try {
                     setSendingContact(true);
-                    const { data } = await messagingAPI.sendMessage(provider.id, contactMsg.trim(), ad.id);
+                    const { data } = await messagingAPI.sendMessage({ recipient_id: provider.id, content: contactMsg.trim(), ad_id: ad.id });
                     setShowContactForm(false);
                     setContactMsg('');
                     toast.success('Message envoyé !');
