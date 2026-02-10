@@ -21,9 +21,11 @@ function resolveLink(notification, userRole) {
   const link = notification.link || '';
   const type = notification.notification_type;
 
-  // If the link is a valid dashboard route, use it
   // Messages links are always valid
   if (link.startsWith('/dashboard/messages/')) return link;
+
+  // Booking-related links
+  if (link.startsWith('/dashboard/bookings') || link.includes('booking')) return '/dashboard/bookings';
 
   // Quote links: proprietaire → /dashboard/quotes, prestataire → /dashboard/quotes/received
   if (link.startsWith('/dashboard/quotes/') || type === 'quote_request' || type === 'quote_response') {
@@ -32,11 +34,18 @@ function resolveLink(notification, userRole) {
     return link;
   }
 
-  // Review links → prestataire reviews
-  if (type === 'new_review') return '/dashboard/reviews';
+  // Message notifications
+  if (type === 'new_message') return '/dashboard/messages';
+
+  // Review links
+  if (type === 'new_review') {
+    if (userRole === 'prestataire') return '/dashboard/reviews';
+    if (link.startsWith('/providers/')) return link;
+    return '/dashboard';
+  }
 
   // Favorite links
-  if (type === 'favorite') return '/dashboard';
+  if (type === 'favorite') return '/dashboard/favorites';
 
   // Ticket links
   if (type === 'ticket_update') {
@@ -44,7 +53,7 @@ function resolveLink(notification, userRole) {
     return '/dashboard/tickets';
   }
 
-  // System notifications
+  // System notifications with specific links
   if (link) return link;
   return '/dashboard';
 }

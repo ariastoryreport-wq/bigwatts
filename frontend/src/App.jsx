@@ -14,6 +14,8 @@ import AdDetail from './pages/AdDetail';
 import ProviderList from './pages/ProviderList';
 import ProviderDetail from './pages/ProviderDetail';
 import MapView from './pages/MapView';
+import IncentiveChecker from './pages/IncentiveChecker';
+import IncentiveResults from './pages/IncentiveResults';
 
 // Dashboard
 import Dashboard from './pages/dashboard/Dashboard';
@@ -77,6 +79,8 @@ export default function App() {
           <Route path="/providers" element={<ProviderList />} />
           <Route path="/providers/:id" element={<ProviderDetail />} />
           <Route path="/map" element={<MapView />} />
+          <Route path="/incentives" element={<IncentiveChecker />} />
+          <Route path="/incentives/results" element={<IncentiveResults />} />
 
           {/* Dashboard - All authenticated */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

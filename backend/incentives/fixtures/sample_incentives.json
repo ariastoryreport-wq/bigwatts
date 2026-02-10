@@ -1,0 +1,311 @@
+[
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 1,
+    "fields": {
+      "name": "MaPrimeRénov' – Décarbonation",
+      "provider_type": "government",
+      "country": "FR",
+      "region": "",
+      "installation_types": [
+        "heat_pump",
+        "solar",
+        "insulation"
+      ],
+      "property_types": [
+        "house",
+        "apartment"
+      ],
+      "income_min": null,
+      "income_max": "30000.00",
+      "discount_percent": "40.00",
+      "max_amount": "10000.00",
+      "description": "Aide de l'État pour les travaux de rénovation énergétique. MaPrimeRénov' finance l'installation de pompes à chaleur, panneaux solaires et travaux d'isolation pour les ménages aux revenus modestes.",
+      "official_url": "https://www.maprimerenov.gouv.fr",
+      "eligibility_rules": {
+        "owner_only": true,
+        "built_before": 2000
+      },
+      "last_verified_date": "2025-01-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 2,
+    "fields": {
+      "name": "MaPrimeRénov' – Revenus intermédiaires",
+      "provider_type": "government",
+      "country": "FR",
+      "region": "",
+      "installation_types": [
+        "heat_pump",
+        "solar",
+        "insulation"
+      ],
+      "property_types": [
+        "house",
+        "apartment"
+      ],
+      "income_min": "30000.01",
+      "income_max": "50000.00",
+      "discount_percent": "25.00",
+      "max_amount": "7500.00",
+      "description": "Aide de l'État pour les travaux de rénovation énergétique destinée aux ménages aux revenus intermédiaires. Couvre pompes à chaleur, solaire et isolation.",
+      "official_url": "https://www.maprimerenov.gouv.fr",
+      "eligibility_rules": {
+        "owner_only": true,
+        "built_before": 2000
+      },
+      "last_verified_date": "2025-01-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 3,
+    "fields": {
+      "name": "Certificats d'Économie d'Énergie (CEE)",
+      "provider_type": "utility",
+      "country": "FR",
+      "region": "",
+      "installation_types": [
+        "heat_pump",
+        "insulation",
+        "solar"
+      ],
+      "property_types": [
+        "house",
+        "apartment",
+        "commercial"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "15.00",
+      "max_amount": "5000.00",
+      "description": "Les fournisseurs d'énergie (EDF, Engie, TotalÉnergies…) financent une partie de vos travaux d'efficacité énergétique dans le cadre du dispositif CEE. Sans condition de revenus.",
+      "official_url": "https://www.ecologie.gouv.fr/certificats-deconomies-denergie-cee",
+      "eligibility_rules": {},
+      "last_verified_date": "2025-01-10",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 4,
+    "fields": {
+      "name": "TVA réduite à 5,5 %",
+      "provider_type": "government",
+      "country": "FR",
+      "region": "",
+      "installation_types": [
+        "heat_pump",
+        "solar",
+        "insulation",
+        "battery"
+      ],
+      "property_types": [
+        "house",
+        "apartment"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "14.50",
+      "max_amount": null,
+      "description": "Les travaux de rénovation énergétique bénéficient d'un taux de TVA réduit à 5,5 % au lieu de 20 %. Applicable sur la main-d'œuvre et les matériaux, sans condition de revenus.",
+      "official_url": "https://www.service-public.fr/particuliers/vosdroits/F35585",
+      "eligibility_rules": {
+        "built_before": 2022
+      },
+      "last_verified_date": "2025-01-12",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 5,
+    "fields": {
+      "name": "Éco-prêt à taux zéro (éco-PTZ)",
+      "provider_type": "government",
+      "country": "FR",
+      "region": "",
+      "installation_types": [
+        "heat_pump",
+        "solar",
+        "insulation",
+        "battery"
+      ],
+      "property_types": [
+        "house",
+        "apartment"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "0.00",
+      "max_amount": "50000.00",
+      "description": "Prêt bancaire sans intérêts pour financer des travaux de rénovation énergétique. Jusqu'à 50 000 € remboursables sur 20 ans. Cumulable avec MaPrimeRénov'.",
+      "official_url": "https://www.service-public.fr/particuliers/vosdroits/F19905",
+      "eligibility_rules": {
+        "owner_only": true
+      },
+      "last_verified_date": "2025-01-08",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 6,
+    "fields": {
+      "name": "Prime ADVENIR – Borne de recharge",
+      "provider_type": "government",
+      "country": "FR",
+      "region": "",
+      "installation_types": [
+        "ev_charger"
+      ],
+      "property_types": [
+        "house",
+        "apartment",
+        "commercial"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "50.00",
+      "max_amount": "960.00",
+      "description": "Le programme ADVENIR finance jusqu'à 50 % de l'installation d'une borne de recharge pour véhicules électriques, plafonné à 960 € pour les particuliers.",
+      "official_url": "https://advenir.mobi",
+      "eligibility_rules": {},
+      "last_verified_date": "2025-01-05",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 7,
+    "fields": {
+      "name": "Aide régionale Île-de-France – Solaire",
+      "provider_type": "regional",
+      "country": "FR",
+      "region": "Île-de-France",
+      "installation_types": [
+        "solar"
+      ],
+      "property_types": [
+        "house"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "25.00",
+      "max_amount": "6000.00",
+      "description": "La région Île-de-France propose une aide complémentaire pour l'installation de panneaux solaires photovoltaïques sur les maisons individuelles.",
+      "official_url": "https://www.iledefrance.fr",
+      "eligibility_rules": {
+        "owner_only": true
+      },
+      "last_verified_date": "2025-01-02",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 8,
+    "fields": {
+      "name": "Aide régionale Occitanie – Éco-chèque logement",
+      "provider_type": "regional",
+      "country": "FR",
+      "region": "Occitanie",
+      "installation_types": [
+        "solar",
+        "heat_pump",
+        "insulation"
+      ],
+      "property_types": [
+        "house",
+        "apartment"
+      ],
+      "income_min": null,
+      "income_max": "35000.00",
+      "discount_percent": "20.00",
+      "max_amount": "3000.00",
+      "description": "L'éco-chèque logement de la région Occitanie aide les ménages modestes à financer leurs travaux de rénovation énergétique.",
+      "official_url": "https://www.laregion.fr",
+      "eligibility_rules": {
+        "owner_only": true
+      },
+      "last_verified_date": "2024-12-20",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 9,
+    "fields": {
+      "name": "Aide locale Métropole de Lyon – Toiture solaire",
+      "provider_type": "local",
+      "country": "FR",
+      "region": "Auvergne-Rhône-Alpes",
+      "installation_types": [
+        "solar"
+      ],
+      "property_types": [
+        "house",
+        "apartment",
+        "commercial"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "15.00",
+      "max_amount": "4000.00",
+      "description": "La Métropole de Lyon soutient l'installation de toitures solaires avec une aide forfaitaire pouvant aller jusqu'à 4 000 €.",
+      "official_url": "https://www.grandlyon.com",
+      "eligibility_rules": {},
+      "last_verified_date": "2024-12-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 10,
+    "fields": {
+      "name": "Coup de pouce Chauffage – Pompe à chaleur",
+      "provider_type": "utility",
+      "country": "FR",
+      "region": "",
+      "installation_types": [
+        "heat_pump"
+      ],
+      "property_types": [
+        "house"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "30.00",
+      "max_amount": "4000.00",
+      "description": "Prime « Coup de pouce Chauffage » versée par les fournisseurs d'énergie pour le remplacement d'une chaudière au fioul ou au gaz par une pompe à chaleur.",
+      "official_url": "https://www.ecologie.gouv.fr/prime-coup-pouce-chauffage",
+      "eligibility_rules": {},
+      "last_verified_date": "2025-01-03",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  }
+]

@@ -2,8 +2,8 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Notification
-from .serializers import NotificationSerializer
+from .models import Notification, NotificationPreference
+from .serializers import NotificationSerializer, NotificationPreferenceSerializer
 
 
 class NotificationListView(generics.ListAPIView):
@@ -42,3 +42,18 @@ class MarkSingleReadView(APIView):
     def post(self, request, pk):
         Notification.objects.filter(recipient=request.user, pk=pk).update(is_read=True)
         return Response({'message': 'Notification lue.'})
+
+
+class NotificationPreferenceView(APIView):
+    """GET/PATCH /api/notifications/preferences/ - User notification preferences."""
+
+    def get(self, request):
+        prefs, _ = NotificationPreference.objects.get_or_create(user=request.user)
+        return Response(NotificationPreferenceSerializer(prefs).data)
+
+    def patch(self, request):
+        prefs, _ = NotificationPreference.objects.get_or_create(user=request.user)
+        serializer = NotificationPreferenceSerializer(prefs, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

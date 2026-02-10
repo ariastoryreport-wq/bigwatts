@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun } from 'lucide-react';
-import { notificationsAPI } from '../../services/api';
+import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare } from 'lucide-react';
+import { notificationsAPI, messagingAPI } from '../../services/api';
 import { useEffect } from 'react';
+import Logo from '../ui/Logo';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -12,20 +13,23 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    // Fetch immediately
-    notificationsAPI.getUnreadCount()
-      .then(({ data }) => setUnreadCount(data.unread_count))
-      .catch(() => {});
-    // Poll every 15 seconds for real-time feel
-    const interval = setInterval(() => {
+    // Fetch notification count
+    const fetchCounts = () => {
       notificationsAPI.getUnreadCount()
         .then(({ data }) => setUnreadCount(data.unread_count))
         .catch(() => {});
-    }, 15000);
+      messagingAPI.getUnreadTotal()
+        .then(({ data }) => setUnreadMessages(data.unread_count))
+        .catch(() => {});
+    };
+    fetchCounts();
+    // Poll every 10 seconds
+    const interval = setInterval(fetchCounts, 10000);
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
@@ -76,18 +80,15 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <img
-                src={dark ? '/logo-dark.png' : '/logo-light.png'}
-                alt="BigWatts"
-                className="h-9 w-auto"
-              />
+            <Link to="/" className="flex items-center">
+              <Logo />
             </Link>
             {/* Desktop links */}
             <div className="hidden md:flex ml-10 space-x-6">
               <Link to="/services" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Services</Link>
               <Link to="/providers" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Prestataires</Link>
               <Link to="/map" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Carte</Link>
+              <Link to="/incentives" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Aides</Link>
             </div>
           </div>
 
@@ -104,6 +105,16 @@ export default function Navbar() {
 
             {isAuthenticated ? (
               <>
+                {/* Messages */}
+                <Link to="/dashboard/messages" className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition">
+                  <MessageSquare className="h-5 w-5" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
+                </Link>
+
                 {/* Notifications */}
                 <Link to="/dashboard/notifications" className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition">
                   <Bell className="h-5 w-5" />
@@ -182,6 +193,7 @@ export default function Navbar() {
             <Link to="/services" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Services</Link>
             <Link to="/providers" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Prestataires</Link>
             <Link to="/map" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Carte</Link>
+            <Link to="/incentives" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Aides</Link>
             {isAuthenticated ? (
               <>
                 {dashboardLinks().map((link) => (

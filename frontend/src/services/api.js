@@ -105,8 +105,10 @@ export const messagingAPI = {
   getConversations: () => api.get('/messaging/conversations/'),
   getConversation: (id) => api.get(`/messaging/conversations/${id}/`),
   getMessages: (convId) => api.get(`/messaging/conversations/${convId}/messages/`),
+  pollMessages: (convId, afterId) => api.get(`/messaging/conversations/${convId}/poll/`, { params: { after: afterId || 0 } }),
   sendMessage: (data) => api.post('/messaging/send/', data),
   sendInConversation: (convId, data) => api.post(`/messaging/conversations/${convId}/messages/`, data),
+  getUnreadTotal: () => api.get('/messaging/unread-total/'),
   // CS
   csGetConversations: () => api.get('/messaging/cs/all/'),
 };
@@ -161,4 +163,10 @@ export const bookingsAPI = {
   updateBooking: (id, data) => api.patch(`/bookings/${id}/`, data),
   // Payments
   payDeposit: (bookingId) => api.post(`/bookings/${bookingId}/pay-deposit/`),
+};
+
+// ---- Incentives API ----
+export const incentivesAPI = {
+  getIncentives: (params) => api.get('/incentives/', { params }),
+  checkEligibility: (data) => api.post('/incentives/check/', data),
 };

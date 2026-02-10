@@ -264,10 +264,7 @@ Internet → Nginx (reverse proxy + SSL) → Docker
 
 - 💳 Paiement en ligne (Stripe)
 - 📅 Calendrier de rendez-vous
-- 📍 Géolocalisation et carte interactive
 - 📧 Notifications email (SendGrid / Brevo)
-- 🔔 Notifications temps réel (WebSocket / Django Channels)
-- 📊 Analytics et rapports
 - 🏷️ Système de badges / certifications vérifiées
 - 📱 Application mobile (React Native)
 

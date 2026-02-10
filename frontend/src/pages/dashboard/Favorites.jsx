@@ -30,7 +30,21 @@ export default function Favorites() {
 
   return (
     <DashboardLayout>
-      <PageHeader title="Mes favoris" description="Prestataires et services sauvegardés" />
+      <PageHeader
+        title="Mes favoris"
+        description={`${favorites.length} favori${favorites.length !== 1 ? 's' : ''} sauvegardé${favorites.length !== 1 ? 's' : ''}`}
+      />
+
+      {/* Counter badge */}
+      {!loading && favorites.length > 0 && (
+        <div className="flex items-center gap-3 mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 dark:bg-brand-900/30 border border-brand-200 dark:border-brand-800">
+            <Heart className="h-4 w-4 text-brand-500 fill-brand-500" />
+            <span className="text-sm font-bold text-brand-700 dark:text-brand-300">{favorites.length}</span>
+            <span className="text-sm text-brand-600 dark:text-brand-400">favori{favorites.length !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
+      )}
 
       {loading ? <LoadingSpinner /> : favorites.length === 0 ? (
         <EmptyState icon={Heart} title="Aucun favori" description="Ajoutez des prestataires ou services en favoris pour les retrouver ici." />

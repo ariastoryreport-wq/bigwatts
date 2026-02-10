@@ -31,6 +31,8 @@ INSTALLED_APPS = [
     'favorites',
     'notifications',
     'tickets',
+    'bookings',
+    'incentives',
 ]
 
 MIDDLEWARE = [
@@ -131,13 +133,18 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# CORS - Free tier dev
+# CORS
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
     default='http://localhost:5173,http://localhost:5174,http://localhost:3000',
     cast=Csv()
 )
 CORS_ALLOW_CREDENTIALS = True
+# Allow Vercel preview URLs and custom domains
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r'^https://.*\.vercel\.app$',
+    r'^https://.*bigwatts.*$',
+]
 
 # Email - Console for dev, SMTP for production
 EMAIL_BACKEND = config(
@@ -150,3 +157,9 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@bigwatts.fr')
+
+# Stripe
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
+DEPOSIT_PERCENT = config('DEPOSIT_PERCENT', default=30, cast=int)
+PLATFORM_FEE_PERCENT = config('PLATFORM_FEE_PERCENT', default=5, cast=int)

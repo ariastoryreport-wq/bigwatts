@@ -17,7 +17,9 @@ export default function AdCard({ ad }) {
           )}
           {ad.category_name && (
             <div className="absolute top-3 left-3">
-              <Badge variant="primary">{ad.category_name}</Badge>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-black/80 text-white border border-white/10 backdrop-blur-sm shadow-sm">
+                {ad.category_name}
+              </span>
             </div>
           )}
         </div>

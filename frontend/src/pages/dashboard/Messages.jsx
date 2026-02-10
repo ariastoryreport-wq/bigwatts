@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { messagingAPI } from '../../services/api';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -10,12 +10,29 @@ export default function Messages() {
   const { user } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isActiveRef = useRef(true);
 
-  useEffect(() => {
+  const fetchConversations = () => {
     messagingAPI.getConversations()
       .then(({ data }) => setConversations(data.results || data))
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchConversations();
+    // Poll every 5 seconds to show new conversations / unread counts
+    const interval = setInterval(() => {
+      if (isActiveRef.current) fetchConversations();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Pause polling when tab hidden
+  useEffect(() => {
+    const handler = () => { isActiveRef.current = document.visibilityState === 'visible'; };
+    document.addEventListener('visibilitychange', handler);
+    return () => document.removeEventListener('visibilitychange', handler);
   }, []);
 
   return (

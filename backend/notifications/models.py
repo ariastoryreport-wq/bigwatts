@@ -11,6 +11,7 @@ class Notification(models.Model):
         NEW_MESSAGE = 'new_message', 'Nouveau message'
         NEW_REVIEW = 'new_review', 'Nouvel avis'
         TICKET_UPDATE = 'ticket_update', 'Mise à jour ticket'
+        FAVORITE = 'favorite', 'Favori'
         SYSTEM = 'system', 'Système'
     
     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
@@ -26,3 +27,19 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"[{self.notification_type}] {self.title} → {self.recipient.username}"
+
+
+class NotificationPreference(models.Model):
+    """Per-user notification preferences (which types they want to receive)."""
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='notification_preferences'
+    )
+    email_quotes = models.BooleanField(default=True, help_text="Recevoir les notifications de devis")
+    email_messages = models.BooleanField(default=True, help_text="Recevoir les notifications de messages")
+    email_reviews = models.BooleanField(default=True, help_text="Recevoir les notifications d'avis")
+    email_favorites = models.BooleanField(default=True, help_text="Recevoir les notifications de favoris")
+    email_system = models.BooleanField(default=True, help_text="Recevoir les notifications système")
+
+    def __str__(self):
+        return f"Prefs: {self.user.username}"

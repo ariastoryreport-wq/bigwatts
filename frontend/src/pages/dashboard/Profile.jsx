@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { authAPI, notificationsAPI } from '../../services/api';
+import { authAPI, notificationsAPI, reviewsAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { PageHeader, LoadingSpinner } from '../../components/ui';
+import { PageHeader, LoadingSpinner, StarRating, Card } from '../../components/ui';
+import { Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Profile() {
@@ -12,6 +13,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const [passwords, setPasswords] = useState({ old_password: '', new_password: '', new_password2: '' });
   const [notifPrefs, setNotifPrefs] = useState(null);
+  const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     if (user) {
@@ -47,6 +49,16 @@ export default function Profile() {
       notificationsAPI.getPreferences()
         .then(({ data }) => setNotifPrefs(data))
         .catch(() => {});
+      // Fetch reviews for the profile
+      if (isPrestataire) {
+        reviewsAPI.getReceivedReviews()
+          .then(({ data }) => setReviews(data.results || data))
+          .catch(() => {});
+      } else if (isProprietaire) {
+        reviewsAPI.getWrittenReviews()
+          .then(({ data }) => setReviews(data.results || data))
+          .catch(() => {});
+      }
     }
   }, [user]);
 
@@ -225,6 +237,49 @@ export default function Profile() {
       </form>
 
       {/* Notification Preferences */}
+      {/* Reviews section */}
+      {reviews.length > 0 && (
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Star className="h-5 w-5 text-brand-300 fill-brand-300" />
+              {isPrestataire ? 'Avis reçus' : 'Mes avis'} ({reviews.length})
+            </h3>
+          </div>
+          <div className="space-y-4">
+            {reviews.slice(0, 5).map((rev) => (
+              <Card key={rev.id} className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-sm text-black dark:text-white">
+                      {rev.author_name || rev.author_username}
+                    </span>
+                    <StarRating rating={rev.rating} size={14} />
+                  </div>
+                  <span className="text-xs text-gray-400">
+                    {new Date(rev.created_at).toLocaleDateString('fr-FR')}
+                  </span>
+                </div>
+                {rev.title && <p className="font-medium text-sm mb-1">{rev.title}</p>}
+                <p className="text-sm text-gray-600 dark:text-gray-400">{rev.comment}</p>
+                {rev.provider_response && (
+                  <div className="mt-2 ml-4 pl-4 border-l-2 border-brand-200 dark:border-brand-800">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="font-medium">Réponse :</span> {rev.provider_response}
+                    </p>
+                  </div>
+                )}
+              </Card>
+            ))}
+            {reviews.length > 5 && (
+              <p className="text-sm text-center text-gray-500">
+                Et {reviews.length - 5} autre{reviews.length - 5 > 1 ? 's' : ''} avis…
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {notifPrefs && (
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 mt-6">
           <h3 className="text-lg font-semibold mb-4">Préférences de notification</h3>

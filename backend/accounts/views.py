@@ -212,22 +212,26 @@ class DashboardStatsView(APIView):
         
         if user.is_prestataire:
             from ads.models import Ad, QuoteRequest
+            from bookings.models import Booking
             data.update({
                 'total_ads': user.ads.count(),
                 'active_ads': user.ads.filter(status='active').count(),
                 'total_quote_requests': QuoteRequest.objects.filter(ad__provider=user).count(),
                 'pending_requests': QuoteRequest.objects.filter(ad__provider=user, status='pending').count(),
                 'total_reviews': user.received_reviews.count(),
+                'total_bookings': Booking.objects.filter(provider=user).exclude(status='cancelled').count(),
                 'unread_messages': user.conversations.filter(
                     messages__is_read=False
                 ).exclude(messages__sender=user).distinct().count(),
             })
         elif user.is_proprietaire:
             from ads.models import QuoteRequest
+            from bookings.models import Booking
             data.update({
                 'total_requests': user.quote_requests.count(),
                 'pending_requests': user.quote_requests.filter(status='pending').count(),
                 'accepted_requests': user.quote_requests.filter(status='accepted').count(),
+                'total_bookings': Booking.objects.filter(homeowner=user).exclude(status='cancelled').count(),
                 'total_favorites': user.favorites.count(),
                 'unread_messages': user.conversations.filter(
                     messages__is_read=False

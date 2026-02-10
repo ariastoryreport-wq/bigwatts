@@ -30,21 +30,31 @@ export default function Home() {
 
   return (
     <div>
-      {/* ─── HERO ─── full-screen, bold black bg, high-contrast */}
-      <section className="min-h-screen flex items-center bg-black text-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
+      {/* ─── HERO ─── full-width solar panel background image */}
+      <section className="min-h-screen flex items-center relative overflow-hidden">
+        {/* Background image */}
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1920&q=80"
+            alt=""
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/30" />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
           <div className="max-w-3xl">
-            <h1 className="font-display text-5xl sm:text-6xl lg:text-8xl font-bold leading-[0.95] mb-8 tracking-tight">
+            <h1 className="font-display text-5xl sm:text-6xl lg:text-8xl font-bold leading-[0.95] mb-8 tracking-tight text-white">
               Trouvez les meilleurs experts en{' '}
               <span className="text-brand-300">énergie verte</span>
             </h1>
-            <p className="text-lg sm:text-xl text-gray-400 mb-10 max-w-xl leading-relaxed">
+            <p className="text-lg sm:text-xl text-gray-300 mb-10 max-w-xl leading-relaxed">
               Panneaux solaires, bornes de recharge, pompes à chaleur… Comparez les prestataires 
               certifiés près de chez vous et demandez un devis gratuit.
             </p>
 
             {/* Search bar */}
-            <div className="bg-white rounded-lg p-2 flex flex-col sm:flex-row gap-2 max-w-xl">
+            <div className="bg-white/95 backdrop-blur-sm rounded-lg p-2 flex flex-col sm:flex-row gap-2 max-w-xl shadow-2xl">
               <div className="flex-1 flex items-center px-4">
                 <Search className="h-5 w-5 text-gray-400 mr-3" />
                 <input
@@ -57,15 +67,13 @@ export default function Home() {
               </div>
               <Link
                 to={`/services${searchCity ? `?city=${searchCity}` : ''}`}
-                className="bg-black text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition font-bold text-center"
+                className="bg-brand-500 text-white px-8 py-3 rounded-lg hover:bg-brand-600 transition font-bold text-center"
               >
                 Rechercher
               </Link>
             </div>
           </div>
         </div>
-        {/* Large brand-colored accent block */}
-        <div className="absolute right-0 top-0 w-1/3 h-full bg-brand-300 hidden lg:block" />
       </section>
 
       {/* ─── STATS ─── full-width, brand-green bg, black text */}
@@ -126,6 +134,24 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* ─── INCENTIVES CTA ─── */}
+      <section className="bg-gradient-to-r from-green-600 to-brand-500 py-16">
+        <div className="max-w-4xl mx-auto px-4 text-center text-white">
+          <h2 className="font-display text-3xl lg:text-5xl font-bold mb-4">
+            Quelles aides pour votre projet ?
+          </h2>
+          <p className="text-lg text-green-100 mb-8 max-w-2xl mx-auto">
+            MaPrimeRénov', CEE, aides régionales… Découvrez en 2 minutes les subventions auxquelles vous avez droit.
+          </p>
+          <Link
+            to="/incentives"
+            className="inline-flex items-center bg-white text-green-700 px-8 py-4 rounded-lg font-bold text-lg hover:bg-green-50 transition shadow-xl"
+          >
+            Vérifier mon éligibilité <ArrowRight className="ml-2 h-5 w-5" />
+          </Link>
+        </div>
+      </section>
 
       {/* ─── CTA ─── full-screen, black bg, impactful */}
       <section className="min-h-[60vh] flex items-center bg-black text-white py-20">
