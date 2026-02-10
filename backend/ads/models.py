@@ -52,6 +52,11 @@ class Ad(models.Model):
     service_area = models.CharField(max_length=200, blank=True, help_text="Zone d'intervention")
     latitude = models.FloatField(null=True, blank=True, help_text="Latitude GPS")
     longitude = models.FloatField(null=True, blank=True, help_text="Longitude GPS")
+    country = models.ForeignKey(
+        'countries.Country', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='ads',
+        help_text="Country where this service is offered"
+    )
     
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     

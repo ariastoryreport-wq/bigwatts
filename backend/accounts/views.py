@@ -158,6 +158,7 @@ class ProviderListView(generics.ListAPIView):
         city = self.request.query_params.get('city')
         search = self.request.query_params.get('search')
         available = self.request.query_params.get('available')
+        country = self.request.query_params.get('country')
         
         if city:
             qs = qs.filter(city__icontains=city)
@@ -170,6 +171,8 @@ class ProviderListView(generics.ListAPIView):
             )
         if available == 'true':
             qs = qs.filter(prestataire_profile__is_available=True)
+        if country:
+            qs = qs.filter(country__code=country)
         return qs.select_related('prestataire_profile')
 
 

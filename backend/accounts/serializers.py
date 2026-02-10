@@ -41,6 +41,7 @@ class UserSerializer(serializers.ModelSerializer):
     prestataire_profile = PrestaireProfileSerializer(read_only=True)
     proprietaire_profile = ProprietaireProfileSerializer(read_only=True)
     badges = UserBadgeSerializer(many=True, read_only=True)
+    country_code = serializers.CharField(source='country.code', read_only=True, default=None)
 
     class Meta:
         model = User
@@ -48,6 +49,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name',
             'role', 'phone', 'avatar', 'city', 'postal_code',
             'address', 'bio', 'is_verified', 'latitude', 'longitude',
+            'country_code',
             'created_at', 'prestataire_profile', 'proprietaire_profile', 'badges'
         ]
         read_only_fields = ['id', 'role', 'is_verified', 'created_at']
@@ -58,13 +60,14 @@ class UserPublicSerializer(serializers.ModelSerializer):
     prestataire_profile = PrestaireProfileSerializer(read_only=True)
     badges = UserBadgeSerializer(many=True, read_only=True)
     is_online = serializers.BooleanField(read_only=True)
+    country_code = serializers.CharField(source='country.code', read_only=True, default=None)
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'first_name', 'last_name',
             'role', 'avatar', 'city', 'bio', 'is_verified',
-            'latitude', 'longitude',
+            'latitude', 'longitude', 'country_code',
             'created_at', 'prestataire_profile', 'badges', 'is_online'
         ]
 
@@ -72,12 +75,14 @@ class UserPublicSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
+    country_code = serializers.CharField(required=False, default='FR')
     
     class Meta:
         model = User
         fields = [
             'username', 'email', 'password', 'password_confirm',
-            'first_name', 'last_name', 'role', 'phone', 'city', 'postal_code'
+            'first_name', 'last_name', 'role', 'phone', 'city', 'postal_code',
+            'country_code'
         ]
     
     def validate(self, attrs):
@@ -88,7 +93,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
     
     def create(self, validated_data):
+        country_code = validated_data.pop('country_code', 'FR')
         user = User.objects.create_user(**validated_data)
+        # Assign country
+        from countries.models import Country
+        try:
+            user.country = Country.objects.get(code=country_code)
+            user.save(update_fields=['country'])
+        except Country.DoesNotExist:
+            pass
         # Create role-specific profile
         if user.role == User.Role.PRESTATAIRE:
             PrestaireProfile.objects.create(user=user)
@@ -109,13 +122,25 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
+    country_code = serializers.CharField(required=False, write_only=True)
+
     class Meta:
         model = User
         fields = [
             'first_name', 'last_name', 'phone', 'avatar',
             'city', 'postal_code', 'address', 'bio',
-            'latitude', 'longitude'
+            'latitude', 'longitude', 'country_code'
         ]
+
+    def update(self, instance, validated_data):
+        country_code = validated_data.pop('country_code', None)
+        if country_code:
+            from countries.models import Country
+            try:
+                instance.country = Country.objects.get(code=country_code)
+            except Country.DoesNotExist:
+                pass
+        return super().update(instance, validated_data)
 
 
 class AppointmentSerializer(serializers.ModelSerializer):

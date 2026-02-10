@@ -20,6 +20,11 @@ class User(AbstractUser):
     bio = models.TextField(blank=True)
     latitude = models.FloatField(null=True, blank=True, help_text="Latitude GPS")
     longitude = models.FloatField(null=True, blank=True, help_text="Longitude GPS")
+    country = models.ForeignKey(
+        'countries.Country', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='users',
+        help_text="User's country"
+    )
     last_seen = models.DateTimeField(null=True, blank=True, help_text="Last activity timestamp")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

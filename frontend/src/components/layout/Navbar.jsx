@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare, Check, FileText, Star, AlertCircle, Settings, Heart } from 'lucide-react';
+import { useCountry } from '../../context/CountryContext';
+import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare, Check, FileText, Star, AlertCircle, Settings, Heart, Globe } from 'lucide-react';
 import { notificationsAPI, messagingAPI } from '../../services/api';
 import Logo from '../ui/Logo';
 
@@ -43,12 +44,15 @@ function resolveLink(notification, userRole) {
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const { dark, toggle } = useTheme();
+  const { countries, currentCountry, switchCountry } = useCountry();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [countryOpen, setCountryOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const notifRef = useRef(null);
+  const countryRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -85,6 +89,7 @@ export default function Navbar() {
   useEffect(() => {
     const handler = (e) => {
       if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
+      if (countryRef.current && !countryRef.current.contains(e.target)) setCountryOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -166,6 +171,48 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="flex items-center space-x-3">
+            {/* Country switcher */}
+            {countries.length > 1 && (
+              <div className="relative" ref={countryRef}>
+                <button
+                  onClick={() => { setCountryOpen(!countryOpen); setNotifOpen(false); setProfileOpen(false); }}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-sm"
+                  title="Changer de pays"
+                >
+                  <span className="text-lg leading-none">{currentCountry.flag_emoji}</span>
+                  <span className="hidden sm:inline font-medium">{currentCountry.code}</span>
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+                {countryOpen && (
+                  <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 z-30 shadow-2xl overflow-hidden py-1">
+                    <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-800">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Pays / Région</p>
+                    </div>
+                    {countries.map((c) => (
+                      <button
+                        key={c.code}
+                        onClick={() => { switchCountry(c.code); setCountryOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm transition ${
+                          c.code === currentCountry.code
+                            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 font-semibold'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        <span className="text-lg">{c.flag_emoji}</span>
+                        <div>
+                          <span className="block">{c.name}</span>
+                          <span className="text-xs text-gray-400">{c.currency} ({c.currency_symbol})</span>
+                        </div>
+                        {c.code === currentCountry.code && (
+                          <Check className="h-4 w-4 ml-auto text-brand-500" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Dark mode toggle */}
             <button
               onClick={toggle}
@@ -313,6 +360,25 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="md:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
           <div className="px-4 py-3 space-y-2">
+            {/* Mobile country switcher */}
+            {countries.length > 1 && (
+              <div className="flex items-center gap-2 py-2 border-b border-gray-200 dark:border-gray-800 mb-2">
+                {countries.map((c) => (
+                  <button
+                    key={c.code}
+                    onClick={() => switchCountry(c.code)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition ${
+                      c.code === currentCountry.code
+                        ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 font-semibold border border-brand-200 dark:border-brand-800'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <span className="text-base">{c.flag_emoji}</span>
+                    <span>{c.code}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             <Link to="/services" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Services</Link>
             <Link to="/providers" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Prestataires</Link>
             <Link to="/map" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Carte</Link>

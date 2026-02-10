@@ -95,11 +95,16 @@ export function PageHeader({ title, description, action }) {
   );
 }
 
-export function PriceDisplay({ price, priceType }) {
+export function PriceDisplay({ price, priceType, currency = 'EUR', currencySymbol }) {
   if (!price && priceType === 'quote') return <span className="text-brand-600 dark:text-brand-300 font-semibold">Sur devis</span>;
   if (!price && priceType === 'free_estimate') return <span className="text-brand-600 dark:text-brand-300 font-semibold">Estimation gratuite</span>;
   if (!price) return <span className="text-gray-400">Prix non renseigné</span>;
-  const formatted = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price);
+  let formatted;
+  try {
+    formatted = new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(price);
+  } catch {
+    formatted = `${currencySymbol || '€'}${Number(price).toFixed(2)}`;
+  }
   const suffix = priceType === 'hourly' ? '/h' : '';
   return <span className="text-black dark:text-white font-bold text-lg">{formatted}{suffix}</span>;
 }

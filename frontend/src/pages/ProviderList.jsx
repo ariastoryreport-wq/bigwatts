@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
+import { useCountry } from '../context/CountryContext';
 import ProviderCard from '../components/cards/ProviderCard';
 import { LoadingSpinner, EmptyState } from '../components/ui';
 import { Search, Users } from 'lucide-react';
@@ -9,9 +10,10 @@ export default function ProviderList() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [city, setCity] = useState('');
+  const { countryCode } = useCountry();
 
   useEffect(() => {
-    const params = {};
+    const params = { country: countryCode };
     if (search) params.search = search;
     if (city) params.city = city;
 
@@ -20,7 +22,7 @@ export default function ProviderList() {
       .then(({ data }) => setProviders(data.results || data))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [search, city]);
+  }, [search, city, countryCode]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'tickets',
     'bookings',
     'incentives',
+    'countries',
 ]
 
 MIDDLEWARE = [

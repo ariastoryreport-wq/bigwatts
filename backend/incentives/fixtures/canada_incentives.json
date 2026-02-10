@@ -1,0 +1,319 @@
+[
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 101,
+    "fields": {
+      "name": "Canada Greener Homes Grant",
+      "provider_type": "government",
+      "country": "CA",
+      "region": "",
+      "installation_types": [
+        "heat_pump",
+        "solar",
+        "insulation"
+      ],
+      "property_types": [
+        "house"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "0.00",
+      "max_amount": "5000.00",
+      "description": "Programme fédéral canadien offrant des subventions pour les rénovations écoénergétiques résidentielles, incluant les thermopompes, panneaux solaires et l'isolation. Disponible pour les propriétaires occupants partout au Canada.",
+      "official_url": "https://natural-resources.canada.ca/energy-efficiency/homes/canada-greener-homes-initiative/24831",
+      "eligibility_rules": {
+        "owner_only": true
+      },
+      "last_verified_date": "2025-01-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 102,
+    "fields": {
+      "name": "Canada Greener Homes Loan",
+      "provider_type": "government",
+      "country": "CA",
+      "region": "",
+      "installation_types": [
+        "heat_pump",
+        "solar",
+        "insulation",
+        "windows"
+      ],
+      "property_types": [
+        "house"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "0.00",
+      "max_amount": "40000.00",
+      "description": "Prêt sans intérêt du gouvernement fédéral pouvant atteindre 40 000 $ pour financer des rénovations écoénergétiques majeures. Remboursable sur 10 ans, combinable avec la subvention Greener Homes Grant.",
+      "official_url": "https://natural-resources.canada.ca/energy-efficiency/homes/canada-greener-homes-initiative/24831",
+      "eligibility_rules": {
+        "owner_only": true
+      },
+      "last_verified_date": "2025-01-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 103,
+    "fields": {
+      "name": "Rénoclimat – Québec",
+      "provider_type": "regional",
+      "country": "CA",
+      "region": "Québec",
+      "installation_types": [
+        "heat_pump",
+        "insulation",
+        "windows"
+      ],
+      "property_types": [
+        "house",
+        "apartment"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "0.00",
+      "max_amount": "6500.00",
+      "description": "Programme du gouvernement du Québec offrant une aide financière pour l'amélioration de l'efficacité énergétique des habitations. Couvre les thermopompes, l'isolation et le remplacement de fenêtres.",
+      "official_url": "https://transitionenergetique.gouv.qc.ca/residentiel/programmes/renoclimat",
+      "eligibility_rules": {
+        "owner_only": true,
+        "built_before": 2010
+      },
+      "last_verified_date": "2025-01-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 104,
+    "fields": {
+      "name": "Chauffez vert – Québec",
+      "provider_type": "regional",
+      "country": "CA",
+      "region": "Québec",
+      "installation_types": [
+        "heat_pump"
+      ],
+      "property_types": [
+        "house",
+        "apartment"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "0.00",
+      "max_amount": "5000.00",
+      "description": "Aide financière pour le remplacement d'un système de chauffage au mazout ou au propane par une thermopompe ou un système électrique. Vise la décarbonation du chauffage résidentiel au Québec.",
+      "official_url": "https://transitionenergetique.gouv.qc.ca/residentiel/programmes/chauffez-vert",
+      "eligibility_rules": {
+        "owner_only": false,
+        "replaces_fossil_fuel": true
+      },
+      "last_verified_date": "2025-01-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 105,
+    "fields": {
+      "name": "Home Energy Conservation Program – Ontario",
+      "provider_type": "regional",
+      "country": "CA",
+      "region": "Ontario",
+      "installation_types": [
+        "heat_pump",
+        "insulation",
+        "windows"
+      ],
+      "property_types": [
+        "house"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "0.00",
+      "max_amount": "10000.00",
+      "description": "Programme ontarien d'aide à la rénovation énergétique résidentielle. Offre des rabais pour l'installation de thermopompes, l'amélioration de l'isolation et le remplacement des fenêtres écoénergétiques.",
+      "official_url": "https://www.ontario.ca/page/green-energy",
+      "eligibility_rules": {
+        "owner_only": true
+      },
+      "last_verified_date": "2025-01-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 106,
+    "fields": {
+      "name": "Enbridge Home Efficiency Rebate – Ontario",
+      "provider_type": "utility",
+      "country": "CA",
+      "region": "Ontario",
+      "installation_types": [
+        "insulation",
+        "windows",
+        "heat_pump"
+      ],
+      "property_types": [
+        "house"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "0.00",
+      "max_amount": "5000.00",
+      "description": "Remises offertes par Enbridge Gas aux propriétaires ontariens pour des améliorations écoénergétiques. Inclut l'isolation, les fenêtres et les thermopompes. Cumulable avec les aides gouvernementales.",
+      "official_url": "https://www.enbridgegas.com/residential/rebates-energy-conservation",
+      "eligibility_rules": {
+        "owner_only": true,
+        "enbridge_customer": true
+      },
+      "last_verified_date": "2025-01-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 107,
+    "fields": {
+      "name": "CleanBC Better Homes – Colombie-Britannique",
+      "provider_type": "regional",
+      "country": "CA",
+      "region": "Colombie-Britannique",
+      "installation_types": [
+        "heat_pump",
+        "solar",
+        "insulation"
+      ],
+      "property_types": [
+        "house",
+        "apartment"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "0.00",
+      "max_amount": "11000.00",
+      "description": "Programme de la Colombie-Britannique offrant des rabais substantiels pour l'installation de thermopompes, panneaux solaires et l'amélioration de l'isolation. Les ménages à faible revenu peuvent recevoir des montants bonifiés.",
+      "official_url": "https://betterhomesbc.ca",
+      "eligibility_rules": {
+        "owner_only": false
+      },
+      "last_verified_date": "2025-01-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 108,
+    "fields": {
+      "name": "Clean Energy Improvement Program – Alberta",
+      "provider_type": "regional",
+      "country": "CA",
+      "region": "Alberta",
+      "installation_types": [
+        "solar",
+        "insulation",
+        "windows",
+        "heat_pump"
+      ],
+      "property_types": [
+        "house"
+      ],
+      "income_min": null,
+      "income_max": null,
+      "discount_percent": "0.00",
+      "max_amount": "12500.00",
+      "description": "Financement via la taxe foncière (PACE) permettant aux propriétaires albertains de financer des améliorations écoénergétiques sans frais initiaux. Couvre les panneaux solaires, thermopompes, isolation et fenêtres.",
+      "official_url": "https://www.alberta.ca/clean-energy-improvement-program",
+      "eligibility_rules": {
+        "owner_only": true,
+        "participating_municipality": true
+      },
+      "last_verified_date": "2025-01-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 109,
+    "fields": {
+      "name": "Total Home Energy Savings – Nouveau-Brunswick",
+      "provider_type": "regional",
+      "country": "CA",
+      "region": "Nouveau-Brunswick",
+      "installation_types": [
+        "heat_pump",
+        "insulation"
+      ],
+      "property_types": [
+        "house"
+      ],
+      "income_min": null,
+      "income_max": "60000.00",
+      "discount_percent": "100.00",
+      "max_amount": "15000.00",
+      "description": "Programme du Nouveau-Brunswick pour les ménages à faible revenu, offrant des améliorations écoénergétiques gratuites incluant l'isolation et l'installation de thermopompes. Financement complet pour les ménages éligibles.",
+      "official_url": "https://www2.gnb.ca/content/gnb/en/departments/erd/energy/content/energy-efficiency.html",
+      "eligibility_rules": {
+        "owner_only": true,
+        "low_income": true
+      },
+      "last_verified_date": "2025-01-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "incentives.incentiveprogram",
+    "pk": 110,
+    "fields": {
+      "name": "Oil to Heat Pump Affordability Program – Canada",
+      "provider_type": "government",
+      "country": "CA",
+      "region": "",
+      "installation_types": [
+        "heat_pump"
+      ],
+      "property_types": [
+        "house"
+      ],
+      "income_min": null,
+      "income_max": "120000.00",
+      "discount_percent": "0.00",
+      "max_amount": "10000.00",
+      "description": "Programme fédéral offrant jusqu'à 10 000 $ pour remplacer un système de chauffage au mazout par une thermopompe électrique. Disponible dans toutes les provinces atlantiques, au Québec et en Ontario.",
+      "official_url": "https://natural-resources.canada.ca/energy-efficiency/homes/oil-to-heat-pump-affordability-program/24831",
+      "eligibility_rules": {
+        "owner_only": true,
+        "replaces_oil_heating": true,
+        "income_tested": true
+      },
+      "last_verified_date": "2025-01-15",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  }
+]

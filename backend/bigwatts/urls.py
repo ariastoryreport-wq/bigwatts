@@ -16,6 +16,7 @@ urlpatterns = [
     path('api/tickets/', include('tickets.urls')),
     path('api/bookings/', include('bookings.urls')),
     path('api/incentives/', include('incentives.urls')),
+    path('api/countries/', include('countries.urls')),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 

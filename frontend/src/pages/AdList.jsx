@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { adsAPI } from '../services/api';
+import { useCountry } from '../context/CountryContext';
 import AdCard from '../components/cards/AdCard';
 import { LoadingSpinner, EmptyState } from '../components/ui';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 
 export default function AdList() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { countryCode } = useCountry();
   const [ads, setAds] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ export default function AdList() {
 
   useEffect(() => {
     setLoading(true);
-    const params = { page };
+    const params = { page, country: countryCode };
     if (filters.search) params.search = filters.search;
     if (filters.city) params.city = filters.city;
     if (filters.category) params.category = filters.category;
@@ -44,7 +46,7 @@ export default function AdList() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [filters, page]);
+  }, [filters, page, countryCode]);
 
   const applyFilter = (key, value) => {
     setFilters({ ...filters, [key]: value });

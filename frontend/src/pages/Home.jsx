@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Sun, Zap, Thermometer, Shield, ArrowRight, Star, MapPin } from 'lucide-react';
 import { adsAPI } from '../services/api';
+import { useCountry } from '../context/CountryContext';
 import AdCard from '../components/cards/AdCard';
 
 const CATEGORIES = [
@@ -21,12 +22,13 @@ const STATS = [
 export default function Home() {
   const [latestAds, setLatestAds] = useState([]);
   const [searchCity, setSearchCity] = useState('');
+  const { countryCode } = useCountry();
 
   useEffect(() => {
-    adsAPI.getAds({ page_size: 6 }).then(({ data }) => {
+    adsAPI.getAds({ page_size: 6, country: countryCode }).then(({ data }) => {
       setLatestAds(data.results || data);
     }).catch(() => {});
-  }, []);
+  }, [countryCode]);
 
   return (
     <div>

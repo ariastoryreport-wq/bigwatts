@@ -2,14 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, MapPin, Home, Zap, Euro, CheckCircle2, Sparkles, Sun, Thermometer, Plug, Layers, Battery, Wind, Building2 } from 'lucide-react';
 import { PageHeader } from '../components/ui';
-
-const REGIONS = [
-  '', 'Auvergne-Rhône-Alpes', 'Bourgogne-Franche-Comté', 'Bretagne',
-  'Centre-Val de Loire', 'Corse', 'Grand Est', 'Hauts-de-France',
-  'Île-de-France', 'Normandie', 'Nouvelle-Aquitaine', 'Occitanie',
-  'Pays de la Loire', "Provence-Alpes-Côte d'Azur",
-  'Guadeloupe', 'Guyane', 'La Réunion', 'Martinique', 'Mayotte',
-];
+import { useCountry } from '../context/CountryContext';
 
 const INSTALLATION_TYPES = [
   { value: 'solar', label: 'Panneaux solaires', Icon: Sun },
@@ -36,9 +29,10 @@ const STEPS = [
 
 export default function IncentiveChecker() {
   const navigate = useNavigate();
+  const { countries, currentCountry, countryCode } = useCountry();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    country: 'FR',
+    country: countryCode,
     region: '',
     property_type: '',
     is_owner: true,
@@ -46,6 +40,10 @@ export default function IncentiveChecker() {
     annual_income: '',
     estimated_budget: '',
   });
+
+  // Get regions for the selected country
+  const selectedCountryObj = countries.find((c) => c.code === form.country) || currentCountry;
+  const countryRegions = selectedCountryObj?.regions || [];
 
   const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -117,15 +115,15 @@ export default function IncentiveChecker() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pays</label>
                 <select
                   value={form.country}
-                  onChange={(e) => update('country', e.target.value)}
+                  onChange={(e) => { update('country', e.target.value); update('region', ''); }}
                   className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-3 bg-white dark:bg-gray-800 text-black dark:text-white focus:ring-2 focus:ring-brand-300"
                 >
-                  <option value="FR">France</option>
-                  <option value="BE">Belgique</option>
-                  <option value="CH">Suisse</option>
+                  {countries.map((c) => (
+                    <option key={c.code} value={c.code}>{c.flag_emoji} {c.name}</option>
+                  ))}
                 </select>
               </div>
-              {form.country === 'FR' && (
+              {countryRegions.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Région <span className="text-gray-400 text-xs">(optionnel – pour les aides régionales)</span>
@@ -136,7 +134,7 @@ export default function IncentiveChecker() {
                     className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-3 bg-white dark:bg-gray-800 text-black dark:text-white focus:ring-2 focus:ring-brand-300"
                   >
                     <option value="">— Toutes les régions —</option>
-                    {REGIONS.filter(Boolean).map((r) => (
+                    {countryRegions.map((r) => (
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
@@ -226,7 +224,7 @@ export default function IncentiveChecker() {
               </p>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Budget estimé du projet (€)
+                  Budget estimé du projet ({selectedCountryObj?.currency_symbol || '€'})
                 </label>
                 <input
                   type="number"
@@ -239,7 +237,7 @@ export default function IncentiveChecker() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Revenu fiscal de référence annuel (€)
+                  Revenu fiscal de référence annuel ({selectedCountryObj?.currency_symbol || '€'})
                 </label>
                 <input
                   type="number"

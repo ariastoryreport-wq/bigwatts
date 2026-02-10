@@ -67,7 +67,7 @@ export default function MyAds() {
                     <StatusBadge status={ad.status} />
                   </div>
                   <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                    <PriceDisplay price={ad.price} priceType={ad.price_type} />
+                    <PriceDisplay price={ad.price} priceType={ad.price_type} currency={ad.currency || 'EUR'} />
                     <span>{ad.city}</span>
                     <span>{ad.views_count} vues</span>
                   </div>

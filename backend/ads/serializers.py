@@ -23,6 +23,9 @@ class AdListSerializer(serializers.ModelSerializer):
         max_digits=3, decimal_places=2, read_only=True, default=0
     )
     category_name = serializers.CharField(source='category.name', read_only=True)
+    country_code = serializers.CharField(source='country.code', read_only=True, default=None)
+    currency = serializers.CharField(source='country.currency', read_only=True, default='EUR')
+    currency_symbol = serializers.CharField(source='country.currency_symbol', read_only=True, default='€')
     
     class Meta:
         model = Ad
@@ -31,7 +34,8 @@ class AdListSerializer(serializers.ModelSerializer):
             'city', 'latitude', 'longitude', 'status', 'image_1', 'image_url',
             'category', 'category_name',
             'provider', 'provider_name', 'provider_username', 'provider_avatar',
-            'provider_rating', 'views_count', 'created_at'
+            'provider_rating', 'views_count', 'created_at',
+            'country_code', 'currency', 'currency_symbol'
         ]
 
 
@@ -39,6 +43,9 @@ class AdDetailSerializer(serializers.ModelSerializer):
     provider = UserPublicSerializer(read_only=True)
     category_detail = ServiceCategorySerializer(source='category', read_only=True)
     reviews_count = serializers.SerializerMethodField()
+    country_code = serializers.CharField(source='country.code', read_only=True, default=None)
+    currency = serializers.CharField(source='country.currency', read_only=True, default='EUR')
+    currency_symbol = serializers.CharField(source='country.currency_symbol', read_only=True, default='€')
     
     class Meta:
         model = Ad
@@ -50,6 +57,8 @@ class AdDetailSerializer(serializers.ModelSerializer):
 
 
 class AdCreateUpdateSerializer(serializers.ModelSerializer):
+    country_code = serializers.CharField(required=False, write_only=True)
+
     class Meta:
         model = Ad
         fields = [
@@ -57,11 +66,22 @@ class AdCreateUpdateSerializer(serializers.ModelSerializer):
             'price', 'price_type', 'city', 'postal_code', 'service_area',
             'latitude', 'longitude',
             'status', 'image_1', 'image_2', 'image_3', 'image_url',
-            'duration_estimate', 'warranty_info', 'requirements'
+            'duration_estimate', 'warranty_info', 'requirements',
+            'country_code'
         ]
     
     def create(self, validated_data):
-        validated_data['provider'] = self.context['request'].user
+        user = self.context['request'].user
+        validated_data['provider'] = user
+        country_code = validated_data.pop('country_code', None)
+        if country_code:
+            from countries.models import Country
+            try:
+                validated_data['country'] = Country.objects.get(code=country_code)
+            except Country.DoesNotExist:
+                validated_data['country'] = user.country
+        else:
+            validated_data['country'] = user.country
         return super().create(validated_data)
 
 

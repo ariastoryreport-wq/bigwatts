@@ -29,7 +29,7 @@ class AdListView(generics.ListAPIView):
     ordering_fields = ['created_at', 'price', 'views_count']
     
     def get_queryset(self):
-        qs = Ad.objects.filter(status='active').select_related('provider', 'category', 'provider__prestataire_profile')
+        qs = Ad.objects.filter(status='active').select_related('provider', 'category', 'provider__prestataire_profile', 'country')
         
         category = self.request.query_params.get('category')
         city = self.request.query_params.get('city')
@@ -37,6 +37,7 @@ class AdListView(generics.ListAPIView):
         price_max = self.request.query_params.get('price_max')
         price_type = self.request.query_params.get('price_type')
         provider = self.request.query_params.get('provider')
+        country = self.request.query_params.get('country')
         
         if category:
             qs = qs.filter(category__slug=category)
@@ -50,6 +51,8 @@ class AdListView(generics.ListAPIView):
             qs = qs.filter(price_type=price_type)
         if provider:
             qs = qs.filter(provider_id=provider)
+        if country:
+            qs = qs.filter(country__code=country)
         
         return qs
 

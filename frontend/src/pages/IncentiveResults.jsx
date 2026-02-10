@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Euro, Sparkles, Award, RefreshCw } from 'lucide-react';
 import { LoadingSpinner, PageHeader } from '../components/ui';
+import { useCountry } from '../context/CountryContext';
 import api from '../services/api';
 
 const INSTALLATION_LABELS = {
@@ -24,10 +25,14 @@ const PROVIDER_BADGES = {
 export default function IncentiveResults() {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const { formatPrice, countries } = useCountry();
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [totalSavings, setTotalSavings] = useState(0);
+
+  // Get the country info for the results
+  const resultCountry = countries.find((c) => c.code === state?.country) || {};
 
   useEffect(() => {
     if (!state) {
@@ -98,7 +103,7 @@ export default function IncentiveResults() {
 
         <PageHeader
           title="Vos aides éligibles"
-          subtitle={`Pour un projet de ${INSTALLATION_LABELS[state?.installation_type] || 'rénovation'} — ${state?.region || 'France entière'}`}
+          subtitle={`Pour un projet de ${INSTALLATION_LABELS[state?.installation_type] || 'rénovation'} — ${state?.region || resultCountry.name || 'Tout le pays'}`}
         />
 
         {/* Summary card */}
@@ -108,7 +113,7 @@ export default function IncentiveResults() {
               <div>
                 <p className="text-green-100 text-sm font-medium">Économies potentielles totales</p>
                 <p className="text-4xl font-black mt-1">
-                  {totalSavings > 0 ? `${totalSavings.toLocaleString('fr-FR')} €` : 'À calculer'}
+                  {totalSavings > 0 ? formatPrice(totalSavings) : 'À calculer'}
                 </p>
                 <p className="text-green-100 text-sm mt-1">
                   {results.length} programme{results.length > 1 ? 's' : ''} disponible{results.length > 1 ? 's' : ''}
@@ -120,7 +125,7 @@ export default function IncentiveResults() {
             </div>
             {state.estimated_budget && (
               <p className="text-green-100 text-xs mt-3">
-                Sur un budget estimé de {parseFloat(state.estimated_budget).toLocaleString('fr-FR')} €.
+                Sur un budget estimé de {formatPrice(parseFloat(state.estimated_budget))}.
                 Les aides sont souvent cumulables !
               </p>
             )}
@@ -167,7 +172,7 @@ export default function IncentiveResults() {
                     {r.estimated_savings != null && r.estimated_savings > 0 && (
                       <div className="text-right shrink-0">
                         <p className="text-2xl font-black text-green-600 dark:text-green-400">
-                          {r.estimated_savings.toLocaleString('fr-FR')} €
+                          {formatPrice(r.estimated_savings)}
                         </p>
                         <p className="text-xs text-gray-400">économie estimée</p>
                       </div>
@@ -193,7 +198,7 @@ export default function IncentiveResults() {
                     )}
                     {r.max_amount && (
                       <span className="text-gray-600 dark:text-gray-400">
-                        Plafond : {r.max_amount.toLocaleString('fr-FR')} €
+                        Plafond : {formatPrice(r.max_amount)}
                       </span>
                     )}
                   </div>

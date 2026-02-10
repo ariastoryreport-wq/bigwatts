@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authAPI, reviewsAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useCountry } from '../../context/CountryContext';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { PageHeader, LoadingSpinner, StarRating, Card } from '../../components/ui';
 import { Star } from 'lucide-react';
@@ -8,6 +9,7 @@ import toast from 'react-hot-toast';
 
 export default function Profile() {
   const { user, updateUser, isPrestataire, isProprietaire } = useAuth();
+  const { countries } = useCountry();
   const [form, setForm] = useState({});
   const [profileForm, setProfileForm] = useState({});
   const [loading, setLoading] = useState(false);
@@ -24,6 +26,7 @@ export default function Profile() {
         postal_code: user.postal_code || '',
         address: user.address || '',
         bio: user.bio || '',
+        country_code: user.country_code || 'FR',
       });
       if (isPrestataire && user.prestataire_profile) {
         setProfileForm({
@@ -128,6 +131,16 @@ export default function Profile() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Adresse</label>
             <input className={inputClass} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </div>
+          {countries.length > 1 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pays</label>
+              <select className={inputClass} value={form.country_code} onChange={(e) => setForm({ ...form, country_code: e.target.value })}>
+                {countries.map((c) => (
+                  <option key={c.code} value={c.code}>{c.flag_emoji} {c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
             <textarea rows={3} className={inputClass} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />

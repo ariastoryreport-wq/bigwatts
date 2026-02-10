@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCountry } from '../context/CountryContext';
 import { Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Register() {
   const { register, isAuthenticated } = useAuth();
+  const { countries, countryCode } = useCountry();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     username: '', email: '', password: '', password_confirm: '',
     first_name: '', last_name: '', role: 'proprietaire',
-    phone: '', city: '', postal_code: ''
+    phone: '', city: '', postal_code: '', country_code: countryCode,
   });
 
   if (isAuthenticated) {
@@ -135,6 +137,21 @@ export default function Register() {
                 />
               </div>
             </div>
+
+            {countries.length > 1 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Pays</label>
+                <select
+                  value={form.country_code}
+                  onChange={(e) => setForm({ ...form, country_code: e.target.value })}
+                  className={inputClass}
+                >
+                  {countries.map((c) => (
+                    <option key={c.code} value={c.code}>{c.flag_emoji} {c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Téléphone</label>

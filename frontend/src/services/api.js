@@ -185,3 +185,10 @@ export const incentivesAPI = {
   getIncentives: (params) => api.get('/incentives/', { params }),
   checkEligibility: (data) => api.post('/incentives/check/', data),
 };
+
+// ---- Countries API ----
+export const countriesAPI = {
+  getCountries: () => api.get('/countries/'),
+  getCountry: (code) => api.get(`/countries/${code}/`),
+  detect: () => api.get('/countries/detect/'),
+};

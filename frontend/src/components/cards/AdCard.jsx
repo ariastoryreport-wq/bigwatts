@@ -35,7 +35,7 @@ export default function AdCard({ ad }) {
           )}
 
           <div className="flex items-center justify-between mb-3">
-            <PriceDisplay price={ad.price} priceType={ad.price_type} />
+            <PriceDisplay price={ad.price} priceType={ad.price_type} currency={ad.currency || 'EUR'} currencySymbol={ad.currency_symbol || '€'} />
             {ad.provider_rating > 0 && (
               <div className="flex items-center text-sm text-gray-500">
                 <Star className="h-4 w-4 fill-brand-300 text-brand-300 mr-1" />

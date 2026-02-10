@@ -111,7 +111,7 @@ export default function AdDetail() {
             </div>
 
             <div className="mb-6">
-              <PriceDisplay price={ad.price} priceType={ad.price_type} />
+              <PriceDisplay price={ad.price} priceType={ad.price_type} currency={ad.currency || 'EUR'} currencySymbol={ad.currency_symbol || '€'} />
             </div>
 
             <div className="prose max-w-none text-gray-700 dark:text-gray-300">
