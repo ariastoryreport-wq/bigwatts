@@ -122,6 +122,10 @@ export const messagingAPI = {
   searchUsers: (q) => api.get('/messaging/users/search/', { params: { q } }),
   // CS
   csGetConversations: () => api.get('/messaging/cs/all/'),
+  csGetReports: (params) => api.get('/messaging/cs/reports/', { params }),
+  csReportAction: (id, data) => api.post(`/messaging/cs/reports/${id}/action/`, data),
+  csGetReportStats: () => api.get('/messaging/cs/reports/stats/'),
+  csGetModLog: () => api.get('/messaging/cs/modlog/'),
 };
 
 // ---- Reviews API ----

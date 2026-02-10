@@ -4,8 +4,8 @@ import { messagingAPI } from '../../services/api';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Card, LoadingSpinner, EmptyState } from '../../components/ui';
 import {
-  MessageSquare, Send, ArrowLeft, CheckCheck, Check, Plus,
-  Search, MoreVertical, Flag, Ban, X, Info
+  MessageSquare, Send, ArrowLeft, CheckCheck, Check,
+  MoreVertical, Flag, Ban, X, Info
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -30,142 +30,6 @@ function userDisplayName(u) {
 
 function userInitial(u) {
   return (u?.first_name?.[0] || u?.username?.[0] || '?').toUpperCase();
-}
-
-/* ──────────── New Conversation Modal ──────────── */
-function NewConversationModal({ onClose, onStarted }) {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [searching, setSearching] = useState(false);
-  const [message, setMessage] = useState('');
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [sending, setSending] = useState(false);
-  const debounceRef = useRef(null);
-
-  const search = useCallback((q) => {
-    if (q.length < 2) { setResults([]); return; }
-    setSearching(true);
-    messagingAPI.searchUsers(q)
-      .then(({ data }) => setResults(data))
-      .catch(() => {})
-      .finally(() => setSearching(false));
-  }, []);
-
-  useEffect(() => {
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(query), 300);
-    return () => clearTimeout(debounceRef.current);
-  }, [query, search]);
-
-  const handleSend = async () => {
-    if (!selectedUser || !message.trim()) return;
-    setSending(true);
-    try {
-      const { data } = await messagingAPI.sendMessage({
-        recipient_id: selectedUser.id,
-        content: message.trim(),
-      });
-      toast.success('Message envoyé !');
-      onStarted(data.conversation_id);
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Erreur');
-    } finally {
-      setSending(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl max-w-md w-full shadow-2xl">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-          <h3 className="font-semibold text-black dark:text-white">Nouvelle conversation</h3>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="p-4">
-          {!selectedUser ? (
-            <>
-              <div className="relative mb-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Rechercher un utilisateur..."
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm outline-none focus:ring-2 focus:ring-brand-300 text-black dark:text-white"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </div>
-              <div className="max-h-64 overflow-y-auto space-y-1">
-                {searching && <p className="text-xs text-gray-400 text-center py-2">Recherche...</p>}
-                {!searching && query.length >= 2 && results.length === 0 && (
-                  <p className="text-sm text-gray-500 text-center py-4">Aucun utilisateur trouvé</p>
-                )}
-                {results.map((u) => (
-                  <button
-                    key={u.id}
-                    onClick={() => setSelectedUser(u)}
-                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition text-left"
-                  >
-                    <div className="relative">
-                      <div className="w-10 h-10 rounded-full bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center">
-                        <span className="text-sm font-bold text-brand-600 dark:text-brand-300">{userInitial(u)}</span>
-                      </div>
-                      {u.is_online && (
-                        <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-gray-900 rounded-full" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-black dark:text-white truncate">{userDisplayName(u)}</p>
-                      <p className="text-xs text-gray-500 truncate">{u.role === 'prestataire' ? 'Prestataire' : 'Propriétaire'}{u.city ? ` · ${u.city}` : ''}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center">
-                    <span className="text-sm font-bold text-brand-600 dark:text-brand-300">{userInitial(selectedUser)}</span>
-                  </div>
-                  {selectedUser.is_online && (
-                    <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-gray-800 rounded-full" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-black dark:text-white">{userDisplayName(selectedUser)}</p>
-                  <p className="text-xs text-gray-500">{selectedUser.role === 'prestataire' ? 'Prestataire' : 'Propriétaire'}</p>
-                </div>
-                <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <textarea
-                autoFocus
-                rows={3}
-                placeholder="Votre message..."
-                className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm outline-none focus:ring-2 focus:ring-brand-300 resize-none text-black dark:text-white"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-              <button
-                onClick={handleSend}
-                disabled={sending || !message.trim()}
-                className="mt-3 w-full py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50 transition flex items-center justify-center gap-2"
-              >
-                <Send className="h-4 w-4" />
-                {sending ? 'Envoi...' : 'Envoyer'}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 /* ──────────── Report Modal ──────────── */
@@ -244,14 +108,12 @@ export default function Messages() {
   const [loadingConv, setLoadingConv] = useState(false);
   const [newMsg, setNewMsg] = useState('');
   const [sending, setSending] = useState(false);
-  const [showNewConv, setShowNewConv] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [otherOnline, setOtherOnline] = useState(false);
   const [firstMsgBanner, setFirstMsgBanner] = useState(false);
   const [mobileShowChat, setMobileShowChat] = useState(false);
 
-  const bottomRef = useRef(null);
   const lastMsgIdRef = useRef(0);
   const isActiveRef = useRef(true);
   const inputRef = useRef(null);
@@ -360,8 +222,9 @@ export default function Messages() {
     isAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
   }, []);
 
-  const scrollToBottom = useCallback((behavior = 'smooth') => {
-    bottomRef.current?.scrollIntoView({ behavior });
+  const scrollToBottom = useCallback(() => {
+    const el = messagesContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, []);
 
   // Only scroll on initial load of a conversation (loadingConv transition)
@@ -369,7 +232,7 @@ export default function Messages() {
   useEffect(() => {
     if (prevLoadingConv.current && !loadingConv && messages.length > 0) {
       // Just finished loading conversation — scroll to bottom
-      scrollToBottom('auto');
+      requestAnimationFrame(scrollToBottom);
     }
     prevLoadingConv.current = loadingConv;
   }, [loadingConv, messages.length, scrollToBottom]);
@@ -405,7 +268,7 @@ export default function Messages() {
             const lastNew = data.messages[data.messages.length - 1];
             lastMsgIdRef.current = Math.max(lastMsgIdRef.current, lastNew.id);
             if (data.messages.some(m => m.sender !== user.id) && isAtBottomRef.current) {
-              setTimeout(() => scrollToBottom('smooth'), 50);
+              requestAnimationFrame(scrollToBottom);
             }
           }
         })
@@ -436,7 +299,7 @@ export default function Messages() {
     setNewMsg('');
     setSending(true);
     isAtBottomRef.current = true;
-    requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: 'auto' }));
+    requestAnimationFrame(scrollToBottom);
 
     try {
       const { data } = await messagingAPI.sendInConversation(activeConvId, { content });
@@ -490,17 +353,8 @@ export default function Messages() {
         {/* ═══════ SIDEBAR ═══════ */}
         <div className={`w-full md:w-80 lg:w-96 border-r border-gray-200 dark:border-gray-800 flex flex-col shrink-0 ${mobileShowChat ? 'hidden md:flex' : 'flex'}`}>
           {/* Sidebar header */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <h2 className="text-lg font-semibold text-black dark:text-white">Messages</h2>
-            {user?.role === 'proprietaire' && (
-              <button
-                onClick={() => setShowNewConv(true)}
-                className="p-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition"
-                title="Nouvelle conversation"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            )}
           </div>
 
           {/* Conversation list */}
@@ -510,15 +364,7 @@ export default function Messages() {
             ) : conversations.length === 0 ? (
               <div className="text-center py-12 px-4">
                 <MessageSquare className="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600 mb-3" />
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Aucune conversation</p>
-                {user?.role === 'proprietaire' && (
-                  <button
-                    onClick={() => setShowNewConv(true)}
-                    className="text-sm text-brand-600 dark:text-brand-400 hover:underline font-medium"
-                  >
-                    Démarrer une conversation
-                  </button>
-                )}
+                <p className="text-sm text-gray-500 dark:text-gray-400">Aucune conversation</p>
               </div>
             ) : (
               conversations.map((conv) => {
@@ -577,16 +423,7 @@ export default function Messages() {
               <div className="text-center">
                 <MessageSquare className="mx-auto h-14 w-14 text-gray-200 dark:text-gray-700 mb-4" />
                 <p className="text-gray-500 dark:text-gray-400 mb-1 font-medium">Sélectionnez une conversation</p>
-                <p className="text-sm text-gray-400 dark:text-gray-500">ou démarrez-en une nouvelle</p>
-                {user?.role === 'proprietaire' && (
-                  <button
-                    onClick={() => setShowNewConv(true)}
-                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-200 transition"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Nouvelle conversation
-                  </button>
-                )}
+                <p className="text-sm text-gray-400 dark:text-gray-500">Choisissez une conversation dans la liste</p>
               </div>
             </div>
           ) : loadingConv ? (
@@ -730,7 +567,6 @@ export default function Messages() {
                     </div>
                   );
                 })}
-                <div ref={bottomRef} />
               </div>
 
               {/* Input */}
@@ -758,16 +594,6 @@ export default function Messages() {
       </div>
 
       {/* Modals */}
-      {showNewConv && (
-        <NewConversationModal
-          onClose={() => setShowNewConv(false)}
-          onStarted={(convId) => {
-            setShowNewConv(false);
-            openConversation(convId);
-            fetchConversations();
-          }}
-        />
-      )}
       {showReport && other && (
         <ReportModal
           user={other}

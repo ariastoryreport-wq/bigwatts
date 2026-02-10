@@ -39,6 +39,7 @@ import Availability from './pages/dashboard/Availability';
 import CSUsers from './pages/dashboard/cs/CSUsers';
 import CSTickets from './pages/dashboard/cs/CSTickets';
 import CSAds from './pages/dashboard/cs/CSAds';
+import CSReports from './pages/dashboard/cs/CSReports';
 
 function ProtectedRoute({ children, roles }) {
   const { isAuthenticated, user, loading } = useAuth();
@@ -109,6 +110,7 @@ export default function App() {
           <Route path="/dashboard/cs/users" element={<ProtectedRoute roles={['customer_service']}><CSUsers /></ProtectedRoute>} />
           <Route path="/dashboard/cs/tickets" element={<ProtectedRoute roles={['customer_service']}><CSTickets /></ProtectedRoute>} />
           <Route path="/dashboard/cs/ads" element={<ProtectedRoute roles={['customer_service']}><CSAds /></ProtectedRoute>} />
+          <Route path="/dashboard/cs/reports" element={<ProtectedRoute roles={['customer_service']}><CSReports /></ProtectedRoute>} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />

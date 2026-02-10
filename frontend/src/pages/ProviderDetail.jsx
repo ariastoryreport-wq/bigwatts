@@ -1,9 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { authAPI, adsAPI, reviewsAPI } from '../services/api';
+import { authAPI, adsAPI, reviewsAPI, messagingAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { LoadingSpinner, StarRating, Badge, Card } from '../components/ui';
 import AdCard from '../components/cards/AdCard';
-import { MapPin, Star, Briefcase, Award, Globe, Phone, ArrowLeft, CheckCircle, ShieldCheck, Trophy, Zap } from 'lucide-react';
+import { MapPin, Star, Briefcase, Award, Globe, Phone, ArrowLeft, CheckCircle, ShieldCheck, Trophy, Zap, Flag, X } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+const REPORT_REASONS = [
+  { value: 'spam', label: 'Spam' },
+  { value: 'harassment', label: 'Harcèlement' },
+  { value: 'fraud', label: 'Fraude' },
+  { value: 'inappropriate', label: 'Contenu inapproprié' },
+  { value: 'scam', label: 'Arnaque' },
+  { value: 'other', label: 'Autre' },
+];
 
 const BADGE_ICONS = {
   'shield-check': ShieldCheck,
@@ -24,11 +35,16 @@ const BADGE_COLORS = {
 export default function ProviderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [provider, setProvider] = useState(null);
   const [ads, setAds] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [sendingReport, setSendingReport] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -151,6 +167,18 @@ export default function ProviderDetail() {
         </div>
       </Card>
 
+      {/* Report button */}
+      {isAuthenticated && user?.id !== Number(id) && (
+        <div className="flex justify-end -mt-4 mb-4">
+          <button
+            onClick={() => setShowReportModal(true)}
+            className="text-sm text-gray-400 hover:text-red-500 dark:hover:text-red-400 flex items-center gap-1.5 transition"
+          >
+            <Flag className="h-3.5 w-3.5" /> Signaler ce profil
+          </button>
+        </div>
+      )}
+
       {/* Ads */}
       {ads.length > 0 && (
         <div className="mb-8">
@@ -189,6 +217,82 @@ export default function ProviderDetail() {
           </div>
         )}
       </Card>
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowReportModal(false)}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-black dark:text-white flex items-center gap-2">
+                <Flag className="h-5 w-5 text-red-500" /> Signaler ce profil
+              </h3>
+              <button onClick={() => setShowReportModal(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Profil : <span className="font-medium text-gray-700 dark:text-gray-300">{profile.company_name || `${provider.first_name} ${provider.last_name}`}</span>
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Motif *</label>
+                <select
+                  className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-300 bg-white dark:bg-gray-900 text-black dark:text-white"
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                >
+                  <option value="">Sélectionner un motif</option>
+                  {REPORT_REASONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Détails (optionnel)</label>
+                <textarea
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-300 bg-white dark:bg-gray-800 text-black dark:text-white resize-none"
+                  rows={3}
+                  placeholder="Décrivez le problème..."
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(false)}
+                  className="flex-1 border border-gray-200 dark:border-gray-800 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white"
+                >
+                  Annuler
+                </button>
+                <button
+                  disabled={!reportReason || sendingReport}
+                  onClick={async () => {
+                    try {
+                      setSendingReport(true);
+                      await messagingAPI.reportUser({
+                        reported_user_id: Number(id),
+                        reason: reportReason,
+                        details: reportDetails,
+                        content_type: 'profile',
+                      });
+                      setShowReportModal(false);
+                      setReportReason('');
+                      setReportDetails('');
+                      toast.success('Signalement envoyé. Merci.');
+                    } catch (err) {
+                      toast.error(err.response?.data?.error || 'Erreur lors du signalement');
+                    } finally {
+                      setSendingReport(false);
+                    }
+                  }}
+                  className="flex-1 bg-red-600 text-white py-2.5 rounded-lg hover:bg-red-700 font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <Flag className="h-4 w-4" /> {sendingReport ? 'Envoi...' : 'Signaler'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

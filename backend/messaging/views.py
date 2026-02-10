@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q, Count
 from django.utils import timezone
 
-from .models import Conversation, Message, BlockedUser, Report
+from .models import Conversation, Message, BlockedUser, Report, ModerationLog
 from .serializers import (
     ConversationListSerializer, ConversationDetailSerializer,
     MessageSerializer, SendMessageSerializer
@@ -310,13 +310,15 @@ class BlockedListView(APIView):
 
 
 class ReportUserView(APIView):
-    """POST /api/messaging/report/ — report a user."""
+    """POST /api/messaging/report/ — report a user, message, or ad."""
 
     def post(self, request):
         user_id = request.data.get('user_id')
         reason = request.data.get('reason', 'other')
         details = request.data.get('details', '')
         conversation_id = request.data.get('conversation_id')
+        content_type = request.data.get('content_type', 'message')
+        content_id = request.data.get('content_id')
 
         if not user_id:
             return Response({'error': 'user_id requis.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -326,14 +328,277 @@ class ReportUserView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Utilisateur introuvable.'}, status=status.HTTP_404_NOT_FOUND)
 
-        Report.objects.create(
+        if target == request.user:
+            return Response({'error': 'Vous ne pouvez pas vous signaler.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Rate limiting: prevent duplicate reports from same reporter on same target within 24h
+        from datetime import timedelta
+        recent = Report.objects.filter(
             reporter=request.user,
             reported_user=target,
+            created_at__gte=timezone.now() - timedelta(hours=24),
+        )
+        if content_type and content_id:
+            recent = recent.filter(content_type=content_type, content_id=content_id)
+        if recent.exists():
+            return Response({'error': 'Vous avez déjà signalé cet élément récemment.'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        # Calculate priority score based on unique reporters
+        existing_reports_count = Report.objects.filter(
+            reported_user=target,
+            status__in=['pending', 'reviewing'],
+        ).values('reporter').distinct().count()
+        priority = min(existing_reports_count + 1, 10)
+
+        report = Report.objects.create(
+            reporter=request.user,
+            reported_user=target,
+            content_type=content_type,
+            content_id=content_id,
             conversation_id=conversation_id,
             reason=reason,
             details=details,
+            priority_score=priority,
         )
-        return Response({'status': 'reported'}, status=status.HTTP_201_CREATED)
+
+        # Auto-hide content if priority >= 3 (3+ unique reporters)
+        if priority >= 3:
+            Report.objects.filter(
+                reported_user=target,
+                status='pending',
+            ).update(is_content_hidden=True)
+
+        # Create notification to CS staff
+        from notifications.models import Notification
+        cs_users = User.objects.filter(role='customer_service')
+        for cs in cs_users:
+            Notification.objects.create(
+                recipient=cs,
+                notification_type='system',
+                title='Nouveau signalement',
+                message=f'{request.user.get_full_name() or request.user.username} a signalé {target.get_full_name() or target.username} ({report.get_reason_display()}).',
+                link='/dashboard/cs/reports',
+            )
+
+        return Response({
+            'status': 'reported',
+            'message': 'Votre signalement a été enregistré. Notre équipe l\'examinera dans les plus brefs délais.',
+        }, status=status.HTTP_201_CREATED)
+
+
+# ──────────── CS Moderation ────────────
+
+class CSReportListView(APIView):
+    """GET /api/messaging/cs/reports/ — list all reports for CS moderation."""
+    permission_classes = [IsCustomerService]
+
+    def get(self, request):
+        reports = Report.objects.select_related(
+            'reporter', 'reported_user', 'conversation', 'resolved_by'
+        ).all()
+
+        # Filters
+        report_status = request.query_params.get('status')
+        reason = request.query_params.get('reason')
+        content_type = request.query_params.get('content_type')
+
+        if report_status:
+            reports = reports.filter(status=report_status)
+        if reason:
+            reports = reports.filter(reason=reason)
+        if content_type:
+            reports = reports.filter(content_type=content_type)
+
+        data = []
+        for r in reports[:100]:
+            context_data = None
+            # Fetch context based on content type
+            if r.content_type == 'message' and r.conversation_id:
+                msgs = Message.objects.filter(
+                    conversation_id=r.conversation_id,
+                ).select_related('sender').order_by('-created_at')[:10]
+                context_data = [{
+                    'id': m.id,
+                    'sender': m.sender.username,
+                    'sender_name': m.sender.get_full_name(),
+                    'content': m.content,
+                    'created_at': m.created_at.isoformat(),
+                } for m in reversed(msgs)]
+            elif r.content_type == 'ad' and r.content_id:
+                from ads.models import Ad
+                try:
+                    ad = Ad.objects.get(pk=r.content_id)
+                    context_data = {'id': ad.id, 'title': ad.title, 'description': ad.description[:200]}
+                except Ad.DoesNotExist:
+                    context_data = None
+
+            data.append({
+                'id': r.id,
+                'reporter': {
+                    'id': r.reporter.id,
+                    'username': r.reporter.username,
+                    'name': r.reporter.get_full_name(),
+                    'role': r.reporter.role,
+                },
+                'reported_user': {
+                    'id': r.reported_user.id,
+                    'username': r.reported_user.username,
+                    'name': r.reported_user.get_full_name(),
+                    'role': r.reported_user.role,
+                    'reports_count': Report.objects.filter(reported_user=r.reported_user).count(),
+                },
+                'content_type': r.content_type,
+                'content_id': r.content_id,
+                'reason': r.reason,
+                'reason_display': r.get_reason_display(),
+                'details': r.details,
+                'status': r.status,
+                'status_display': r.get_status_display(),
+                'priority_score': r.priority_score,
+                'is_content_hidden': r.is_content_hidden,
+                'admin_notes': r.admin_notes,
+                'resolved_by': r.resolved_by.username if r.resolved_by else None,
+                'resolved_at': r.resolved_at.isoformat() if r.resolved_at else None,
+                'created_at': r.created_at.isoformat(),
+                'context': context_data,
+            })
+
+        return Response(data)
+
+
+class CSReportActionView(APIView):
+    """POST /api/messaging/cs/reports/<id>/action/ — take moderation action."""
+    permission_classes = [IsCustomerService]
+
+    def post(self, request, pk):
+        try:
+            report = Report.objects.select_related('reported_user').get(pk=pk)
+        except Report.DoesNotExist:
+            return Response({'error': 'Signalement introuvable.'}, status=status.HTTP_404_NOT_FOUND)
+
+        action = request.data.get('action')
+        notes = request.data.get('notes', '')
+
+        valid_actions = ['dismiss', 'delete_content', 'hide_content', 'warn_user', 'suspend_user', 'ban_user']
+        if action not in valid_actions:
+            return Response({'error': f'Action invalide. Choix: {", ".join(valid_actions)}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        target = report.reported_user
+
+        # Execute action
+        if action == 'dismiss':
+            report.status = 'dismissed'
+        elif action == 'delete_content':
+            if report.content_type == 'message' and report.content_id:
+                Message.objects.filter(pk=report.content_id).delete()
+            elif report.content_type == 'ad' and report.content_id:
+                from ads.models import Ad
+                Ad.objects.filter(pk=report.content_id).update(status='archived')
+            report.status = 'resolved'
+        elif action == 'hide_content':
+            report.is_content_hidden = True
+            report.status = 'resolved'
+        elif action == 'warn_user':
+            from notifications.models import Notification
+            Notification.objects.create(
+                recipient=target,
+                notification_type='system',
+                title='Avertissement de modération',
+                message='Votre contenu a été signalé pour comportement inapproprié. Veuillez respecter les règles de la plateforme.',
+                link='/dashboard',
+            )
+            report.status = 'resolved'
+        elif action == 'suspend_user':
+            target.is_active = False
+            target.save(update_fields=['is_active'])
+            report.status = 'resolved'
+        elif action == 'ban_user':
+            target.is_active = False
+            target.save(update_fields=['is_active'])
+            report.status = 'resolved'
+
+        report.resolved_by = request.user
+        report.resolved_at = timezone.now()
+        report.admin_notes = notes
+        report.save()
+
+        # Log moderation action
+        ModerationLog.objects.create(
+            admin=request.user,
+            report=report,
+            action_type=action,
+            target_user=target,
+            target_content_id=report.content_id,
+            notes=notes,
+        )
+
+        # Resolve all pending reports for same target+content
+        if action != 'dismiss':
+            Report.objects.filter(
+                reported_user=target,
+                content_type=report.content_type,
+                content_id=report.content_id,
+                status='pending',
+            ).exclude(pk=report.pk).update(
+                status='resolved',
+                resolved_by=request.user,
+                resolved_at=timezone.now(),
+                admin_notes=f'Résolu automatiquement via le signalement #{report.pk}',
+            )
+
+        return Response({
+            'status': 'ok',
+            'action': action,
+            'report_status': report.status,
+        })
+
+
+class CSReportStatsView(APIView):
+    """GET /api/messaging/cs/reports/stats/ — report statistics for dashboard."""
+    permission_classes = [IsCustomerService]
+
+    def get(self, request):
+        total = Report.objects.count()
+        pending = Report.objects.filter(status='pending').count()
+        reviewing = Report.objects.filter(status='reviewing').count()
+        high_priority = Report.objects.filter(priority_score__gte=3, status='pending').count()
+        hidden = Report.objects.filter(is_content_hidden=True).count()
+        resolved = Report.objects.filter(status='resolved').count()
+        dismissed = Report.objects.filter(status='dismissed').count()
+
+        return Response({
+            'total': total,
+            'pending': pending,
+            'reviewing': reviewing,
+            'high_priority': high_priority,
+            'hidden_content': hidden,
+            'resolved': resolved,
+            'dismissed': dismissed,
+        })
+
+
+class CSModerationLogView(APIView):
+    """GET /api/messaging/cs/modlog/ — audit log of moderation actions."""
+    permission_classes = [IsCustomerService]
+
+    def get(self, request):
+        logs = ModerationLog.objects.select_related(
+            'admin', 'target_user', 'report'
+        ).all()[:100]
+
+        data = [{
+            'id': log.id,
+            'admin': log.admin.username,
+            'action_type': log.action_type,
+            'action_display': log.get_action_type_display(),
+            'target_user': log.target_user.username,
+            'target_user_name': log.target_user.get_full_name(),
+            'report_id': log.report_id,
+            'notes': log.notes,
+            'created_at': log.created_at.isoformat(),
+        } for log in logs]
+
+        return Response(data)
 
 
 # ──────────── User Search (for starting new conversations) ────────────

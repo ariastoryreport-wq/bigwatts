@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Conversation, Message, BlockedUser, Report
+from .models import Conversation, Message, BlockedUser, Report, ModerationLog
 
 
 class MessageInline(admin.TabularInline):
@@ -31,5 +31,13 @@ class BlockedUserAdmin(admin.ModelAdmin):
 
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
-    list_display = ('reporter', 'reported_user', 'reason', 'is_resolved', 'created_at')
-    list_filter = ('reason', 'is_resolved')
+    list_display = ('reporter', 'reported_user', 'reason', 'content_type', 'status', 'priority_score', 'created_at')
+    list_filter = ('reason', 'status', 'content_type', 'priority_score')
+    search_fields = ('reporter__username', 'reported_user__username', 'details')
+
+
+@admin.register(ModerationLog)
+class ModerationLogAdmin(admin.ModelAdmin):
+    list_display = ('admin', 'action_type', 'target_user', 'report', 'created_at')
+    list_filter = ('action_type', 'created_at')
+    readonly_fields = ('admin', 'report', 'action_type', 'target_user', 'target_content_id', 'notes', 'created_at')

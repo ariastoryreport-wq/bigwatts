@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard, FileText, MessageSquare, Star, Heart,
   ClipboardList, Users, LifeBuoy, Bell, User, Megaphone,
-  BarChart3, Calendar, Briefcase, CalendarDays, CreditCard
+  BarChart3, Calendar, Briefcase, CalendarDays, CreditCard, Flag
 } from 'lucide-react';
 
 export default function DashboardLayout({ children }) {
@@ -28,6 +28,7 @@ export default function DashboardLayout({ children }) {
     { to: '/dashboard/cs/users', icon: Users, label: 'Utilisateurs', roles: ['customer_service'] },
     { to: '/dashboard/cs/tickets', icon: LifeBuoy, label: 'Tickets', roles: ['customer_service'] },
     { to: '/dashboard/cs/ads', icon: Megaphone, label: 'Annonces', roles: ['customer_service'] },
+    { to: '/dashboard/cs/reports', icon: Flag, label: 'Signalements', roles: ['customer_service'] },
     // Tickets (all)
     { to: '/dashboard/tickets', icon: LifeBuoy, label: 'Support', roles: ['prestataire', 'proprietaire'] },
   ];

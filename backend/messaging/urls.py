@@ -25,4 +25,8 @@ urlpatterns = [
 
     # CS
     path('cs/all/', views.CSConversationListView.as_view(), name='cs-conversations'),
+    path('cs/reports/', views.CSReportListView.as_view(), name='cs-reports'),
+    path('cs/reports/stats/', views.CSReportStatsView.as_view(), name='cs-reports-stats'),
+    path('cs/reports/<int:pk>/action/', views.CSReportActionView.as_view(), name='cs-report-action'),
+    path('cs/modlog/', views.CSModerationLogView.as_view(), name='cs-modlog'),
 ]
