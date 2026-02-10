@@ -202,7 +202,7 @@ export default function AdDetail() {
                   <Send className="h-4 w-4" /> Demander un devis
                 </button>
               )}
-              {isAuthenticated && (
+              {isProprietaire && (
                 <button
                   onClick={() => setShowContactForm(true)}
                   className="w-full border border-brand-300 text-brand-600 dark:text-brand-300 py-3 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/30 transition font-medium flex items-center justify-center gap-2"
@@ -275,7 +275,7 @@ export default function AdDetail() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowContactForm(false)}>
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-black dark:text-white">Contacter {provider?.company_name || provider?.first_name}</h3>
+              <h3 className="text-lg font-semibold text-black dark:text-white">Contacter {profile?.company_name || provider?.first_name}</h3>
               <button onClick={() => setShowContactForm(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
                 <X className="h-5 w-5 text-gray-500" />
               </button>
@@ -308,8 +308,8 @@ export default function AdDetail() {
                     setContactMsg('');
                     toast.success('Message envoyé !');
                     navigate(`/dashboard/messages?conv=${data.conversation_id}`);
-                  } catch {
-                    toast.error("Erreur lors de l'envoi du message");
+                  } catch (err) {
+                    toast.error(err.response?.data?.error || "Erreur lors de l'envoi du message");
                   } finally {
                     setSendingContact(false);
                   }

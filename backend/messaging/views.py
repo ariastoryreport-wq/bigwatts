@@ -163,6 +163,14 @@ class SendMessageView(APIView):
         if recipient == request.user:
             return Response({'error': 'Vous ne pouvez pas vous envoyer un message.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Role-based restrictions
+        sender_role = request.user.role
+        recipient_role = recipient.role
+        if sender_role == 'proprietaire' and recipient_role != 'prestataire':
+            return Response({'error': 'Vous ne pouvez contacter que des prestataires.'}, status=status.HTTP_403_FORBIDDEN)
+        if sender_role == 'prestataire' and recipient_role != 'proprietaire':
+            return Response({'error': 'Vous ne pouvez répondre qu\'aux propriétaires.'}, status=status.HTTP_403_FORBIDDEN)
+
         # Check if blocked
         if BlockedUser.objects.filter(blocker=recipient, blocked=request.user).exists():
             return Response({'error': 'Vous ne pouvez pas contacter cet utilisateur.'}, status=status.HTTP_403_FORBIDDEN)
@@ -354,7 +362,15 @@ class UserSearchView(APIView):
             Q(prestataire_profile__company_name__icontains=query)
         ).exclude(id__in=exclude_ids).exclude(
             role='customer_service'
-        )[:15]
+        )
+
+        # Role-based filtering: proprietaire sees only prestataires, prestataire sees only proprietaires
+        if request.user.role == 'proprietaire':
+            users = users.filter(role='prestataire')
+        elif request.user.role == 'prestataire':
+            users = users.filter(role='proprietaire')
+
+        users = users[:15]
 
         from accounts.serializers import UserPublicSerializer
         return Response(UserPublicSerializer(users, many=True).data)

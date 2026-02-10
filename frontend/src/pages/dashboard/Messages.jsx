@@ -374,21 +374,6 @@ export default function Messages() {
     prevLoadingConv.current = loadingConv;
   }, [loadingConv, messages.length, scrollToBottom]);
 
-  /* ── notification sound ── */
-  const playSound = useCallback(() => {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(1047, ctx.currentTime + 0.08);
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
-    } catch { /* silent */ }
-  }, []);
-
   /* ── polling for active conversation ── */
   useEffect(() => {
     if (!activeConvId) return;
@@ -419,9 +404,8 @@ export default function Messages() {
             });
             const lastNew = data.messages[data.messages.length - 1];
             lastMsgIdRef.current = Math.max(lastMsgIdRef.current, lastNew.id);
-            if (data.messages.some(m => m.sender !== user.id)) {
-              playSound();
-              if (isAtBottomRef.current) setTimeout(() => scrollToBottom('smooth'), 50);
+            if (data.messages.some(m => m.sender !== user.id) && isAtBottomRef.current) {
+              setTimeout(() => scrollToBottom('smooth'), 50);
             }
           }
         })
@@ -429,7 +413,7 @@ export default function Messages() {
     };
     const interval = setInterval(poll, POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [activeConvId, user?.id, playSound]);
+  }, [activeConvId, user?.id, scrollToBottom]);
 
   /* ── send message ── */
   const sendMessage = async (e) => {
@@ -451,7 +435,8 @@ export default function Messages() {
     setMessages(prev => [...prev, optimisticMsg]);
     setNewMsg('');
     setSending(true);
-    setTimeout(() => scrollToBottom('smooth'), 50);
+    isAtBottomRef.current = true;
+    requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: 'auto' }));
 
     try {
       const { data } = await messagingAPI.sendInConversation(activeConvId, { content });
@@ -507,13 +492,15 @@ export default function Messages() {
           {/* Sidebar header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-black dark:text-white">Messages</h2>
-            <button
-              onClick={() => setShowNewConv(true)}
-              className="p-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition"
-              title="Nouvelle conversation"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
+            {user?.role === 'proprietaire' && (
+              <button
+                onClick={() => setShowNewConv(true)}
+                className="p-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition"
+                title="Nouvelle conversation"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           {/* Conversation list */}
@@ -524,12 +511,14 @@ export default function Messages() {
               <div className="text-center py-12 px-4">
                 <MessageSquare className="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600 mb-3" />
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Aucune conversation</p>
-                <button
-                  onClick={() => setShowNewConv(true)}
-                  className="text-sm text-brand-600 dark:text-brand-400 hover:underline font-medium"
-                >
-                  Démarrer une conversation
-                </button>
+                {user?.role === 'proprietaire' && (
+                  <button
+                    onClick={() => setShowNewConv(true)}
+                    className="text-sm text-brand-600 dark:text-brand-400 hover:underline font-medium"
+                  >
+                    Démarrer une conversation
+                  </button>
+                )}
               </div>
             ) : (
               conversations.map((conv) => {
@@ -589,13 +578,15 @@ export default function Messages() {
                 <MessageSquare className="mx-auto h-14 w-14 text-gray-200 dark:text-gray-700 mb-4" />
                 <p className="text-gray-500 dark:text-gray-400 mb-1 font-medium">Sélectionnez une conversation</p>
                 <p className="text-sm text-gray-400 dark:text-gray-500">ou démarrez-en une nouvelle</p>
-                <button
-                  onClick={() => setShowNewConv(true)}
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-200 transition"
-                >
-                  <Plus className="h-4 w-4" />
-                  Nouvelle conversation
-                </button>
+                {user?.role === 'proprietaire' && (
+                  <button
+                    onClick={() => setShowNewConv(true)}
+                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-200 transition"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Nouvelle conversation
+                  </button>
+                )}
               </div>
             </div>
           ) : loadingConv ? (
