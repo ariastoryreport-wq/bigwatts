@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Trash2, AlertTriangle, GripVertical } from '
 import toast from 'react-hot-toast';
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7);
-const SLOT_HEIGHT = 48;
+const SLOT_HEIGHT = 64;
 const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
@@ -59,8 +59,8 @@ export default function Availability() {
   const weekLabel = (() => {
     const f = weekDays[0], l = weekDays[6];
     return f.getMonth() === l.getMonth()
-      ? `${f.getDate()} \u2013 ${l.getDate()} ${MONTHS_FR[f.getMonth()]} ${f.getFullYear()}`
-      : `${f.getDate()} ${MONTHS_FR[f.getMonth()]} \u2013 ${l.getDate()} ${MONTHS_FR[l.getMonth()]} ${l.getFullYear()}`;
+      ? `${f.getDate()} – ${l.getDate()} ${MONTHS_FR[f.getMonth()]} ${f.getFullYear()}`
+      : `${f.getDate()} ${MONTHS_FR[f.getMonth()]} – ${l.getDate()} ${MONTHS_FR[l.getMonth()]} ${l.getFullYear()}`;
   })();
 
   const daySlots = (day) => slots.filter(s => isSameDay(new Date(s.start), day));
@@ -129,18 +129,24 @@ export default function Availability() {
       setCollisionWarning(false);
       const startMin = sH * 60 + sM, endMin = eH * 60 + eM;
       if (checkCollision(dayIdx, startMin, endMin, slot.id)) {
-        toast.error('Collision : ce cr\u00e9neau chevauche un autre.');
+        toast.error('Collision : ce créneau chevauche un autre.');
         return;
       }
       const day = weekDays[dayIdx];
       const ds = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+      const newStart = `${ds}T${fmt(sH,sM)}:00`;
+      const newEnd = `${ds}T${fmt(eH,eM)}:00`;
+
+      // Optimistic update
+      setSlots(prev => prev.map(s => s.id === slot.id ? { ...s, start: newStart, end: newEnd } : s));
+
       try {
         await bookingsAPI.deleteSlot(slot.id);
-        await bookingsAPI.createSlot({ start: `${ds}T${fmt(sH,sM)}:00`, end: `${ds}T${fmt(eH,eM)}:00` });
-        toast.success('Cr\u00e9neau d\u00e9plac\u00e9 !');
-        fetchSlots();
+        const { data: newSlot } = await bookingsAPI.createSlot({ start: newStart, end: newEnd });
+        setSlots(prev => prev.map(s => s.id === slot.id ? newSlot : s));
+        toast.success('Créneau déplacé !');
       } catch (err) {
-        toast.error(err.response?.data?.detail || 'Erreur lors du d\u00e9placement.');
+        toast.error(err.response?.data?.detail || 'Erreur lors du déplacement.');
         fetchSlots();
       }
       return;
@@ -154,18 +160,27 @@ export default function Availability() {
     if (e2 - s < 15) return;
     sH = Math.floor(s / 60); sM = s % 60; eH = Math.floor(e2 / 60); eM = e2 % 60;
     if (checkCollision(dayIdx, s, e2)) {
-      toast.error('Collision : ce cr\u00e9neau chevauche un cr\u00e9neau existant.');
+      toast.error('Collision : ce créneau chevauche un créneau existant.');
       return;
     }
     const day = weekDays[dayIdx];
     const ds = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
     const start = `${ds}T${fmt(sH,sM)}:00`, end = `${ds}T${fmt(eH,eM)}:00`;
-    if (new Date(start) < new Date()) { toast.error('Impossible de cr\u00e9er un cr\u00e9neau dans le pass\u00e9.'); return; }
-    try { await bookingsAPI.createSlot({ start, end }); toast.success('Cr\u00e9neau ajout\u00e9 !'); fetchSlots(); }
-    catch (err) {
+    if (new Date(start) < new Date()) { toast.error('Impossible de créer un créneau dans le passé.'); return; }
+
+    // Optimistic: add temp slot immediately
+    const tempId = `temp-${Date.now()}`;
+    setSlots(prev => [...prev, { id: tempId, start, end, is_booked: false }]);
+
+    try {
+      const { data: newSlot } = await bookingsAPI.createSlot({ start, end });
+      setSlots(prev => prev.map(s => s.id === tempId ? newSlot : s));
+      toast.success('Créneau ajouté !');
+    } catch (err) {
+      setSlots(prev => prev.filter(s => s.id !== tempId));
       const msg = err.response?.data?.detail || err.response?.data?.error
         || err.response?.data?.start?.[0] || err.response?.data?.end?.[0]
-        || err.response?.data?.non_field_errors?.[0] || 'Erreur lors de la cr\u00e9ation.';
+        || err.response?.data?.non_field_errors?.[0] || 'Erreur lors de la création.';
       toast.error(msg);
     }
   }, [dragging, movingSlot, weekDays, fetchSlots, checkCollision]);
@@ -179,9 +194,16 @@ export default function Availability() {
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();
-    if (!confirm('Supprimer ce cr\u00e9neau ?')) return;
-    try { await bookingsAPI.deleteSlot(id); toast.success('Cr\u00e9neau supprim\u00e9'); fetchSlots(); }
-    catch (err) { toast.error(err.response?.data?.detail || 'Erreur.'); }
+    if (!confirm('Supprimer ce créneau ?')) return;
+    // Optimistic remove
+    setSlots(prev => prev.filter(s => s.id !== id));
+    try {
+      await bookingsAPI.deleteSlot(id);
+      toast.success('Créneau supprimé');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erreur.');
+      fetchSlots();
+    }
   };
 
   const handleStartMove = (e, slot, dayIdx) => {
@@ -206,31 +228,31 @@ export default function Availability() {
     const sMin = st.getHours() * 60 + st.getMinutes() - 420;
     const eMin = en.getHours() * 60 + en.getMinutes() - 420;
     const top = (sMin / 60) * SLOT_HEIGHT;
-    const height = Math.max(((eMin - sMin) / 60) * SLOT_HEIGHT, 12);
-    const label = `${fmt(st.getHours(), st.getMinutes())} \u2013 ${fmt(en.getHours(), en.getMinutes())}`;
+    const height = Math.max(((eMin - sMin) / 60) * SLOT_HEIGHT, 20);
+    const label = `${fmt(st.getHours(), st.getMinutes())} – ${fmt(en.getHours(), en.getMinutes())}`;
     return (
-      <div key={slot.id} title={`${label}${slot.is_booked ? ' (R\u00e9serv\u00e9)' : ''}`}
-        className={`absolute left-1 right-1 rounded-md px-2 py-1 text-xs group overflow-hidden border transition-opacity ${
+      <div key={slot.id} title={`${label}${slot.is_booked ? ' (Réservé)' : ''}`}
+        className={`absolute left-1 right-1 rounded-md px-2 py-1 text-xs group overflow-hidden border transition-opacity select-none ${
           isBeingMoved ? 'opacity-30' : ''} ${
           slot.is_booked
             ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 cursor-default'
             : 'bg-emerald-100 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 cursor-grab'
         }`} style={{ top: `${top}px`, height: `${height}px` }}>
         <div className="flex items-center justify-between h-full">
-          <div className="flex items-center gap-1 truncate flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
             {!slot.is_booked && (
-              <GripVertical className="h-3 w-3 text-emerald-400 dark:text-emerald-600 flex-shrink-0 cursor-grab opacity-0 group-hover:opacity-100 transition"
+              <GripVertical className="h-4 w-4 text-emerald-400 dark:text-emerald-600 flex-shrink-0 cursor-grab transition"
                 onMouseDown={(e) => handleStartMove(e, slot, dayIdx)} />
             )}
             <div className="truncate">
               <span className="font-medium">{label}</span>
-              {height >= 36 && <span className="block text-[10px] opacity-70">{slot.is_booked ? 'R\u00e9serv\u00e9' : 'Disponible'}</span>}
+              {height >= 40 && <span className="block text-[10px] opacity-70">{slot.is_booked ? 'Réservé' : 'Disponible'}</span>}
             </div>
           </div>
           {!slot.is_booked && (
             <button onClick={(e) => handleDelete(e, slot.id)}
-              className="opacity-0 group-hover:opacity-100 p-0.5 text-red-400 hover:text-red-600 transition flex-shrink-0">
-              <Trash2 className="h-3 w-3" />
+              className="p-1 text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition flex-shrink-0">
+              <Trash2 className="h-4 w-4" />
             </button>
           )}
         </div>
@@ -249,7 +271,7 @@ export default function Availability() {
         }`} style={{ top: `${top}px`, height: `${h}px` }}>
           {h >= 24 && <span className={`text-[11px] font-semibold ${collisionWarning ? 'text-red-700 dark:text-red-200' : 'text-emerald-700 dark:text-emerald-200'}`}>
             {collisionWarning && <AlertTriangle className="h-3 w-3 inline mr-1" />}
-            {fmt(movingSlot.sH, movingSlot.sM)} \u2013 {fmt(movingSlot.eH, movingSlot.eM)}
+            {fmt(movingSlot.sH, movingSlot.sM)} – {fmt(movingSlot.eH, movingSlot.eM)}
           </span>}
         </div>
       );
@@ -266,7 +288,7 @@ export default function Availability() {
       }`} style={{ top: `${top}px`, height: `${h}px` }}>
         {h >= 24 && <span className={`text-[11px] font-semibold ${collisionWarning ? 'text-red-700 dark:text-red-200' : 'text-brand-700 dark:text-brand-200'}`}>
           {collisionWarning && <AlertTriangle className="h-3 w-3 inline mr-1" />}
-          {fmt(sH2, sM2)} \u2013 {fmt(eH2, eM2)}
+          {fmt(sH2, sM2)} – {fmt(eH2, eM2)}
         </span>}
       </div>
     );
@@ -276,7 +298,7 @@ export default function Availability() {
 
   return (
     <DashboardLayout>
-      <PageHeader title="Mes disponibilit\u00e9s" description="Glissez pour cr\u00e9er \u00b7 Poign\u00e9e pour d\u00e9placer \u00b7 Croix pour supprimer" />
+      <PageHeader title="Mes disponibilités" description="Glissez pour créer · Poignée pour déplacer · Croix pour supprimer" />
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <button onClick={prevWeek} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition"><ChevronLeft className="h-5 w-5" /></button>
@@ -288,7 +310,7 @@ export default function Availability() {
       {collisionWarning && (
         <div className="mb-3 flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300">
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-          <span>Ce cr\u00e9neau chevauche un cr\u00e9neau existant \u2014 il ne pourra pas \u00eatre enregistr\u00e9.</span>
+          <span>Ce créneau chevauche un créneau existant — il ne pourra pas être enregistré.</span>
         </div>
       )}
       {loading ? <LoadingSpinner /> : (
@@ -305,7 +327,7 @@ export default function Availability() {
                     <div key={i} className={`p-2 text-center border-l border-gray-200 dark:border-gray-800 ${isPast ? 'opacity-40' : ''}`}>
                       <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{DAYS_FR[i]}</div>
                       <div className={`text-lg font-bold mt-0.5 ${isToday ? 'text-white bg-brand-500 w-8 h-8 rounded-full flex items-center justify-center mx-auto' : 'text-black dark:text-white'}`}>{day.getDate()}</div>
-                      {slotCount > 0 && <div className="text-[10px] text-gray-400 mt-0.5">{slotCount} cr\u00e9neau{slotCount > 1 ? 'x' : ''}</div>}
+                      {slotCount > 0 && <div className="text-[10px] text-gray-400 mt-0.5">{slotCount} créneau{slotCount > 1 ? 'x' : ''}</div>}
                     </div>
                   );
                 })}
@@ -340,7 +362,7 @@ export default function Availability() {
       )}
       <div className="flex flex-wrap items-center gap-6 mt-4 text-sm text-gray-500 dark:text-gray-400">
         <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-700" /> Disponible</div>
-        <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700" /> R\u00e9serv\u00e9</div>
+        <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700" /> Réservé</div>
         <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-brand-200/60 dark:bg-brand-700/40 border-2 border-dashed border-brand-400 dark:border-brand-500" /> Nouveau (glisser)</div>
         <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-red-200/60 dark:bg-red-700/40 border-2 border-dashed border-red-400 dark:border-red-500" /> Collision</div>
       </div>

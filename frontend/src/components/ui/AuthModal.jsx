@@ -173,6 +173,7 @@ function AuthModal() {
                   value={loginForm.username}
                   onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
                   placeholder="votre@email.fr"
+                  autoComplete="username"
                 />
               </div>
               <div>
@@ -184,6 +185,7 @@ function AuthModal() {
                     value={loginForm.password}
                     onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                     placeholder="••••••••"
+                    autoComplete="current-password"
                   />
                   <button type="button" onClick={() => setShowPw(!showPw)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -249,43 +251,43 @@ function AuthModal() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Prénom *</label>
-                  <input type="text" required value={regForm.first_name} onChange={setReg('first_name')} className={inputClass} />
+                  <input type="text" required value={regForm.first_name} onChange={setReg('first_name')} className={inputClass} autoComplete="given-name" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nom *</label>
-                  <input type="text" required value={regForm.last_name} onChange={setReg('last_name')} className={inputClass} />
+                  <input type="text" required value={regForm.last_name} onChange={setReg('last_name')} className={inputClass} autoComplete="family-name" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nom d'utilisateur *</label>
-                <input type="text" required value={regForm.username} onChange={setReg('username')} className={inputClass} />
+                <input type="text" required value={regForm.username} onChange={setReg('username')} className={inputClass} autoComplete="username" />
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Email *</label>
-                <input type="email" required value={regForm.email} onChange={setReg('email')} className={inputClass} />
+                <input type="email" required value={regForm.email} onChange={setReg('email')} className={inputClass} autoComplete="email" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Ville</label>
-                  <input type="text" value={regForm.city} onChange={setReg('city')} className={inputClass} />
+                  <input type="text" value={regForm.city} onChange={setReg('city')} className={inputClass} autoComplete="address-level2" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Code postal</label>
-                  <input type="text" value={regForm.postal_code} onChange={setReg('postal_code')} className={inputClass} />
+                  <input type="text" value={regForm.postal_code} onChange={setReg('postal_code')} className={inputClass} autoComplete="postal-code" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Mot de passe *</label>
-                  <input type="password" required value={regForm.password} onChange={setReg('password')} className={inputClass} minLength={8} />
+                  <input type="password" required value={regForm.password} onChange={setReg('password')} className={inputClass} minLength={8} autoComplete="new-password" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Confirmer *</label>
-                  <input type="password" required value={regForm.password_confirm} onChange={setReg('password_confirm')} className={inputClass} minLength={8} />
+                  <input type="password" required value={regForm.password_confirm} onChange={setReg('password_confirm')} className={inputClass} minLength={8} autoComplete="new-password" />
                 </div>
               </div>
 

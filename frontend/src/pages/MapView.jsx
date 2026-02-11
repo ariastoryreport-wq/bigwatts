@@ -142,7 +142,7 @@ export default function MapView() {
       </div>
 
       {viewMode === 'map' ? (
-        <div className="flex-1 relative">
+        <div className="flex-1 relative" style={{ zIndex: 0, isolation: 'isolate' }}>
           <div ref={mapRef} className="w-full h-full" />
 
           {/* Selected ad panel */}

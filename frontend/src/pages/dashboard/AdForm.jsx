@@ -77,19 +77,19 @@ export default function AdForm() {
       .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   };
 
-  // When category changes via grid button, auto-suggest title & image
+  // When category changes via grid button, always auto-suggest title & image
   const handleCategorySelect = (catId) => {
     const cat = categories.find(c => c.id === Number(catId));
     const newForm = { ...form, category: String(catId) };
 
-    // Auto-generate title from category if title is empty or was auto-generated
-    if (cat && !isEdit && !form.title) {
+    // Always auto-generate title from category name
+    if (cat) {
       newForm.title = cat.name;
       newForm.slug = generateSlug(cat.name);
     }
 
-    // Auto-set default Unsplash image if no image set
-    if (cat && !form.image_url) {
+    // Always auto-set default image from category
+    if (cat) {
       newForm.image_url = DEFAULT_IMAGES[cat.slug] || '';
     }
 
@@ -191,6 +191,7 @@ export default function AdForm() {
               onChange={(e) => setForm({ ...form, title: e.target.value, slug: generateSlug(e.target.value) })}
               className={inputClass}
               placeholder="Ex: Installation Panneaux Solaires"
+              autoComplete="off"
             />
           </div>
 
@@ -292,12 +293,12 @@ export default function AdForm() {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ville *</label>
               <input type="text" required value={form.city} onChange={set('city')}
-                className={inputClass} />
+                className={inputClass} autoComplete="address-level2" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code postal</label>
               <input type="text" value={form.postal_code} onChange={set('postal_code')}
-                className={inputClass} />
+                className={inputClass} autoComplete="postal-code" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zone d'intervention</label>

@@ -25,7 +25,9 @@ export default function Documents() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ doc_type: 'rge', label: '', file_url: '' });
+  const [selectedFile, setSelectedFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useState(null);
 
   const fetchDocs = () => {
     setLoading(true);
@@ -40,15 +42,22 @@ export default function Documents() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.label.trim()) { toast.error('Veuillez saisir un libellé.'); return; }
+    if (!form.file_url && !selectedFile) { toast.error('Veuillez ajouter un fichier ou une URL.'); return; }
     setSubmitting(true);
     try {
-      await authAPI.createDocument(form);
+      // Build payload: only include file_url if actually provided
+      const payload = { doc_type: form.doc_type, label: form.label };
+      if (form.file_url.trim()) payload.file_url = form.file_url.trim();
+      // If a file name is provided for context
+      if (selectedFile) payload.file_name = selectedFile.name;
+      await authAPI.createDocument(payload);
       toast.success('Document envoyé !');
       setShowForm(false);
       setForm({ doc_type: 'rge', label: '', file_url: '' });
+      setSelectedFile(null);
       fetchDocs();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erreur lors de l\'envoi.');
+      toast.error(err.response?.data?.detail || err.response?.data?.file_url?.[0] || 'Erreur lors de l\'envoi.');
     }
     setSubmitting(false);
   };
@@ -108,9 +117,35 @@ export default function Documents() {
                 <input className={inputClass} value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder="Ex: Certification RGE 2024" />
               </div>
             </div>
+            {/* File upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL du document (optionnel)</label>
-              <input type="url" className={inputClass} value={form.file_url} onChange={(e) => setForm({ ...form, file_url: e.target.value })} placeholder="https://..." />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fichier (PDF, image)</label>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:border-brand-400 dark:hover:border-brand-600 hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition text-sm text-gray-600 dark:text-gray-400">
+                  <Upload className="h-4 w-4" />
+                  {selectedFile ? selectedFile.name : 'Choisir un fichier'}
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 10 * 1024 * 1024) { toast.error('Max 10 Mo par fichier'); return; }
+                      setSelectedFile(file);
+                    }} />
+                </label>
+                {selectedFile && (
+                  <button type="button" onClick={() => setSelectedFile(null)} className="text-sm text-red-500 hover:text-red-700">Retirer</button>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG, WebP · Max 10 Mo</p>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200 dark:border-gray-800" /></div>
+              <div className="relative flex justify-center"><span className="bg-white dark:bg-gray-900 px-3 text-xs text-gray-400">ou</span></div>
+            </div>
+            {/* URL fallback */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL du document</label>
+              <input type="url" className={inputClass} value={form.file_url} onChange={(e) => setForm({ ...form, file_url: e.target.value })} placeholder="https://drive.google.com/..." autoComplete="url" />
               <p className="text-xs text-gray-400 mt-1">Lien vers le document hébergé (Google Drive, Dropbox, etc.)</p>
             </div>
             <div className="flex gap-3">

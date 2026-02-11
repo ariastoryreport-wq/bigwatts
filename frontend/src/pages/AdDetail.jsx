@@ -4,7 +4,7 @@ import { adsAPI, reviewsAPI, favoritesAPI, messagingAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext';
 import { useAuthModal } from '../components/ui/AuthModal';
 import { LoadingSpinner, PriceDisplay, StatusBadge, StarRating, Badge, Card } from '../components/ui';
-import { MapPin, Clock, Shield, Eye, MessageSquare, Heart, Star, Send, ArrowLeft, X, Flag, Pencil } from 'lucide-react';
+import { MapPin, Clock, Shield, Eye, MessageSquare, Heart, Star, Send, ArrowLeft, X, Flag, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const REPORT_REASONS = [
@@ -14,6 +14,35 @@ const REPORT_REASONS = [
   { value: 'scam', label: 'Arnaque' },
   { value: 'other', label: 'Autre' },
 ];
+
+function ImageCarousel({ images, alt }) {
+  const [idx, setIdx] = useState(0);
+  const prev = () => setIdx(i => (i - 1 + images.length) % images.length);
+  const next = () => setIdx(i => (i + 1) % images.length);
+  return (
+    <div className="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden group">
+      <img src={images[idx]} alt={`${alt} ${idx + 1}`} className="w-full h-full object-cover transition-opacity duration-300" />
+      {/* Arrows */}
+      <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition">
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition">
+        <ChevronRight className="h-5 w-5" />
+      </button>
+      {/* Dots */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+        {images.map((_, i) => (
+          <button key={i} onClick={() => setIdx(i)}
+            className={`w-2.5 h-2.5 rounded-full transition ${i === idx ? 'bg-white scale-110' : 'bg-white/50 hover:bg-white/80'}`} />
+        ))}
+      </div>
+      {/* Counter */}
+      <div className="absolute top-3 right-3 px-2.5 py-1 bg-black/50 text-white text-xs rounded-full">
+        {idx + 1} / {images.length}
+      </div>
+    </div>
+  );
+}
 
 export default function AdDetail() {
   const { id } = useParams();
@@ -120,14 +149,21 @@ export default function AdDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Images */}
-          <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
-            {(ad.image_1 || ad.image_url) ? (
-              <img src={ad.image_1 || ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-6xl">⚡</div>
-            )}
-          </div>
+          {/* Images carousel */}
+          {(() => {
+            const images = [ad.image_1, ad.image_2, ad.image_3, ad.image_url].filter(Boolean);
+            if (images.length === 0) return (
+              <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
+                <div className="w-full h-full flex items-center justify-center text-6xl">⚡</div>
+              </div>
+            );
+            if (images.length === 1) return (
+              <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
+                <img src={images[0]} alt={ad.title} className="w-full h-full object-cover" />
+              </div>
+            );
+            return <ImageCarousel images={images} alt={ad.title} />;
+          })()}
 
           {/* Info */}
           <Card className="p-6">

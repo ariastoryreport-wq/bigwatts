@@ -375,10 +375,12 @@ class AnalyticsView(APIView):
         if user.is_prestataire:
             from ads.models import Ad, QuoteRequest
             from reviews.models import Review
+            from bookings.models import Booking
 
             ads = Ad.objects.filter(provider=user)
             quotes = QuoteRequest.objects.filter(ad__provider=user)
             reviews = Review.objects.filter(provider=user)
+            bookings = Booking.objects.filter(provider=user)
 
             # Views over time (last 6 months, grouped by month)
             now = timezone.now()
@@ -407,7 +409,7 @@ class AnalyticsView(APIView):
                 reviews.values('rating').annotate(count=Count('id')).order_by('rating')
             )
 
-            # Monthly revenue (last 6 months, from completed quotes)
+            # Monthly revenue (last 6 months, from completed client bookings)
             monthly_revenue = []
             for i in range(6):
                 month_start = (now - timedelta(days=30 * (5 - i))).replace(day=1)
@@ -415,20 +417,20 @@ class AnalyticsView(APIView):
                     month_end = (now - timedelta(days=30 * (4 - i))).replace(day=1)
                 else:
                     month_end = now + timedelta(days=1)
-                rev = quotes.filter(
+                rev = bookings.filter(
                     status='completed',
                     updated_at__gte=month_start,
                     updated_at__lt=month_end,
-                    quoted_price__isnull=False,
-                ).aggregate(total=Sum('quoted_price'))['total'] or 0
+                    quote__quoted_price__isnull=False,
+                ).aggregate(total=Sum('quote__quoted_price'))['total'] or 0
                 monthly_revenue.append({
                     'month': month_start.strftime('%b %Y'),
                     'amount': float(rev),
                 })
 
             total_revenue = float(
-                quotes.filter(status='completed', quoted_price__isnull=False)
-                .aggregate(total=Sum('quoted_price'))['total'] or 0
+                bookings.filter(status='completed', quote__quoted_price__isnull=False)
+                .aggregate(total=Sum('quote__quoted_price'))['total'] or 0
             )
 
             data = {
