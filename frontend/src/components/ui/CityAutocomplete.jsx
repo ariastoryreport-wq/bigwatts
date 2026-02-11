@@ -1,13 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapPin } from 'lucide-react';
 import { useCountry } from '../../context/CountryContext';
+import api from '../../api';
 
 /**
  * CityAutocomplete — reusable city input with dropdown suggestions.
  *
+ * France  → geo.api.gouv.fr (official government API)
+ * Canada  → self-hosted /api/countries/locations/cities/ (Statistics Canada data)
+ *
  * Props:
  *   value        — current city string
  *   onChange      — (cityName: string) => void
+ *   onLocationResolved — (location: {postalCode, region, regionCode}) => void (optional)
  *   placeholder   — input placeholder text
  *   className     — CSS class for the input element
  *   required      — HTML required attribute
@@ -16,7 +21,7 @@ import { useCountry } from '../../context/CountryContext';
  *   compact       — if true, renders without wrapper div (for inline use)
  */
 
-const DEBOUNCE_MS = 250;
+const DEBOUNCE_MS = 300;
 
 // French government API for city autocompletion
 function searchFrenchCities(query) {
@@ -34,19 +39,19 @@ function searchFrenchCities(query) {
     );
 }
 
-// For Canada — use GeoNames-based free API or simple static fallback
-// We use the GeoNames search API (no key required for basic usage)
+// For Canada — self-hosted backend with Statistics Canada data
 function searchCanadianCities(query) {
-  return fetch(
-    `https://secure.geonames.org/searchJSON?name_startsWith=${encodeURIComponent(query)}&country=CA&featureClass=P&maxRows=7&orderby=population&username=bigwatts_demo`
-  )
-    .then((r) => r.json())
-    .then((data) =>
-      (data.geonames || []).map((c) => ({
-        name: c.name,
-        postalCode: '',
-        region: c.adminName1 || '',
+  return api
+    .get('/countries/locations/cities/', { params: { search: query, country: 'CA' } })
+    .then((res) =>
+      (res.data || []).map((c) => ({
+        name: c.city_name,
+        postalCode: c.postal_code || '',
+        region: c.region_name || '',
+        regionCode: c.region_code || '',
         population: c.population || 0,
+        latitude: c.latitude,
+        longitude: c.longitude,
       }))
     )
     .catch(() => []);
@@ -55,6 +60,7 @@ function searchCanadianCities(query) {
 export default function CityAutocomplete({
   value = '',
   onChange,
+  onLocationResolved,
   placeholder = 'Ville...',
   className = '',
   required = false,
@@ -123,6 +129,13 @@ export default function CityAutocomplete({
   const selectCity = (city) => {
     setQuery(city.name);
     onChange(city.name);
+    if (onLocationResolved) {
+      onLocationResolved({
+        postalCode: city.postalCode,
+        region: city.region,
+        regionCode: city.regionCode || '',
+      });
+    }
     setSuggestions([]);
     setIsOpen(false);
   };

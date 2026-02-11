@@ -38,3 +38,35 @@ class Country(models.Model):
 
     def __str__(self):
         return f"{self.flag_emoji} {self.name} ({self.code})"
+
+
+class Location(models.Model):
+    """
+    Self-hosted geographic location data for autocomplete.
+    Currently used for Canada (France uses geo.api.gouv.fr).
+    ~7 000 rows for Canadian cities/FSAs.
+    """
+    country_code = models.CharField(max_length=5, db_index=True, help_text="ISO country code (CA, FR…)")
+    city_name = models.CharField(max_length=150, help_text="City / municipality name")
+    postal_code = models.CharField(max_length=10, blank=True, help_text="Postal code or FSA (e.g. H2X)")
+    region_name = models.CharField(max_length=100, blank=True, help_text="Province / region name")
+    region_code = models.CharField(max_length=10, blank=True, help_text="Province / region code (QC, ON…)")
+    population = models.PositiveIntegerField(default=0, help_text="Population for sort priority")
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-population', 'city_name']
+        indexes = [
+            models.Index(fields=['country_code', 'city_name'], name='loc_country_city'),
+            models.Index(fields=['country_code', 'postal_code'], name='loc_country_postal'),
+            models.Index(fields=['country_code', 'region_code'], name='loc_country_region'),
+        ]
+
+    def __str__(self):
+        parts = [self.city_name]
+        if self.postal_code:
+            parts.append(self.postal_code)
+        if self.region_code:
+            parts.append(self.region_code)
+        return f"{', '.join(parts)} ({self.country_code})"

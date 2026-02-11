@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Hash } from 'lucide-react';
 import { useCountry } from '../../context/CountryContext';
+import api from '../../api';
 
 /**
  * PostalCodeAutocomplete — reusable postal code input with dropdown suggestions.
+ *
+ * France  → geo.api.gouv.fr (official government API)
+ * Canada  → self-hosted /api/countries/locations/postalcodes/ (Statistics Canada data)
  *
  * Props:
  *   value         — current postal code string
@@ -15,7 +19,7 @@ import { useCountry } from '../../context/CountryContext';
  *   compact        — if true, renders without wrapper div
  */
 
-const DEBOUNCE_MS = 250;
+const DEBOUNCE_MS = 300;
 
 function searchFrenchPostalCodes(query) {
   // The geo API can search by postal code or city name via the /communes endpoint
@@ -53,9 +57,17 @@ function searchFrenchPostalCodes(query) {
 }
 
 function searchCanadianPostalCodes(query) {
-  // Canada doesn't have a free postal code API like France
-  // Return empty — the field remains a plain text input for CA
-  return Promise.resolve([]);
+  return api
+    .get('/countries/locations/postalcodes/', { params: { search: query, country: 'CA' } })
+    .then((res) =>
+      (res.data || []).map((c) => ({
+        postalCode: c.postal_code || '',
+        city: c.city_name,
+        region: c.region_name || '',
+        regionCode: c.region_code || '',
+      }))
+    )
+    .catch(() => []);
 }
 
 export default function PostalCodeAutocomplete({

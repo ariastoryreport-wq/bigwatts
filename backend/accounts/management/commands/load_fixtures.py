@@ -32,6 +32,8 @@ class Command(BaseCommand):
         # Create completed bookings + reviews for demo
         self._demo_bookings(providers, owners, ca_providers, ca_owners)
         self._canada_reviews(ca_providers, ca_owners)
+        # Import Canada location data for autocomplete
+        self._import_locations()
         self.stdout.write(self.style.SUCCESS('\n🎉 Fixtures chargées avec succès!'))
         self._print_accounts()
 
@@ -288,7 +290,7 @@ class Command(BaseCommand):
             'ev_charger': 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=800&q=80',
             'ev_station': 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&q=80',
             'ev_parking': 'https://images.unsplash.com/photo-1647166545674-ce28ce93bdca?w=800&q=80',
-            'heat_pump': 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80',
+            'heat_pump': 'https://images.unsplash.com/photo-1700124113583-81aa99ea2aa2??w=800&q=80',
             'heating': 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&q=80',
             'hvac': 'https://images.unsplash.com/photo-1631545806609-05fdb2f4e058?w=800&q=80',
             'insulation': 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80',
@@ -723,7 +725,7 @@ class Command(BaseCommand):
         IMG = {
             'solar_ca': 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=800&q=80',
             'ev_ca': 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=800&q=80',
-            'hp_ca': 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80',
+            'hp_ca': 'https://images.unsplash.com/photo-1700124113583-81aa99ea2aa2?w=800&q=80',
             'iso_ca': 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80',
         }
 
@@ -970,6 +972,13 @@ class Command(BaseCommand):
                 )
 
         self.stdout.write(f'  ✅ {count} avis canadiens créés')
+
+    # ──────────────────── Locations (autocomplete) ────────────────────
+
+    def _import_locations(self):
+        """Import Canada location data by calling the import_canada_locations command."""
+        from django.core.management import call_command
+        call_command('import_canada_locations')
 
     # ──────────────────── Summary ────────────────────
 
