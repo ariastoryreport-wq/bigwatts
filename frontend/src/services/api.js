@@ -153,6 +153,7 @@ export const reviewsAPI = {
   respondReview: (id, data) => api.patch(`/reviews/${id}/respond/`, data),
   getReceivedReviews: () => api.get('/reviews/received/'),
   getWrittenReviews: () => api.get('/reviews/written/'),
+  canReview: (params) => api.get('/reviews/can-review/', { params }),
 };
 
 // ---- Favorites API ----

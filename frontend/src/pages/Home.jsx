@@ -93,7 +93,7 @@ export default function Home() {
               </p>
 
               {/* Search bar — black text on white */}
-              <div className="bg-white rounded-lg p-2 flex flex-col sm:flex-row gap-2 max-w-xl shadow-2xl">
+              <div className="bg-white rounded-lg p-2 flex flex-col sm:flex-row gap-2 max-w-xl">
                 <div className="flex-1 flex items-center px-4">
                   <Search className="h-5 w-5 text-gray-500 mr-3" />
                   <input
@@ -149,7 +149,7 @@ export default function Home() {
               <Link
                 key={cat.slug}
                 to={`/services?category=${cat.slug}`}
-                className="group relative overflow-hidden rounded-2xl h-64 sm:h-72 hover:shadow-card-hover transition-all duration-300"
+                className="group relative overflow-hidden rounded-2xl h-64 sm:h-72 transition-all duration-300"
               >
                 <img
                   src={cat.image}
@@ -244,7 +244,7 @@ export default function Home() {
               </ul>
               <Link
                 to="/incentives"
-                className="inline-flex items-center bg-white text-green-700 px-8 py-4 rounded-lg font-bold text-lg hover:bg-green-50 transition shadow-xl"
+                  className="inline-flex items-center bg-white text-green-700 px-8 py-4 rounded-lg font-bold text-lg hover:bg-green-50 transition"
               >
                 Vérifier mon éligibilité <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
@@ -255,7 +255,7 @@ export default function Home() {
               <img
                 src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=800&q=80"
                 alt="Personne remplissant un formulaire"
-                className="rounded-2xl shadow-2xl w-full max-h-[500px] object-cover"
+                className="rounded-2xl w-full max-h-[500px] object-cover"
               />
             </div>
           </div>
@@ -273,7 +273,7 @@ export default function Home() {
           </p>
           <Link
             to="/register"
-            className="inline-flex items-center bg-brand-300 text-black px-10 py-4 rounded-lg font-bold text-lg hover:bg-brand-200 transition shadow-brand-lg"
+            className="inline-flex items-center bg-brand-300 text-black px-10 py-4 rounded-lg font-bold text-lg hover:bg-brand-200 transition"
           >
             Inscrivez-vous gratuitement <ArrowRight className="ml-2 h-5 w-5" />
           </Link>

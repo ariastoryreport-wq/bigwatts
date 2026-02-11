@@ -127,9 +127,9 @@ function AuthModal() {
   const inputClass = "w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-lg text-black dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-brand-300 outline-none text-sm";
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={close}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={close}>
       <div
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-800"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -277,17 +277,6 @@ function AuthModal() {
                   <input type="text" value={regForm.postal_code} onChange={setReg('postal_code')} className={inputClass} />
                 </div>
               </div>
-
-              {countries.length > 1 && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Pays</label>
-                  <select value={regForm.country_code} onChange={(e) => setRegForm({ ...regForm, country_code: e.target.value })} className={inputClass}>
-                    {countries.map((c) => (
-                      <option key={c.code} value={c.code}>{c.flag_emoji} {c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

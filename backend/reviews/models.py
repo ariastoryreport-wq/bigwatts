@@ -14,6 +14,11 @@ class Review(models.Model):
         related_name='written_reviews', limit_choices_to={'role': 'proprietaire'}
     )
     ad = models.ForeignKey('ads.Ad', on_delete=models.SET_NULL, null=True, blank=True, related_name='reviews')
+    booking = models.ForeignKey(
+        'bookings.Booking', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='reviews',
+        help_text='The completed booking that entitles this review'
+    )
     
     rating = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)]

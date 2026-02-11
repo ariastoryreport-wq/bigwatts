@@ -45,7 +45,7 @@
     @apply btn bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 hover:bg-gray-800 dark:hover:bg-gray-200 focus:ring-gray-500;
   }
   .btn-brand {
-    @apply btn bg-brand-300 text-black px-6 py-2.5 hover:bg-brand-200 focus:ring-brand-300 shadow-brand hover:shadow-brand-lg;
+    @apply btn bg-brand-300 text-black px-6 py-2.5 hover:bg-brand-200 focus:ring-brand-300;
   }
   .btn-outline {
     @apply btn border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-6 py-2.5 hover:border-brand-300 hover:text-brand-600 dark:hover:text-brand-300 focus:ring-brand-300;
@@ -85,10 +85,10 @@
 
   /* Cards */
   .card {
-    @apply bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-card;
+    @apply bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800;
   }
   .card-hover {
-    @apply card hover:shadow-card-hover hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300;
+    @apply card hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300;
   }
   .card-interactive {
     @apply card-hover cursor-pointer;

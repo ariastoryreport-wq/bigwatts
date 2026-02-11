@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, MapPin, Home, Zap, Euro, CheckCircle2, Sparkles, Sun, Thermometer, Plug, Layers, Battery, Wind, Building2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2, Sparkles, Sun, Thermometer, Plug, Layers, Battery, Wind, Home, Building2, Zap, MapPin } from 'lucide-react';
 import { PageHeader } from '../components/ui';
 import { useCountry } from '../context/CountryContext';
 
@@ -81,8 +81,8 @@ export default function IncentiveChecker() {
               return (
                 <div key={i} className="flex flex-col items-center flex-1">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                    done ? 'bg-green-500 text-white' :
-                    active ? 'bg-green-500 text-white' :
+                    done ? 'bg-black dark:bg-white text-white dark:text-black' :
+                    active ? 'bg-black dark:bg-white text-white dark:text-black' :
                     'bg-gray-200 dark:bg-gray-800 text-gray-500'
                   }`}>
                     {done ? <CheckCircle2 className="h-5 w-5" /> : i + 1}
@@ -96,31 +96,26 @@ export default function IncentiveChecker() {
           </div>
           <div className="w-full h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-green-500 transition-all duration-500 rounded-full"
+              className="h-full bg-black dark:bg-white transition-all duration-500 rounded-full"
               style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
             />
           </div>
         </div>
 
         {/* Step content */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 sm:p-8 shadow-sm min-h-[320px] flex flex-col">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 sm:p-8 min-h-[320px] flex flex-col">
           {/* Step 0: Location */}
           {step === 0 && (
             <div className="flex-1 space-y-6">
-              <h2 className="text-xl font-bold text-black dark:text-white flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-brand-400" /> Où se situe votre projet ?
+              <h2 className="text-xl font-bold text-black dark:text-white">
+                Où se situe votre projet ?
               </h2>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pays</label>
-                <select
-                  value={form.country}
-                  onChange={(e) => { update('country', e.target.value); update('region', ''); }}
-                  className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-3 bg-white dark:bg-gray-800 text-black dark:text-white focus:ring-2 focus:ring-brand-300"
-                >
-                  {countries.map((c) => (
-                    <option key={c.code} value={c.code}>{c.flag_emoji} {c.name}</option>
-                  ))}
-                </select>
+              <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Pays sélectionné</p>
+                <p className="text-lg font-bold text-black dark:text-white flex items-center gap-2">
+                  <span className="text-2xl">{selectedCountryObj?.flag_emoji}</span>
+                  {selectedCountryObj?.name || 'France'}
+                </p>
               </div>
               {countryRegions.length > 0 && (
                 <div>
@@ -145,8 +140,8 @@ export default function IncentiveChecker() {
           {/* Step 1: Property */}
           {step === 1 && (
             <div className="flex-1 space-y-6">
-              <h2 className="text-xl font-bold text-black dark:text-white flex items-center gap-2">
-                <Home className="h-5 w-5 text-brand-400" /> Quel type de bien ?
+              <h2 className="text-xl font-bold text-black dark:text-white">
+                Quel type de bien ?
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 {PROPERTY_TYPES.map((pt) => (
@@ -190,8 +185,8 @@ export default function IncentiveChecker() {
           {/* Step 2: Installation type */}
           {step === 2 && (
             <div className="flex-1 space-y-6">
-              <h2 className="text-xl font-bold text-black dark:text-white flex items-center gap-2">
-                <Zap className="h-5 w-5 text-brand-400" /> Quel type d'installation ?
+              <h2 className="text-xl font-bold text-black dark:text-white">
+                Quel type d'installation ?
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {INSTALLATION_TYPES.map((it) => (
@@ -215,8 +210,8 @@ export default function IncentiveChecker() {
           {/* Step 3: Budget & Income */}
           {step === 3 && (
             <div className="flex-1 space-y-6">
-              <h2 className="text-xl font-bold text-black dark:text-white flex items-center gap-2">
-                <Euro className="h-5 w-5 text-brand-400" /> Budget & revenus
+              <h2 className="text-xl font-bold text-black dark:text-white">
+                Budget & revenus
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Ces informations sont <strong>optionnelles</strong> mais permettent d'affiner les résultats et d'estimer vos économies.

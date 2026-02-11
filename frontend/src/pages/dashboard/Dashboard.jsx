@@ -26,14 +26,14 @@ export default function Dashboard() {
   const StatCard = ({ icon: Icon, label, value, color = 'primary', to }) => {
     const colors = {
       primary: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
-      blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
-      yellow: 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400',
-      red: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400',
+      blue: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
+      yellow: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
+      red: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
       green: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
-      purple: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
+      purple: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
     };
     const content = (
-      <Card className="p-5 hover:shadow-md transition group">
+      <Card className="p-5 transition group">
         <div className="flex items-center gap-4">
           <div className={`w-12 h-12 rounded-xl ${colors[color]} flex items-center justify-center`}>
             <Icon className="h-6 w-6" />
@@ -52,7 +52,7 @@ export default function Dashboard() {
   /* ─── Quick action card for provider ─── */
   const QuickAction = ({ icon: Icon, label, description, to }) => (
     <Link to={to}>
-      <Card className="p-5 hover:shadow-md transition group border-l-4 border-l-green-500">
+      <Card className="p-5 transition group border-l-4 border-l-green-500">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 flex items-center justify-center">
             <Icon className="h-5 w-5" />
@@ -133,7 +133,7 @@ export default function Dashboard() {
     <DashboardLayout>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-black dark:text-white">
-          Bonjour {user?.first_name || user?.username} 👋
+          Bonjour {user?.first_name || user?.username}
         </h1>
         <p className="text-gray-500 dark:text-gray-400">Voici un aperçu de votre activité</p>
       </div>

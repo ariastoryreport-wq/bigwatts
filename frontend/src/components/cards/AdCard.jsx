@@ -5,7 +5,7 @@ import { PriceDisplay, Badge } from '../ui';
 export default function AdCard({ ad }) {
   return (
     <Link to={`/services/${ad.id}`} className="group">
-      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-card-hover hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300">
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300">
         {/* Image */}
         <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
           {(ad.image_1 || ad.image_url) ? (
@@ -17,7 +17,7 @@ export default function AdCard({ ad }) {
           )}
           {ad.category_name && (
             <div className="absolute top-3 left-3">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-black/80 text-white border border-white/10 backdrop-blur-sm shadow-sm">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-black/80 text-white border border-white/10 backdrop-blur-sm">
                 {ad.category_name}
               </span>
             </div>

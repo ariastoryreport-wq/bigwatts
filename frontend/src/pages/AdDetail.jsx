@@ -4,7 +4,7 @@ import { adsAPI, reviewsAPI, favoritesAPI, messagingAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext';
 import { useAuthModal } from '../components/ui/AuthModal';
 import { LoadingSpinner, PriceDisplay, StatusBadge, StarRating, Badge, Card } from '../components/ui';
-import { MapPin, Clock, Shield, Eye, MessageSquare, Heart, Star, Send, ArrowLeft, X, Flag } from 'lucide-react';
+import { MapPin, Clock, Shield, Eye, MessageSquare, Heart, Star, Send, ArrowLeft, X, Flag, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const REPORT_REASONS = [
@@ -33,6 +33,10 @@ export default function AdDetail() {
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
   const [sendingReport, setSendingReport] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', comment: '' });
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -48,6 +52,15 @@ export default function AdDetail() {
       favoritesAPI.checkFavorite({ ad_id: id }).then(({ data }) => setIsFav(data.is_favorite)).catch(() => {});
     }
   }, [id, isAuthenticated]);
+
+  // Check if user can write a review (needs completed booking)
+  useEffect(() => {
+    if (isAuthenticated && ad?.provider?.id) {
+      reviewsAPI.canReview({ provider: ad.provider.id, ad: id })
+        .then(({ data }) => setCanReview(data.can_review))
+        .catch(() => setCanReview(false));
+    }
+  }, [isAuthenticated, ad?.provider?.id, id]);
 
   const toggleFavorite = async () => {
     if (!isAuthenticated) { openLogin(); return; }
@@ -67,6 +80,28 @@ export default function AdDetail() {
       setQuoteForm({ message: '', preferred_date: '', budget_indication: '' });
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erreur lors de l\'envoi');
+    }
+  };
+
+  const submitReview = async (e) => {
+    e.preventDefault();
+    setSubmittingReview(true);
+    try {
+      await reviewsAPI.createReview({
+        provider: ad.provider.id,
+        ad: Number(id),
+        ...reviewForm,
+      });
+      toast.success('Avis publié !');
+      setShowReviewForm(false);
+      setCanReview(false);
+      // Refresh reviews
+      const revRes = await reviewsAPI.getReviews({ ad: id });
+      setReviews(revRes.data.results || revRes.data);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erreur lors de la publication');
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -141,8 +176,70 @@ export default function AdDetail() {
 
           {/* Reviews */}
           <Card className="p-6">
-            <h3 className="text-lg font-heading font-semibold text-black dark:text-white mb-4">Avis ({reviews.length})</h3>
-            {reviews.length === 0 ? (
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-heading font-semibold text-black dark:text-white">Avis ({reviews.length})</h3>
+              {canReview && !showReviewForm && (
+                <button
+                  onClick={() => setShowReviewForm(true)}
+                  className="text-sm font-medium text-brand-600 dark:text-brand-300 hover:underline"
+                >
+                  Laisser un avis
+                </button>
+              )}
+            </div>
+
+            {/* Review form */}
+            {showReviewForm && (
+              <form onSubmit={submitReview} className="mb-6 p-4 border rounded-lg space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Note</label>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <button
+                        key={s} type="button"
+                        onClick={() => setReviewForm(prev => ({ ...prev, rating: s }))}
+                        className="p-1"
+                      >
+                        <Star className={`h-6 w-6 ${s <= reviewForm.rating ? 'fill-brand-300 text-brand-300' : 'text-gray-300 dark:text-gray-600'}`} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre</label>
+                  <input
+                    type="text" required
+                    value={reviewForm.title}
+                    onChange={(e) => setReviewForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-900 text-black dark:text-white"
+                    placeholder="Résumez votre expérience"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Commentaire</label>
+                  <textarea
+                    required rows={3}
+                    value={reviewForm.comment}
+                    onChange={(e) => setReviewForm(prev => ({ ...prev, comment: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-900 text-black dark:text-white"
+                    placeholder="Décrivez votre expérience avec ce prestataire..."
+                  />
+                </div>
+                <div className="flex gap-3 justify-end">
+                  <button type="button" onClick={() => setShowReviewForm(false)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    Annuler
+                  </button>
+                  <button
+                    type="submit" disabled={submittingReview}
+                    className="px-4 py-2 text-sm font-medium bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition disabled:opacity-50"
+                  >
+                    {submittingReview ? 'Publication...' : 'Publier'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {reviews.length === 0 && !showReviewForm ? (
               <p className="text-gray-500 dark:text-gray-400">Aucun avis pour le moment.</p>
             ) : (
               <div className="space-y-4">
@@ -208,7 +305,15 @@ export default function AdDetail() {
 
             {/* Actions */}
             <div className="space-y-3">
-              {isProprietaire && (
+              {isAuthenticated && provider?.id === user?.id && (
+                <Link
+                  to={`/dashboard/ads/${ad.id}/edit`}
+                  className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition font-semibold flex items-center justify-center gap-2"
+                >
+                  <Pencil className="h-4 w-4" /> Modifier mon annonce
+                </Link>
+              )}
+              {isProprietaire && provider?.id !== user?.id && (
                 <button
                   onClick={() => setShowQuoteForm(true)}
                   className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition font-semibold flex items-center justify-center gap-2"
@@ -216,7 +321,7 @@ export default function AdDetail() {
                   <Send className="h-4 w-4" /> Demander un devis
                 </button>
               )}
-              {isProprietaire && (
+              {isProprietaire && provider?.id !== user?.id && (
                 <button
                   onClick={() => setShowContactForm(true)}
                   className="w-full border border-brand-300 text-brand-600 dark:text-brand-300 py-3 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/30 transition font-medium flex items-center justify-center gap-2"
@@ -255,8 +360,8 @@ export default function AdDetail() {
 
       {/* Quote form modal */}
       {showQuoteForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-lg max-w-lg w-full p-6">
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-lg max-w-lg w-full p-6 border border-gray-200 dark:border-gray-800">
             <h3 className="text-lg font-bold mb-4">Demander un devis</h3>
             <form onSubmit={submitQuote} className="space-y-4">
               <div>
@@ -305,8 +410,8 @@ export default function AdDetail() {
 
       {/* Contact Modal */}
       {showContactForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowContactForm(false)}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowContactForm(false)}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md border border-gray-200 dark:border-gray-800" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-black dark:text-white">Contacter {profile?.company_name || provider?.first_name}</h3>
               <button onClick={() => setShowContactForm(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
@@ -358,8 +463,8 @@ export default function AdDetail() {
 
       {/* Report Modal */}
       {showReportModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowReportModal(false)}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowReportModal(false)}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md border border-gray-200 dark:border-gray-800" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-black dark:text-white flex items-center gap-2">
                 <Flag className="h-5 w-5 text-red-500" /> Signaler cette annonce

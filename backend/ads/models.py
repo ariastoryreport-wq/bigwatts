@@ -41,7 +41,7 @@ class Ad(models.Model):
     
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200)
-    description = models.TextField()
+    description = models.TextField(blank=True)
     short_description = models.CharField(max_length=300, blank=True)
     
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

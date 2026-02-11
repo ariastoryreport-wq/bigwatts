@@ -205,7 +205,7 @@ export default function Navbar() {
                   <ChevronDown className="h-3.5 w-3.5" />
                 </button>
                 {countryOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 z-30 shadow-2xl overflow-hidden py-1">
+                  <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 z-30 overflow-hidden py-1">
                     <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-800">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Pays / Région</p>
                     </div>
@@ -260,7 +260,7 @@ export default function Navbar() {
                   </button>
 
                   {notifOpen && (
-                    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 z-30 shadow-2xl overflow-hidden">
+                    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 z-30 overflow-hidden">
                       {/* Header */}
                       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
                         <h3 className="text-sm font-bold text-black dark:text-white">Notifications</h3>
@@ -332,7 +332,7 @@ export default function Navbar() {
                   {profileOpen && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setProfileOpen(false)} />
-                      <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 z-20 py-2 shadow-xl">
+                      <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 z-20 py-2">
                         <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">
                           <p className="text-sm font-medium text-black dark:text-white">{user.first_name} {user.last_name}</p>
                           <p className="text-xs text-gray-500 capitalize">{user.role?.replace('_', ' ')}</p>
@@ -425,8 +425,8 @@ export default function Navbar() {
       
       {/* Country switch warning modal */}
       {countryWarning && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setCountryWarning(null)}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setCountryWarning(null)}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-sm w-full p-6 text-center border border-gray-200 dark:border-gray-800" onClick={e => e.stopPropagation()}>
             <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
             </div>

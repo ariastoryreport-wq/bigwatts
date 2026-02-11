@@ -108,7 +108,7 @@ export default function IncentiveResults() {
 
         {/* Summary card */}
         {results.length > 0 && (
-          <div className="mt-6 mb-8 bg-green-500 rounded-2xl p-6 text-white shadow-lg">
+          <div className="mt-6 mb-8 bg-green-500 rounded-2xl p-6 text-white">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <p className="text-green-100 text-sm font-medium">Économies potentielles totales</p>
@@ -151,7 +151,7 @@ export default function IncentiveResults() {
               return (
                 <div
                   key={r.id}
-                  className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex-1 min-w-0">

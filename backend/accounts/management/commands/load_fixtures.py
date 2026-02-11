@@ -25,6 +25,9 @@ class Command(BaseCommand):
         self._reviews(providers, owners)
         self._badges(providers)
         self._assign_countries()
+        # Canada fixtures
+        ca_providers = self._canada_providers()
+        self._canada_ads(ca_providers)
         self.stdout.write(self.style.SUCCESS('\n🎉 Fixtures chargées avec succès!'))
         self._print_accounts()
 
@@ -608,6 +611,153 @@ class Command(BaseCommand):
         u_count = User.objects.filter(country__isnull=True).update(country=fr)
         a_count = Ad.objects.filter(country__isnull=True).update(country=fr)
         self.stdout.write(f'  ✅ Pays assigné: {u_count} utilisateurs, {a_count} annonces → FR')
+
+    # ──────────────────── Canada Providers ────────────────────
+
+    def _canada_providers(self):
+        CA_COORDS = {
+            'Montréal': (45.5017, -73.5673), 'Toronto': (43.6532, -79.3832),
+            'Vancouver': (49.2827, -123.1207), 'Québec': (46.8139, -71.2080),
+            'Ottawa': (45.4215, -75.6972), 'Calgary': (51.0447, -114.0719),
+        }
+        ca_providers_data = [
+            {
+                'user': {'username': 'solaire_qc', 'email': 'marc.tremblay@solaire-qc.ca',
+                         'first_name': 'Marc', 'last_name': 'Tremblay',
+                         'city': 'Montréal', 'postal_code': 'H2X 1Y4', 'phone': '514-555-1234',
+                         'bio': "Expert en installation de panneaux solaires au Québec. Certifié par la RBQ, nous aidons les Québécois à produire leur propre énergie verte."},
+                'profile': {'company_name': 'Solaire Québec Inc.', 'siret': '',
+                            'years_experience': 8, 'service_radius_km': 100,
+                            'certifications': 'RBQ, CanSIA, Certification NABCEP',
+                            'specialties': 'Solaire résidentiel, Autoconsommation, Net metering',
+                            'is_available': True, 'average_rating': 4.6, 'completed_projects': 120},
+            },
+            {
+                'user': {'username': 'ecoborne_ca', 'email': 'sarah.johnson@ecoborne.ca',
+                         'first_name': 'Sarah', 'last_name': 'Johnson',
+                         'city': 'Toronto', 'postal_code': 'M5V 2T6', 'phone': '416-555-5678',
+                         'bio': "EV charging solutions for Ontario homes and businesses. Tesla, ChargePoint, and FLO certified installer."},
+                'profile': {'company_name': 'EcoBorne Ontario', 'siret': '',
+                            'years_experience': 5, 'service_radius_km': 80,
+                            'certifications': 'ESA Licensed, ChargePoint Certified',
+                            'specialties': 'EV Chargers, Level 2 Charging, Commercial Fleet',
+                            'is_available': True, 'average_rating': 4.8, 'completed_projects': 200},
+            },
+            {
+                'user': {'username': 'thermopac_bc', 'email': 'james.lee@thermopac.ca',
+                         'first_name': 'James', 'last_name': 'Lee',
+                         'city': 'Vancouver', 'postal_code': 'V6B 1A1', 'phone': '604-555-9012',
+                         'bio': "Heat pump specialists in British Columbia. We help homeowners switch from natural gas to efficient electric heat pumps."},
+                'profile': {'company_name': 'ThermoPac BC', 'siret': '',
+                            'years_experience': 12, 'service_radius_km': 60,
+                            'certifications': 'BC Safety Authority, HRAI Certified',
+                            'specialties': 'Air-source heat pumps, Ductless mini-splits, Geothermal',
+                            'is_available': True, 'average_rating': 4.7, 'completed_projects': 180},
+            },
+            {
+                'user': {'username': 'isolation_qc', 'email': 'julie.gagnon@isolation-qc.ca',
+                         'first_name': 'Julie', 'last_name': 'Gagnon',
+                         'city': 'Québec', 'postal_code': 'G1R 4P5', 'phone': '418-555-3456',
+                         'bio': "Spécialiste en isolation thermique pour maisons et bâtiments commerciaux au Québec. Isolation soufflée, cellulose et mousse giclée."},
+                'profile': {'company_name': 'IsoConfort Québec', 'siret': '',
+                            'years_experience': 15, 'service_radius_km': 120,
+                            'certifications': 'RBQ, Novoclimat, ENERGY STAR',
+                            'specialties': 'Isolation cellulose, Mousse giclée, Pare-air, Combles',
+                            'is_available': True, 'average_rating': 4.5, 'completed_projects': 300},
+            },
+        ]
+
+        try:
+            ca = Country.objects.get(code='CA')
+        except Country.DoesNotExist:
+            self.stdout.write('  ⚠️  Country CA not found, skipping Canada providers')
+            return []
+
+        providers = []
+        for pdata in ca_providers_data:
+            user_data = pdata['user']
+            profile_data = pdata['profile']
+            city = user_data.get('city', '')
+            if city in CA_COORDS:
+                user_data['latitude'], user_data['longitude'] = CA_COORDS[city]
+            user, created = User.objects.get_or_create(
+                username=user_data['username'],
+                defaults={**user_data, 'role': 'prestataire', 'country': ca}
+            )
+            if created:
+                user.set_password('demo1234')
+                user.save()
+                PrestaireProfile.objects.create(user=user, **profile_data)
+            providers.append(user)
+        self.stdout.write(f'  ✅ {len(providers)} prestataires canadiens')
+        return providers
+
+    def _canada_ads(self, ca_providers):
+        if not ca_providers:
+            return
+        try:
+            ca = Country.objects.get(code='CA')
+        except Country.DoesNotExist:
+            return
+
+        cats = {c.slug: c for c in ServiceCategory.objects.all()}
+        CA_COORDS = {
+            'Montréal': (45.5017, -73.5673), 'Toronto': (43.6532, -79.3832),
+            'Vancouver': (49.2827, -123.1207), 'Québec': (46.8139, -71.2080),
+        }
+        IMG = {
+            'solar_ca': 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=800&q=80',
+            'ev_ca': 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=800&q=80',
+            'hp_ca': 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80',
+            'iso_ca': 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80',
+        }
+
+        ca_ads = [
+            {'provider': ca_providers[0], 'category': cats.get('panneaux-solaires'),
+             'title': 'Installation Solaire Résidentielle – Québec', 'slug': 'installation-solaire-residentielle-quebec',
+             'description': "Installation de panneaux solaires pour résidences québécoises. Profitez du programme Chauffez Vert et du crédit d'impôt provincial. Net metering avec Hydro-Québec.",
+             'short_description': 'Panneaux solaires résidentiels au Québec, aides provinciales incluses.',
+             'price': 12000, 'price_type': 'fixed', 'city': 'Montréal',
+             'service_area': 'Grand Montréal, Montérégie, Laurentides', 'status': 'active',
+             'image_url': IMG['solar_ca'], 'duration_estimate': '2-3 jours',
+             'warranty_info': '25 ans panneaux, 10 ans installation'},
+            {'provider': ca_providers[1], 'category': cats.get('bornes-recharge'),
+             'title': 'EV Charger Installation – Ontario', 'slug': 'ev-charger-installation-ontario',
+             'description': "Level 2 EV charger installation for Ontario homes. Compatible with Tesla, Chevy, Hyundai and all EVs. Eligible for the Ontario EV Charger Grant.",
+             'short_description': 'Level 2 EV charger for your Ontario home. Grant-eligible.',
+             'price': 2000, 'price_type': 'fixed', 'city': 'Toronto',
+             'service_area': 'Greater Toronto Area', 'status': 'active',
+             'image_url': IMG['ev_ca'], 'duration_estimate': '1 day'},
+            {'provider': ca_providers[2], 'category': cats.get('pompe-chaleur'),
+             'title': 'Heat Pump Installation – Vancouver', 'slug': 'heat-pump-installation-vancouver',
+             'description': "Switch from gas to an efficient heat pump. CleanBC rebates available. Air-source and ductless mini-split options for BC's mild climate.",
+             'short_description': 'Heat pump installation in BC with CleanBC rebates.',
+             'price': 8000, 'price_type': 'fixed', 'city': 'Vancouver',
+             'service_area': 'Metro Vancouver, Fraser Valley', 'status': 'active',
+             'image_url': IMG['hp_ca'], 'duration_estimate': '2-3 days',
+             'warranty_info': '10 year manufacturer warranty'},
+            {'provider': ca_providers[3], 'category': cats.get('isolation'),
+             'title': 'Isolation Résidentielle – Ville de Québec', 'slug': 'isolation-residentielle-quebec',
+             'description': "Isolation thermique de votre maison pour les hivers québécois. Mousse giclée, cellulose soufflée et laine de roche. Éligible au programme Rénoclimat.",
+             'short_description': 'Isolation performante pour hivers québécois, programme Rénoclimat.',
+             'price': None, 'price_type': 'quote', 'city': 'Québec',
+             'service_area': 'Capitale-Nationale, Chaudière-Appalaches', 'status': 'active',
+             'image_url': IMG['iso_ca'], 'duration_estimate': '1-3 jours'},
+        ]
+
+        count = 0
+        for ad_data in ca_ads:
+            slug = ad_data['slug']
+            city = ad_data.get('city', '')
+            if city in CA_COORDS:
+                lat, lng = CA_COORDS[city]
+                ad_data['latitude'] = lat + (hash(slug) % 100 - 50) * 0.002
+                ad_data['longitude'] = lng + (hash(slug) % 100 - 50) * 0.002
+            ad_data['country'] = ca
+            _, created = Ad.objects.update_or_create(slug=slug, defaults=ad_data)
+            if created:
+                count += 1
+        self.stdout.write(f'  ✅ {count} annonces canadiennes créées')
 
     # ──────────────────── Summary ────────────────────
 

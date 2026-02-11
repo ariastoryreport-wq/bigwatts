@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { adsAPI } from '../../services/api';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Card, PageHeader, LoadingSpinner } from '../../components/ui';
-import { ImageIcon } from 'lucide-react';
+import { ImageIcon, Sun, Zap, Thermometer, Layers, Droplet, Wind, ClipboardList, Battery, HelpCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const STATUS_OPTIONS = [
@@ -21,6 +21,17 @@ const DEFAULT_IMAGES = {
   'eolienne': 'https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?w=800&q=80',
   'audit-energetique': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80',
   'batterie-stockage': 'https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?w=800&q=80',
+};
+
+const CATEGORY_ICONS = {
+  'panneaux-solaires': Sun,
+  'bornes-recharge': Zap,
+  'pompe-chaleur': Thermometer,
+  'isolation': Layers,
+  'chauffe-eau-thermo': Droplet,
+  'eolienne': Wind,
+  'audit-energetique': ClipboardList,
+  'batterie-stockage': Battery,
 };
 
 export default function AdForm() {
@@ -64,11 +75,10 @@ export default function AdForm() {
       .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   };
 
-  // When category changes, auto-suggest a title
-  const handleCategoryChange = (e) => {
-    const catId = e.target.value;
+  // When category changes via grid button, auto-suggest title & image
+  const handleCategorySelect = (catId) => {
     const cat = categories.find(c => c.id === Number(catId));
-    const newForm = { ...form, category: catId };
+    const newForm = { ...form, category: String(catId) };
 
     // Auto-generate title from category if title is empty or was auto-generated
     if (cat && !isEdit && !form.title) {
@@ -125,14 +135,33 @@ export default function AdForm() {
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Category first */}
+          {/* Category grid */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie *</label>
-            <select required value={form.category} onChange={handleCategoryChange}
-              className={inputClass}>
-              <option value="">Choisir une catégorie...</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Catégorie *</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {categories.map((c) => {
+                const IconComp = CATEGORY_ICONS[c.slug] || HelpCircle;
+                const isSelected = String(form.category) === String(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => handleCategorySelect(c.id)}
+                    className={`p-4 rounded-xl border-2 text-center transition-all ${
+                      isSelected
+                        ? 'border-black dark:border-white bg-gray-50 dark:bg-gray-800'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500'
+                    }`}
+                  >
+                    <IconComp className={`h-6 w-6 mx-auto ${isSelected ? 'text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`} />
+                    <p className={`mt-2 text-sm font-medium ${isSelected ? 'text-black dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>{c.name}</p>
+                  </button>
+                );
+              })}
+            </div>
+            {!form.category && (
+              <p className="text-xs text-gray-400 mt-2">Sélectionnez la catégorie de votre service</p>
+            )}
           </div>
 
           {/* Title (auto-generated from category, editable) */}
@@ -146,10 +175,12 @@ export default function AdForm() {
             />
           </div>
 
-          {/* Description */}
+          {/* Description (optional) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description complète *</label>
-            <textarea required rows={6} value={form.description} onChange={set('description')}
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Description <span className="text-gray-400 text-xs">(optionnel)</span>
+            </label>
+            <textarea rows={6} value={form.description} onChange={set('description')}
               className={inputClass}
               placeholder="Détaillez votre service..." />
           </div>

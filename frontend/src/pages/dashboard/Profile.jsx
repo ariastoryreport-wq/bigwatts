@@ -131,16 +131,6 @@ export default function Profile() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Adresse</label>
             <input className={inputClass} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </div>
-          {countries.length > 1 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pays</label>
-              <select className={inputClass} value={form.country_code} onChange={(e) => setForm({ ...form, country_code: e.target.value })}>
-                {countries.map((c) => (
-                  <option key={c.code} value={c.code}>{c.flag_emoji} {c.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
             <textarea rows={3} className={inputClass} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
