@@ -5,6 +5,7 @@ import { useCountry } from '../context/CountryContext';
 import AdCard from '../components/cards/AdCard';
 import { LoadingSpinner, EmptyState } from '../components/ui';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
+import CityAutocomplete from '../components/ui/CityAutocomplete';
 
 export default function AdList() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -80,12 +81,15 @@ export default function AdList() {
               onChange={(e) => applyFilter('search', e.target.value)}
             />
           </div>
-          <input
-            type="text" placeholder="Ville..."
-            className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg focus:ring-2 focus:ring-brand-300 outline-none sm:w-44"
-            value={filters.city}
-            onChange={(e) => applyFilter('city', e.target.value)}
-          />
+          <div className="sm:w-44">
+            <CityAutocomplete
+              value={filters.city}
+              onChange={(val) => applyFilter('city', val)}
+              placeholder="Ville..."
+              className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg focus:ring-2 focus:ring-brand-300 outline-none w-full"
+              compact
+            />
+          </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg transition text-black dark:text-white ${showFilters ? 'bg-brand-50 dark:bg-brand-900/30 border-brand-300 text-brand-600 dark:text-brand-300' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}

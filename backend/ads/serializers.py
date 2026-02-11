@@ -58,6 +58,9 @@ class AdDetailSerializer(serializers.ModelSerializer):
 
 class AdCreateUpdateSerializer(serializers.ModelSerializer):
     country_code = serializers.CharField(required=False, write_only=True)
+    image_1 = serializers.ImageField(required=False, allow_null=True)
+    image_2 = serializers.ImageField(required=False, allow_null=True)
+    image_3 = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Ad

@@ -206,7 +206,7 @@ export default function Navbar() {
                   <ChevronDown className="h-3.5 w-3.5" />
                 </button>
                 {countryOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 z-30 overflow-hidden py-1">
+                  <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 z-[60] overflow-hidden py-1">
                     <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-800">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Pays / Région</p>
                     </div>
@@ -261,7 +261,7 @@ export default function Navbar() {
                   </button>
 
                   {notifOpen && (
-                    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 z-30 overflow-hidden">
+                    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 z-[60] overflow-hidden">
                       {/* Header */}
                       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
                         <h3 className="text-sm font-bold text-black dark:text-white">Notifications</h3>
@@ -332,8 +332,8 @@ export default function Navbar() {
 
                   {profileOpen && (
                     <>
-                      <div className="fixed inset-0 z-10" onClick={() => setProfileOpen(false)} />
-                      <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 z-20 py-2">
+                      <div className="fixed inset-0 z-[55]" onClick={() => setProfileOpen(false)} />
+                      <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 z-[60] py-2">
                         <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">
                           <p className="text-sm font-medium text-black dark:text-white">{user.first_name} {user.last_name}</p>
                           <p className="text-xs text-gray-500 capitalize">{user.role?.replace('_', ' ')}</p>

@@ -115,9 +115,9 @@ export default function MapView() {
   );
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col">
+    <div className="h-[calc(100vh-64px)] flex flex-col map-page-wrapper">
       {/* Toolbar */}
-      <div className="bg-white dark:bg-gray-950 border-b divider px-4 py-3 flex items-center justify-between relative z-[1000]">
+      <div className="bg-white dark:bg-gray-950 border-b divider px-4 py-3 flex items-center justify-between relative z-10">
         <div>
           <h1 className="text-lg font-bold text-black dark:text-white flex items-center gap-2">
             <MapPin className="h-5 w-5 text-brand-300" />
@@ -142,12 +142,12 @@ export default function MapView() {
       </div>
 
       {viewMode === 'map' ? (
-        <div className="flex-1 relative" style={{ zIndex: 0, isolation: 'isolate' }}>
+        <div className="flex-1 relative" style={{ zIndex: 1, isolation: 'isolate' }}>
           <div ref={mapRef} className="w-full h-full" />
 
           {/* Selected ad panel */}
           {selectedAd && (
-            <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-[1000]">
+            <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-10">
               <div className="card p-4">
                 <button
                   onClick={() => setSelectedAd(null)}

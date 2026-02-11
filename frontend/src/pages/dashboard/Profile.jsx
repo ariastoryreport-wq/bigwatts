@@ -6,6 +6,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import { PageHeader, LoadingSpinner, StarRating, Card } from '../../components/ui';
 import { Star } from 'lucide-react';
 import toast from 'react-hot-toast';
+import CityAutocomplete from '../../components/ui/CityAutocomplete';
 
 export default function Profile() {
   const { user, updateUser, isPrestataire, isProprietaire } = useAuth();
@@ -121,7 +122,12 @@ export default function Profile() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ville</label>
-            <input className={inputClass} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} autoComplete="address-level2" />
+            <CityAutocomplete
+              value={form.city}
+              onChange={(val) => setForm({ ...form, city: val })}
+              className={inputClass}
+              compact
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code postal</label>

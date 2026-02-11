@@ -170,6 +170,9 @@
 .leaflet-bottom           { z-index: 6 !important; }
 .leaflet-control          { z-index: 6 !important; }
 
+/* Map page wrapper — ensure map never overlaps Navbar or any global overlay */
+.map-page-wrapper         { position: relative; z-index: 0; isolation: isolate; }
+
 @layer utilities {
   .focus-ring {
     @apply focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300;

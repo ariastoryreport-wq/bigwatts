@@ -4,6 +4,7 @@ import { useCountry } from '../context/CountryContext';
 import ProviderCard from '../components/cards/ProviderCard';
 import { LoadingSpinner, EmptyState } from '../components/ui';
 import { Search, Users } from 'lucide-react';
+import CityAutocomplete from '../components/ui/CityAutocomplete';
 
 export default function ProviderList() {
   const [providers, setProviders] = useState([]);
@@ -43,12 +44,15 @@ export default function ProviderList() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <input
-          type="text" placeholder="Ville..."
-          className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg focus:ring-2 focus:ring-brand-300 outline-none sm:w-48"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-        />
+        <div className="sm:w-48">
+          <CityAutocomplete
+            value={city}
+            onChange={setCity}
+            placeholder="Ville..."
+            className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg focus:ring-2 focus:ring-brand-300 outline-none w-full"
+            compact
+          />
+        </div>
       </div>
 
       {loading ? (

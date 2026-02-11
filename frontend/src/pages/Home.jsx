@@ -5,6 +5,7 @@ import { adsAPI } from '../services/api';
 import { useCountry } from '../context/CountryContext';
 import AdCard from '../components/cards/AdCard';
 import CountryPickerModal from '../components/ui/CountryPickerModal';
+import CityAutocomplete from '../components/ui/CityAutocomplete';
 
 const CATEGORIES = [
   {
@@ -95,14 +96,13 @@ export default function Home() {
               {/* Search bar — black text on white */}
               <div className="bg-white rounded-lg p-2 flex flex-col sm:flex-row gap-2 max-w-xl">
                 <div className="flex-1 flex items-center px-4">
-                  <Search className="h-5 w-5 text-gray-500 mr-3" />
-                  <input
-                    type="text"
+                  <Search className="h-5 w-5 text-gray-500 mr-3 shrink-0" />
+                  <CityAutocomplete
+                    value={searchCity}
+                    onChange={setSearchCity}
                     placeholder="Votre ville ou code postal..."
                     className="w-full py-3 bg-transparent text-gray-900 placeholder-gray-500 outline-none font-medium"
-                    value={searchCity}
-                    onChange={(e) => setSearchCity(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    compact
                   />
                 </div>
                 <Link

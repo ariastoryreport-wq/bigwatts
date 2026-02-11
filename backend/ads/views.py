@@ -96,6 +96,19 @@ class AdUpdateView(generics.UpdateAPIView):
     def get_queryset(self):
         return Ad.objects.filter(provider=self.request.user)
 
+    def perform_update(self, serializer):
+        """Handle image clearing: if an image field is sent as empty string, clear it."""
+        instance = serializer.instance
+        for img_field in ('image_1', 'image_2', 'image_3'):
+            raw = self.request.data.get(img_field)
+            if raw == '' or raw == 'null':
+                # Delete old file and clear the field
+                field_file = getattr(instance, img_field)
+                if field_file:
+                    field_file.delete(save=False)
+                setattr(instance, img_field, None)
+        serializer.save()
+
 
 class AdDeleteView(generics.DestroyAPIView):
     """DELETE /api/ads/<id>/delete/ - Delete an ad."""
