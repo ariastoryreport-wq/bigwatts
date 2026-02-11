@@ -10,8 +10,8 @@ class PrestaireProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = PrestaireProfile
         fields = [
-            'company_name', 'siret', 'website', 'years_experience',
-            'service_radius_km', 'is_available', 'certifications',
+            'provider_type', 'company_name', 'website', 'years_experience',
+            'is_available',
             'specialties', 'total_reviews', 'average_rating', 'completed_projects'
         ]
         read_only_fields = ['total_reviews', 'average_rating', 'completed_projects']
@@ -49,7 +49,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name',
             'role', 'phone', 'avatar', 'city', 'postal_code',
             'address', 'bio', 'is_verified', 'latitude', 'longitude',
-            'country_code',
+            'country_code', 'region',
             'created_at', 'prestataire_profile', 'proprietaire_profile', 'badges'
         ]
         read_only_fields = ['id', 'role', 'is_verified', 'created_at']
@@ -67,7 +67,7 @@ class UserPublicSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'first_name', 'last_name',
             'role', 'avatar', 'city', 'bio', 'is_verified',
-            'latitude', 'longitude', 'country_code',
+            'latitude', 'longitude', 'country_code', 'region',
             'created_at', 'prestataire_profile', 'badges', 'is_online'
         ]
 
@@ -76,13 +76,15 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
     country_code = serializers.CharField(required=False, default='FR')
+    provider_type = serializers.CharField(required=False, default='independant')
+    company_name = serializers.CharField(required=False, default='', allow_blank=True)
     
     class Meta:
         model = User
         fields = [
             'username', 'email', 'password', 'password_confirm',
-            'first_name', 'last_name', 'role', 'phone', 'city', 'postal_code',
-            'country_code'
+            'first_name', 'last_name', 'role', 'phone', 'region',
+            'country_code', 'provider_type', 'company_name',
         ]
     
     def validate(self, attrs):
@@ -94,6 +96,8 @@ class RegisterSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         country_code = validated_data.pop('country_code', 'FR')
+        provider_type = validated_data.pop('provider_type', 'independant')
+        company_name = validated_data.pop('company_name', '')
         user = User.objects.create_user(**validated_data)
         # Assign country
         from countries.models import Country
@@ -104,7 +108,11 @@ class RegisterSerializer(serializers.ModelSerializer):
             pass
         # Create role-specific profile
         if user.role == User.Role.PRESTATAIRE:
-            PrestaireProfile.objects.create(user=user)
+            PrestaireProfile.objects.create(
+                user=user,
+                provider_type=provider_type,
+                company_name=company_name if provider_type == 'entreprise' else '',
+            )
         elif user.role == User.Role.PROPRIETAIRE:
             ProprietaireProfile.objects.create(user=user)
         return user
@@ -127,7 +135,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'first_name', 'last_name', 'phone', 'avatar',
             'city', 'postal_code', 'address', 'bio',
-            'latitude', 'longitude',
+            'latitude', 'longitude', 'region',
         ]
 
 

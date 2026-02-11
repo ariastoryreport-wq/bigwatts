@@ -4,8 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useCountry } from '../../context/CountryContext';
 import { Eye, EyeOff, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import CityAutocomplete from './CityAutocomplete';
-import PostalCodeAutocomplete from './PostalCodeAutocomplete';
 
 /* ─── Auth Modal Context ─── */
 const AuthModalContext = createContext(null);
@@ -63,7 +61,8 @@ function AuthModal() {
   const [regForm, setRegForm] = useState({
     username: '', email: '', password: '', password_confirm: '',
     first_name: '', last_name: '', role: 'proprietaire',
-    phone: '', city: '', postal_code: '', country_code: countryCode,
+    phone: '', region: '', country_code: countryCode,
+    provider_type: 'independant',
   });
   const [regLoading, setRegLoading] = useState(false);
 
@@ -271,27 +270,59 @@ function AuthModal() {
                 <input type="email" required value={regForm.email} onChange={setReg('email')} className={inputClass} autoComplete="email" />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Ville</label>
-                  <CityAutocomplete
-                    value={regForm.city}
-                    onChange={(val) => setRegForm({ ...regForm, city: val })}
-                    className={inputClass}
-                    compact
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Code postal</label>
-                  <PostalCodeAutocomplete
-                    value={regForm.postal_code}
-                    onChange={(val) => setRegForm(f => ({ ...f, postal_code: val }))}
-                    onCityResolved={(city) => setRegForm(f => ({ ...f, city: city }))}
-                    className={inputClass}
-                    compact
-                  />
-                </div>
-              </div>
+              {/* Region dropdown */}
+              {(() => {
+                const selectedCountry = countries.find((c) => c.code === countryCode);
+                const regionList = selectedCountry?.regions || [];
+                return regionList.length > 0 ? (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Région</label>
+                    <select
+                      value={regForm.region}
+                      onChange={(e) => setRegForm({ ...regForm, region: e.target.value })}
+                      className={inputClass}
+                    >
+                      <option value="">— Sélectionner une région —</option>
+                      {regionList.map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null;
+              })()}
+
+              {/* Provider-specific fields */}
+              {regForm.role === 'prestataire' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Type de prestataire *</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { value: 'independant', label: 'Indépendant' },
+                        { value: 'entreprise', label: 'Entreprise' },
+                      ].map((pt) => (
+                        <button
+                          key={pt.value} type="button"
+                          onClick={() => setRegForm({ ...regForm, provider_type: pt.value })}
+                          className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition ${
+                            regForm.provider_type === pt.value
+                              ? 'border-brand-300 bg-brand-50 dark:bg-brand-900/30 text-black dark:text-white'
+                              : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-400'
+                          }`}
+                        >
+                          {pt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {regForm.provider_type === 'entreprise' && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nom de l'entreprise</label>
+                      <input type="text" value={regForm.company_name || ''} onChange={(e) => setRegForm({ ...regForm, company_name: e.target.value })} className={inputClass} autoComplete="organization" />
+                    </div>
+                  )}
+                </>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

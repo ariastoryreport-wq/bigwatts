@@ -21,8 +21,6 @@ export default function AdList() {
     search: searchParams.get('search') || '',
     city: searchParams.get('city') || '',
     category: searchParams.get('category') || '',
-    price_min: searchParams.get('price_min') || '',
-    price_max: searchParams.get('price_max') || '',
     ordering: searchParams.get('ordering') || '-created_at',
   });
 
@@ -36,8 +34,6 @@ export default function AdList() {
     if (filters.search) params.search = filters.search;
     if (filters.city) params.city = filters.city;
     if (filters.category) params.category = filters.category;
-    if (filters.price_min) params.price_min = filters.price_min;
-    if (filters.price_max) params.price_max = filters.price_max;
     if (filters.ordering) params.ordering = filters.ordering;
 
     adsAPI.getAds(params)
@@ -55,12 +51,12 @@ export default function AdList() {
   };
 
   const clearFilters = () => {
-    setFilters({ search: '', city: '', category: '', price_min: '', price_max: '', ordering: '-created_at' });
+    setFilters({ search: '', city: '', category: '', ordering: '-created_at' });
     setSearchParams({});
     setPage(1);
   };
 
-  const hasActiveFilters = filters.search || filters.city || filters.category || filters.price_min || filters.price_max;
+  const hasActiveFilters = filters.search || filters.city || filters.category;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -100,7 +96,7 @@ export default function AdList() {
 
         {/* Extended filters */}
         {showFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <select
               className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg outline-none"
               value={filters.category}
@@ -111,18 +107,6 @@ export default function AdList() {
                 <option key={c.slug} value={c.slug}>{c.name}</option>
               ))}
             </select>
-            <input
-              type="number" placeholder="Prix min (€)"
-              className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg outline-none"
-              value={filters.price_min}
-              onChange={(e) => applyFilter('price_min', e.target.value)}
-            />
-            <input
-              type="number" placeholder="Prix max (€)"
-              className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg outline-none"
-              value={filters.price_max}
-              onChange={(e) => applyFilter('price_max', e.target.value)}
-            />
             <select
               className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg outline-none"
               value={filters.ordering}

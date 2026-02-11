@@ -123,6 +123,60 @@ class ChangePasswordView(generics.UpdateAPIView):
         return Response({'message': 'Mot de passe modifié avec succès.'})
 
 
+class DeleteAccountView(APIView):
+    """POST /api/auth/delete-account/ - Permanently delete user account."""
+
+    def post(self, request):
+        password = request.data.get('password', '')
+        confirm = request.data.get('confirm', False)
+
+        if not confirm:
+            return Response(
+                {'error': 'Veuillez confirmer la suppression.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not request.user.check_password(password):
+            return Response(
+                {'error': 'Mot de passe incorrect.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = request.user
+
+        # Anonymize related data instead of cascading delete
+        from ads.models import Ad
+        Ad.objects.filter(provider=user).update(status='deleted')
+
+        # Deactivate + anonymize the user
+        user.is_active = False
+        user.email = f'deleted_{user.pk}@removed.local'
+        user.first_name = ''
+        user.last_name = ''
+        user.phone = ''
+        user.bio = ''
+        user.address = ''
+        user.city = ''
+        user.postal_code = ''
+        user.avatar = None
+        user.set_unusable_password()
+        user.save()
+
+        # Blacklist all outstanding tokens
+        try:
+            from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+            from rest_framework_simplejwt.tokens import RefreshToken as _RT
+            for token in OutstandingToken.objects.filter(user=user):
+                try:
+                    _RT(token.token).blacklist()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        return Response({'message': 'Votre compte a été supprimé.'}, status=status.HTTP_200_OK)
+
+
 class PrestataireProfileUpdateView(generics.UpdateAPIView):
     """PATCH /api/auth/prestataire-profile/ - Update provider profile."""
     serializer_class = PrestaireProfileSerializer

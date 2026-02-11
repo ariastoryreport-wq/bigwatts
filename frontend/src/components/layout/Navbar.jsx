@@ -419,11 +419,8 @@ export default function Navbar() {
             <Link to="/incentives" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Aides</Link>
             {isAuthenticated ? (
               <>
-                {dashboardLinks().map((link) => (
-                  <Link key={link.to} to={link.to} onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
-                    {link.label}
-                  </Link>
-                ))}
+                <hr className="border-gray-200 dark:border-gray-800" />
+                <Link to="/dashboard" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white font-medium">Tableau de bord</Link>
                 <button onClick={handleLogout} className="block py-2 text-red-500">Déconnexion</button>
               </>
             ) : (

@@ -32,7 +32,6 @@ export default function IncentiveChecker() {
   const { countries, currentCountry, countryCode } = useCountry();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    country: countryCode,
     region: '',
     property_type: '',
     is_owner: true,
@@ -41,8 +40,8 @@ export default function IncentiveChecker() {
     estimated_budget: '',
   });
 
-  // Get regions for the selected country
-  const selectedCountryObj = countries.find((c) => c.code === form.country) || currentCountry;
+  // Always derive country from global context
+  const selectedCountryObj = currentCountry || countries.find((c) => c.code === countryCode);
   const countryRegions = selectedCountryObj?.regions || [];
 
   const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
@@ -60,7 +59,7 @@ export default function IncentiveChecker() {
       setStep(step + 1);
     } else {
       // Submit - navigate to results with form data in state
-      navigate('/incentives/results', { state: form });
+      navigate('/incentives/results', { state: { ...form, country: countryCode } });
     }
   };
 

@@ -10,6 +10,7 @@ urlpatterns = [
     # Current user
     path('me/', views.MeView.as_view(), name='me'),
     path('change-password/', views.ChangePasswordView.as_view(), name='change-password'),
+    path('delete-account/', views.DeleteAccountView.as_view(), name='delete-account'),
     path('prestataire-profile/', views.PrestataireProfileUpdateView.as_view(), name='prestataire-profile'),
     path('proprietaire-profile/', views.ProprietaireProfileUpdateView.as_view(), name='proprietaire-profile'),
     path('dashboard/', views.DashboardStatsView.as_view(), name='dashboard'),

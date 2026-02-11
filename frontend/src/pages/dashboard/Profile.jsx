@@ -4,19 +4,25 @@ import { useAuth } from '../../context/AuthContext';
 import { useCountry } from '../../context/CountryContext';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { PageHeader, LoadingSpinner, StarRating, Card } from '../../components/ui';
-import { Star, LifeBuoy, Lock } from 'lucide-react';
+import { Star, LifeBuoy, Lock, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import CityAutocomplete from '../../components/ui/CityAutocomplete';
-import PostalCodeAutocomplete from '../../components/ui/PostalCodeAutocomplete';
 
 export default function Profile() {
-  const { user, updateUser, isPrestataire, isProprietaire } = useAuth();
+  const { user, updateUser, isPrestataire, isProprietaire, logout } = useAuth();
   const { countries } = useCountry();
   const [form, setForm] = useState({});
   const [profileForm, setProfileForm] = useState({});
   const [loading, setLoading] = useState(false);
   const [passwords, setPasswords] = useState({ old_password: '', new_password: '', new_password2: '' });
   const [reviews, setReviews] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Get regions for the user's country
+  const userCountry = countries.find((c) => c.code === user?.country_code);
+  const regionList = userCountry?.regions || [];
 
   useEffect(() => {
     if (user) {
@@ -24,19 +30,16 @@ export default function Profile() {
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         phone: user.phone || '',
-        city: user.city || '',
-        postal_code: user.postal_code || '',
+        region: user.region || '',
         address: user.address || '',
         bio: user.bio || '',
       });
       if (isPrestataire && user.prestataire_profile) {
         setProfileForm({
+          provider_type: user.prestataire_profile.provider_type || 'independant',
           company_name: user.prestataire_profile.company_name || '',
-          siret: user.prestataire_profile.siret || '',
           website: user.prestataire_profile.website || '',
           years_experience: user.prestataire_profile.years_experience || 0,
-          service_radius_km: user.prestataire_profile.service_radius_km || 50,
-          certifications: user.prestataire_profile.certifications || '',
           specialties: user.prestataire_profile.specialties || '',
         });
       }
@@ -121,23 +124,21 @@ export default function Profile() {
             <input className={inputClass} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ville</label>
-            <CityAutocomplete
-              value={form.city}
-              onChange={(val) => setForm({ ...form, city: val })}
-              className={inputClass}
-              compact
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code postal</label>
-            <PostalCodeAutocomplete
-              value={form.postal_code}
-              onChange={(val) => setForm(f => ({ ...f, postal_code: val }))}
-              onCityResolved={(city) => setForm(f => ({ ...f, city: city }))}
-              className={inputClass}
-              compact
-            />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Région / Province</label>
+            {regionList.length > 0 ? (
+              <select
+                className={inputClass}
+                value={form.region}
+                onChange={(e) => setForm({ ...form, region: e.target.value })}
+              >
+                <option value="">— Sélectionner —</option>
+                {regionList.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            ) : (
+              <input className={inputClass} value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} placeholder="Votre région" />
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Adresse</label>
@@ -212,13 +213,32 @@ export default function Profile() {
             {isPrestataire && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom entreprise</label>
-                  <input className={inputClass} value={profileForm.company_name || ''} onChange={(e) => setProfileForm({ ...profileForm, company_name: e.target.value })} autoComplete="organization" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de prestataire</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { value: 'independant', label: 'Indépendant' },
+                      { value: 'entreprise', label: 'Entreprise' },
+                    ].map((pt) => (
+                      <button
+                        key={pt.value} type="button"
+                        onClick={() => setProfileForm({ ...profileForm, provider_type: pt.value })}
+                        className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition ${
+                          profileForm.provider_type === pt.value
+                            ? 'border-brand-300 bg-brand-50 dark:bg-brand-900/30 text-black dark:text-white'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-400'
+                        }`}
+                      >
+                        {pt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">SIRET</label>
-                  <input className={inputClass} value={profileForm.siret || ''} onChange={(e) => setProfileForm({ ...profileForm, siret: e.target.value })} />
-                </div>
+                {profileForm.provider_type === 'entreprise' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom entreprise</label>
+                    <input className={inputClass} value={profileForm.company_name || ''} onChange={(e) => setProfileForm({ ...profileForm, company_name: e.target.value })} autoComplete="organization" />
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Site web</label>
                   <input className={inputClass} value={profileForm.website || ''} onChange={(e) => setProfileForm({ ...profileForm, website: e.target.value })} autoComplete="url" />
@@ -226,14 +246,6 @@ export default function Profile() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Années d'expérience</label>
                   <input type="number" className={inputClass} value={profileForm.years_experience || ''} onChange={(e) => setProfileForm({ ...profileForm, years_experience: e.target.value })} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rayon d'intervention (km)</label>
-                  <input type="number" className={inputClass} value={profileForm.service_radius_km || ''} onChange={(e) => setProfileForm({ ...profileForm, service_radius_km: e.target.value })} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Certifications</label>
-                  <input className={inputClass} value={profileForm.certifications || ''} onChange={(e) => setProfileForm({ ...profileForm, certifications: e.target.value })} placeholder="QualiPV, RGE..." />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Spécialités</label>
@@ -335,6 +347,95 @@ export default function Profile() {
                 Et {reviews.length - 5} autre{reviews.length - 5 > 1 ? 's' : ''} avis…
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account */}
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-red-200 dark:border-red-900/50 p-6 mt-6">
+        <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
+          <Trash2 className="h-5 w-5" />
+          Supprimer mon compte
+        </h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Cette action est irréversible. Toutes vos données personnelles seront anonymisées et vos annonces désactivées.
+        </p>
+        <button
+          type="button"
+          onClick={() => setShowDeleteModal(true)}
+          className="px-5 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition"
+        >
+          Supprimer définitivement mon compte
+        </button>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowDeleteModal(false)}>
+          <div
+            className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full border border-gray-200 dark:border-gray-800 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-red-600 dark:text-red-400 mb-2">Confirmer la suppression</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est <strong>définitive et irréversible</strong>.
+              Vos données seront anonymisées et vos annonces marquées comme supprimées.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Mot de passe actuel *
+                </label>
+                <input
+                  type="password"
+                  required
+                  className={inputClass}
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Saisissez votre mot de passe"
+                  autoComplete="current-password"
+                />
+              </div>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={deleteConfirm}
+                  onChange={(e) => setDeleteConfirm(e.target.checked)}
+                  className="mt-0.5 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Je comprends que cette action est irréversible et je souhaite supprimer mon compte.
+                </span>
+              </label>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button
+                type="button"
+                onClick={() => { setShowDeleteModal(false); setDeletePassword(''); setDeleteConfirm(false); }}
+                className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition text-black dark:text-white"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={!deletePassword || !deleteConfirm || deleting}
+                onClick={async () => {
+                  setDeleting(true);
+                  try {
+                    await authAPI.deleteAccount({ password: deletePassword, confirm: true });
+                    toast.success('Compte supprimé. Au revoir.');
+                    logout();
+                  } catch (err) {
+                    toast.error(err.response?.data?.error || 'Erreur lors de la suppression');
+                  } finally {
+                    setDeleting(false);
+                  }
+                }}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {deleting ? 'Suppression...' : 'Supprimer'}
+              </button>
+            </div>
           </div>
         </div>
       )}

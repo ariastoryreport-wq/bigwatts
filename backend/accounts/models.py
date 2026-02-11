@@ -25,6 +25,7 @@ class User(AbstractUser):
         null=True, blank=True, related_name='users',
         help_text="User's country"
     )
+    region = models.CharField(max_length=100, blank=True, help_text="Province / Region")
     last_seen = models.DateTimeField(null=True, blank=True, help_text="Last activity timestamp")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -58,8 +59,13 @@ class User(AbstractUser):
 
 class PrestaireProfile(models.Model):
     """Extended profile for service providers."""
-    
+
+    class ProviderType(models.TextChoices):
+        INDEPENDANT = 'independant', 'Indépendant'
+        ENTREPRISE = 'entreprise', 'Entreprise'
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='prestataire_profile')
+    provider_type = models.CharField(max_length=20, choices=ProviderType.choices, default=ProviderType.INDEPENDANT)
     company_name = models.CharField(max_length=200, blank=True)
     siret = models.CharField(max_length=14, blank=True)
     website = models.URLField(blank=True)

@@ -80,6 +80,7 @@ export const authAPI = {
   getMe: () => api.get('/auth/me/'),
   updateMe: (data) => api.patch('/auth/me/', data),
   changePassword: (data) => api.put('/auth/change-password/', data),
+  deleteAccount: (data) => api.post('/auth/delete-account/', data),
   updatePrestataireProfile: (data) => api.patch('/auth/prestataire-profile/', data),
   updateProprietaireProfile: (data) => api.patch('/auth/proprietaire-profile/', data),
   getDashboard: () => api.get('/auth/dashboard/'),
