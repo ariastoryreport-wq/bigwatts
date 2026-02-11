@@ -4,8 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useCountry } from '../../context/CountryContext';
 import { useAuthModal } from '../ui/AuthModal';
-import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare, Check, FileText, Star, AlertCircle, Settings, Heart, Globe, AlertTriangle, LifeBuoy } from 'lucide-react';
-import { notificationsAPI, messagingAPI, ticketsAPI } from '../../services/api';
+import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare, Check, FileText, Star, AlertCircle, Settings, Heart, Globe, AlertTriangle } from 'lucide-react';
+import { notificationsAPI, messagingAPI } from '../../services/api';
 import Logo from '../ui/Logo';
 import toast from 'react-hot-toast';
 
@@ -60,6 +60,8 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   const handleCountrySwitch = (code) => {
+    // Authenticated users cannot switch country — it's locked to their account
+    if (isAuthenticated) return;
     if (code === currentCountry.code) { setCountryOpen(false); return; }
     const target = countries.find(c => c.code === code);
     setCountryOpen(false);
@@ -68,10 +70,6 @@ export default function Navbar() {
 
   const confirmCountrySwitch = async () => {
     if (!countryWarning) return;
-    if (isAuthenticated) {
-      await logout();
-      navigate('/');
-    }
     switchCountry(countryWarning.code);
     setCountryWarning(null);
   };
@@ -193,8 +191,8 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="flex items-center space-x-3">
-            {/* Country switcher */}
-            {countries.length > 1 && (
+            {/* Country indicator (static for logged-in, switcher for anonymous) */}
+            {countries.length > 1 && !isAuthenticated && (
               <div className="relative" ref={countryRef}>
                 <button
                   onClick={() => { setCountryOpen(!countryOpen); setNotifOpen(false); setProfileOpen(false); }}
@@ -232,6 +230,13 @@ export default function Navbar() {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+            {/* Static country flag for authenticated users */}
+            {isAuthenticated && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-gray-500 dark:text-gray-400" title={currentCountry.name}>
+                <span className="text-lg leading-none">{currentCountry.flag_emoji}</span>
+                <span className="hidden lg:inline font-medium">{currentCountry.code}</span>
               </div>
             )}
 
@@ -382,8 +387,8 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="lg:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
           <div className="px-4 py-3 space-y-2">
-            {/* Mobile country switcher */}
-            {countries.length > 1 && (
+            {/* Mobile country switcher — only for anonymous */}
+            {countries.length > 1 && !isAuthenticated && (
               <div className="flex items-center gap-2 py-2 border-b border-gray-200 dark:border-gray-800 mb-2">
                 {countries.map((c) => (
                   <button
@@ -399,6 +404,13 @@ export default function Navbar() {
                     <span>{c.code}</span>
                   </button>
                 ))}
+              </div>
+            )}
+            {/* Mobile static country flag for authenticated users */}
+            {isAuthenticated && (
+              <div className="flex items-center gap-2 py-2 border-b border-gray-200 dark:border-gray-800 mb-2 text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-base">{currentCountry.flag_emoji}</span>
+                <span>{currentCountry.name}</span>
               </div>
             )}
             <Link to="/services" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Services</Link>
@@ -424,8 +436,8 @@ export default function Navbar() {
         </div>
       )}
       
-      {/* Country switch warning modal */}
-      {countryWarning && (
+      {/* Country switch warning modal (anonymous users only) */}
+      {countryWarning && !isAuthenticated && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setCountryWarning(null)}>
           <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-sm w-full p-6 text-center border border-gray-200 dark:border-gray-800" onClick={e => e.stopPropagation()}>
             <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
@@ -438,46 +450,21 @@ export default function Navbar() {
               Passer de {currentCountry.flag_emoji} {currentCountry.name} à {countryWarning.flag_emoji} {countryWarning.name}
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              {isAuthenticated 
-                ? 'Vous serez déconnecté(e). Les services, aides et devise seront adaptés au nouveau pays.'
-                : 'Les services, aides et devise seront adaptés au nouveau pays. Votre formulaire d\'aides sera réinitialisé.'}
+              Les services, aides et devise seront adaptés au nouveau pays. Votre formulaire d'aides sera réinitialisé.
             </p>
-            <div className="flex flex-col gap-3">
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setCountryWarning(null)}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition text-black dark:text-white"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={confirmCountrySwitch}
-                  className="flex-1 px-4 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:bg-gray-800 dark:hover:bg-gray-200 transition"
-                >
-                  {isAuthenticated ? 'Déconnecter & changer' : 'Confirmer'}
-                </button>
-              </div>
-              {isAuthenticated && (
-                <button
-                  onClick={async () => {
-                    try {
-                      await ticketsAPI.createTicket({
-                        subject: `Demande de changement de pays : ${currentCountry.name} → ${countryWarning.name}`,
-                        category: 'account',
-                        message: `Je souhaite changer mon pays de ${currentCountry.name} (${currentCountry.code}) vers ${countryWarning.name} (${countryWarning.code}). Merci de mettre à jour mon compte.`,
-                        priority: 'medium',
-                      });
-                      setCountryWarning(null);
-                      toast.success('Ticket envoyé au support ! Nous traiterons votre demande rapidement.');
-                    } catch {
-                      toast.error('Erreur lors de la création du ticket');
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 border border-brand-300 text-brand-600 dark:text-brand-300 rounded-lg text-sm font-medium hover:bg-brand-50 dark:hover:bg-brand-900/20 transition flex items-center justify-center gap-2"
-                >
-                  <LifeBuoy className="h-4 w-4" /> Demander au support de changer mon pays
-                </button>
-              )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setCountryWarning(null)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition text-black dark:text-white"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmCountrySwitch}
+                className="flex-1 px-4 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:bg-gray-800 dark:hover:bg-gray-200 transition"
+              >
+                Confirmer
+              </button>
             </div>
           </div>
         </div>

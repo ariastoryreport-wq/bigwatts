@@ -122,25 +122,13 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    country_code = serializers.CharField(required=False, write_only=True)
-
     class Meta:
         model = User
         fields = [
             'first_name', 'last_name', 'phone', 'avatar',
             'city', 'postal_code', 'address', 'bio',
-            'latitude', 'longitude', 'country_code'
+            'latitude', 'longitude',
         ]
-
-    def update(self, instance, validated_data):
-        country_code = validated_data.pop('country_code', None)
-        if country_code:
-            from countries.models import Country
-            try:
-                instance.country = Country.objects.get(code=country_code)
-            except Country.DoesNotExist:
-                pass
-        return super().update(instance, validated_data)
 
 
 class AppointmentSerializer(serializers.ModelSerializer):

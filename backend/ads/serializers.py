@@ -76,16 +76,15 @@ class AdCreateUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context['request'].user
         validated_data['provider'] = user
-        country_code = validated_data.pop('country_code', None)
-        if country_code:
-            from countries.models import Country
-            try:
-                validated_data['country'] = Country.objects.get(code=country_code)
-            except Country.DoesNotExist:
-                validated_data['country'] = user.country
-        else:
-            validated_data['country'] = user.country
+        # Country isolation: always use user's country, ignore any provided country_code
+        validated_data.pop('country_code', None)
+        validated_data['country'] = user.country
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        # Country isolation: prevent changing the country of an existing ad
+        validated_data.pop('country_code', None)
+        return super().update(instance, validated_data)
 
 
 class QuoteRequestSerializer(serializers.ModelSerializer):

@@ -1,14 +1,23 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI } from '../services/api';
+import { useCountry } from './CountryContext';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const { switchCountry } = useCountry();
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
   });
   const [loading, setLoading] = useState(true);
+
+  // Sync country context to user's account country
+  const syncCountry = useCallback((userData) => {
+    if (userData?.country_code) {
+      switchCountry(userData.country_code);
+    }
+  }, [switchCountry]);
 
   const fetchUser = useCallback(async () => {
     const tokens = JSON.parse(localStorage.getItem('tokens') || '{}');
@@ -20,6 +29,7 @@ export function AuthProvider({ children }) {
       const { data } = await authAPI.getMe();
       setUser(data);
       localStorage.setItem('user', JSON.stringify(data));
+      syncCountry(data);
     } catch {
       setUser(null);
       localStorage.removeItem('user');
@@ -27,7 +37,7 @@ export function AuthProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [syncCountry]);
 
   useEffect(() => {
     fetchUser();
@@ -38,6 +48,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('tokens', JSON.stringify(data.tokens));
     localStorage.setItem('user', JSON.stringify(data.user));
     setUser(data.user);
+    syncCountry(data.user);
     return data.user;
   };
 
@@ -46,6 +57,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('tokens', JSON.stringify(data.tokens));
     localStorage.setItem('user', JSON.stringify(data.user));
     setUser(data.user);
+    syncCountry(data.user);
     return data.user;
   };
 

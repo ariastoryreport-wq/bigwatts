@@ -40,6 +40,13 @@ class AdListView(generics.ListAPIView):
         provider = self.request.query_params.get('provider')
         country = self.request.query_params.get('country')
         
+        # Country isolation: authenticated users MUST see only their own country
+        user = self.request.user
+        if user and user.is_authenticated and hasattr(user, 'country') and user.country:
+            qs = qs.filter(country=user.country)
+        elif country:
+            qs = qs.filter(country__code=country)
+        
         if category:
             qs = qs.filter(category__slug=category)
         if city:
@@ -52,17 +59,21 @@ class AdListView(generics.ListAPIView):
             qs = qs.filter(price_type=price_type)
         if provider:
             qs = qs.filter(provider_id=provider)
-        if country:
-            qs = qs.filter(country__code=country)
         
         return qs
 
 
 class AdDetailView(generics.RetrieveAPIView):
     """GET /api/ads/<id>/ - Ad detail (increments view count)."""
-    queryset = Ad.objects.select_related('provider', 'category', 'provider__prestataire_profile')
     serializer_class = AdDetailSerializer
     permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        qs = Ad.objects.select_related('provider', 'category', 'provider__prestataire_profile')
+        user = self.request.user
+        if user and user.is_authenticated and hasattr(user, 'country') and user.country:
+            qs = qs.filter(country=user.country)
+        return qs
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -126,6 +137,12 @@ class QuoteRequestCreateView(generics.CreateAPIView):
     permission_classes = [IsProprietaire]
     
     def perform_create(self, serializer):
+        # Country isolation: ensure the ad belongs to the user's country
+        ad = serializer.validated_data.get('ad')
+        user = self.request.user
+        if user.country and ad.country and ad.country != user.country:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Vous ne pouvez pas demander un devis pour une annonce d\'un autre pays.')
         quote = serializer.save()
         # Increment inquiries count
         Ad.objects.filter(pk=quote.ad_id).update(inquiries_count=F('inquiries_count') + 1)
@@ -248,6 +265,9 @@ class CSAdListView(generics.ListAPIView):
     def get_queryset(self):
         qs = Ad.objects.all().select_related('provider', 'category')
         status_filter = self.request.query_params.get('status')
+        country = self.request.query_params.get('country')
         if status_filter:
             qs = qs.filter(status=status_filter)
+        if country:
+            qs = qs.filter(country__code=country)
         return qs

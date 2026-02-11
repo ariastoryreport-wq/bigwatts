@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useCountry } from '../../context/CountryContext';
+import { useAuth } from '../../context/AuthContext';
 import { Globe } from 'lucide-react';
 
 const COUNTRY_OPTIONS = [
@@ -9,13 +10,17 @@ const COUNTRY_OPTIONS = [
 
 /**
  * Modal shown on first visit to ask which country the user lives in.
- * Choice is persisted in localStorage so it only appears once.
+ * Only shows for unauthenticated users — authenticated users have their
+ * country locked to their account.
  */
 export default function CountryPickerModal() {
   const [show, setShow] = useState(false);
   const { switchCountry } = useCountry();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    // Never show for authenticated users
+    if (isAuthenticated) return;
     const alreadyPicked = localStorage.getItem('country_manual');
     const dismissed = localStorage.getItem('country_popup_dismissed');
     if (!alreadyPicked && !dismissed) {
@@ -23,7 +28,7 @@ export default function CountryPickerModal() {
       const t = setTimeout(() => setShow(true), 600);
       return () => clearTimeout(t);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const handleSelect = (code) => {
     switchCountry(code);

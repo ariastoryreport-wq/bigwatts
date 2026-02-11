@@ -160,6 +160,13 @@ class ProviderListView(generics.ListAPIView):
         available = self.request.query_params.get('available')
         country = self.request.query_params.get('country')
         
+        # Country isolation: authenticated users only see providers in their country
+        user = self.request.user
+        if user and user.is_authenticated and hasattr(user, 'country') and user.country:
+            qs = qs.filter(country=user.country)
+        elif country:
+            qs = qs.filter(country__code=country)
+        
         if city:
             qs = qs.filter(city__icontains=city)
         if search:
@@ -171,8 +178,6 @@ class ProviderListView(generics.ListAPIView):
             )
         if available == 'true':
             qs = qs.filter(prestataire_profile__is_available=True)
-        if country:
-            qs = qs.filter(country__code=country)
         return qs.select_related('prestataire_profile')
 
 

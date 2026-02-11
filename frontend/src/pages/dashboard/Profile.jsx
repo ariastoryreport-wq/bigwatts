@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { authAPI, reviewsAPI } from '../../services/api';
+import { authAPI, reviewsAPI, ticketsAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useCountry } from '../../context/CountryContext';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { PageHeader, LoadingSpinner, StarRating, Card } from '../../components/ui';
-import { Star } from 'lucide-react';
+import { Star, LifeBuoy, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CityAutocomplete from '../../components/ui/CityAutocomplete';
 import PostalCodeAutocomplete from '../../components/ui/PostalCodeAutocomplete';
@@ -28,7 +28,6 @@ export default function Profile() {
         postal_code: user.postal_code || '',
         address: user.address || '',
         bio: user.bio || '',
-        country_code: user.country_code || 'FR',
       });
       if (isPrestataire && user.prestataire_profile) {
         setProfileForm({
@@ -153,6 +152,55 @@ export default function Profile() {
           Enregistrer
         </button>
       </form>
+
+      {/* Country — locked */}
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 mb-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Lock className="h-4 w-4 text-gray-400" />
+          Pays du compte
+        </h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {(() => {
+              const c = countries.find(ct => ct.code === user.country_code);
+              return c ? (
+                <>
+                  <span className="text-2xl">{c.flag_emoji}</span>
+                  <div>
+                    <p className="font-medium text-black dark:text-white">{c.name}</p>
+                    <p className="text-xs text-gray-400">{c.currency} ({c.currency_symbol})</p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-gray-500">{user.country_code || '—'}</p>
+              );
+            })()}
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await ticketsAPI.createTicket({
+                  subject: `Demande de changement de pays`,
+                  category: 'account',
+                  message: `Je souhaite changer le pays de mon compte (actuellement : ${user.country_code || 'non défini'}). Merci de mettre à jour mon compte.`,
+                  priority: 'medium',
+                });
+                toast.success('Ticket envoyé au support ! Nous traiterons votre demande rapidement.');
+              } catch {
+                toast.error('Erreur lors de la création du ticket');
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2 border border-brand-300 text-brand-600 dark:text-brand-300 rounded-lg text-sm font-medium hover:bg-brand-50 dark:hover:bg-brand-900/20 transition"
+          >
+            <LifeBuoy className="h-4 w-4" />
+            Demander un changement
+          </button>
+        </div>
+        <p className="mt-3 text-xs text-gray-400">
+          Votre pays détermine les services, prestataires et aides auxquels vous avez accès. Pour le modifier, veuillez contacter le support.
+        </p>
+      </div>
 
       {/* Role-specific profile */}
       {(isPrestataire || isProprietaire) && (
