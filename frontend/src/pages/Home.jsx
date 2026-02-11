@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Sun, Zap, Thermometer, Shield, ArrowRight, Star, MapPin, CheckCircle, MessageCircle, FileText, CreditCard } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, Sun, Zap, Thermometer, Shield, ArrowRight, Star, MapPin, CheckCircle, FileText, CreditCard } from 'lucide-react';
 import { adsAPI } from '../services/api';
 import { useCountry } from '../context/CountryContext';
 import AdCard from '../components/cards/AdCard';
@@ -42,7 +42,6 @@ const STATS = [
 
 const HOW_IT_WORKS = [
   { icon: Search, title: 'Trouvez un prestataire', description: 'Parcourez notre réseau de professionnels certifiés près de chez vous.' },
-  { icon: MessageCircle, title: 'Contactez-le', description: 'Échangez directement avec le prestataire pour discuter de votre projet.' },
   { icon: FileText, title: 'Recevez un estimé', description: 'Obtenez un devis détaillé et transparent sans engagement.' },
   { icon: CreditCard, title: 'Paiement sécurisé', description: 'Réglez facilement et en toute sécurité via notre plateforme.' },
 ];
@@ -51,6 +50,11 @@ export default function Home() {
   const [latestAds, setLatestAds] = useState([]);
   const [searchCity, setSearchCity] = useState('');
   const { countryCode } = useCountry();
+  const navigate = useNavigate();
+
+  const handleSearch = () => {
+    navigate(`/services${searchCity ? `?city=${searchCity}` : ''}`);
+  };
 
   useEffect(() => {
     adsAPI.getAds({ page_size: 6, country: countryCode }).then(({ data }) => {
@@ -98,6 +102,7 @@ export default function Home() {
                     className="w-full py-3 bg-transparent text-gray-900 placeholder-gray-500 outline-none font-medium"
                     value={searchCity}
                     onChange={(e) => setSearchCity(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   />
                 </div>
                 <Link
@@ -171,9 +176,9 @@ export default function Home() {
               Comment ça marche ?
             </h3>
             <p className="text-center text-gray-500 dark:text-gray-400 mb-12 max-w-lg mx-auto">
-              En 4 étapes simples, trouvez le bon professionnel pour votre projet.
+              En 3 étapes simples, trouvez le bon professionnel pour votre projet.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
               {HOW_IT_WORKS.map((step, i) => (
                 <div key={i} className="text-center">
                   <div className="w-16 h-16 rounded-full bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mx-auto mb-5">

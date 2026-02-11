@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { useAuthModal } from './components/ui/AuthModal';
+import { useEffect } from 'react';
 
 // Layout
 import Navbar from './components/layout/Navbar';
@@ -43,8 +45,14 @@ import CSReports from './pages/dashboard/cs/CSReports';
 
 function ProtectedRoute({ children, roles }) {
   const { isAuthenticated, user, loading } = useAuth();
+  const { openLogin } = useAuthModal();
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) openLogin();
+  }, [loading, isAuthenticated]);
+
   if (loading) return <div className="flex items-center justify-center h-screen"><Spinner /></div>;
-  if (!isAuthenticated) return <Navigate to="/login" />;
+  if (!isAuthenticated) return <Navigate to="/" />;
   if (roles && !roles.includes(user.role)) return <Navigate to="/dashboard" />;
   return children;
 }

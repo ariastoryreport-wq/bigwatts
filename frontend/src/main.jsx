@@ -6,6 +6,7 @@ import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { CountryProvider } from './context/CountryContext'
+import { AuthModalProvider } from './components/ui/AuthModal'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -14,8 +15,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <CountryProvider>
           <AuthProvider>
-            <App />
-            <Toaster position="top-right" />
+            <AuthModalProvider>
+              <App />
+              <Toaster position="top-right" />
+            </AuthModalProvider>
           </AuthProvider>
         </CountryProvider>
       </ThemeProvider>

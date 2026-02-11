@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from ads.models import ServiceCategory, Ad
 from accounts.models import PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge
 from reviews.models import Review
+from countries.models import Country
 
 User = get_user_model()
 
@@ -23,6 +24,7 @@ class Command(BaseCommand):
         self._ads(providers)
         self._reviews(providers, owners)
         self._badges(providers)
+        self._assign_countries()
         self.stdout.write(self.style.SUCCESS('\n🎉 Fixtures chargées avec succès!'))
         self._print_accounts()
 
@@ -593,6 +595,19 @@ class Command(BaseCommand):
                     badge_count += 1
 
         self.stdout.write(f'  ✅ {len(badges_data)} badges, {badge_count} attributions')
+
+    # ──────────────────── Assign countries ────────────────────
+
+    def _assign_countries(self):
+        """Ensure all users and ads without a country are assigned to France."""
+        try:
+            fr = Country.objects.get(code='FR')
+        except Country.DoesNotExist:
+            self.stdout.write('  ⚠️  Country FR not found, skipping country assignment')
+            return
+        u_count = User.objects.filter(country__isnull=True).update(country=fr)
+        a_count = Ad.objects.filter(country__isnull=True).update(country=fr)
+        self.stdout.write(f'  ✅ Pays assigné: {u_count} utilisateurs, {a_count} annonces → FR')
 
     # ──────────────────── Summary ────────────────────
 

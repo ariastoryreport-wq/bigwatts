@@ -21,10 +21,10 @@ const PROPERTY_TYPES = [
 ];
 
 const STEPS = [
-  { title: 'Localisation', icon: MapPin },
-  { title: 'Propriété', icon: Home },
-  { title: 'Installation', icon: Zap },
-  { title: 'Budget', icon: Euro },
+  { title: 'Localisation' },
+  { title: 'Propriété' },
+  { title: 'Installation' },
+  { title: 'Budget' },
 ];
 
 export default function IncentiveChecker() {
@@ -76,17 +76,16 @@ export default function IncentiveChecker() {
         <div className="mt-8 mb-10">
           <div className="flex items-center justify-between mb-3">
             {STEPS.map((s, i) => {
-              const Icon = s.icon;
               const done = i < step;
               const active = i === step;
               return (
                 <div key={i} className="flex flex-col items-center flex-1">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                     done ? 'bg-green-500 text-white' :
-                    active ? 'bg-black dark:bg-white text-white dark:text-black ring-4 ring-brand-200 dark:ring-brand-800' :
+                    active ? 'bg-green-500 text-white' :
                     'bg-gray-200 dark:bg-gray-800 text-gray-500'
                   }`}>
-                    {done ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                    {done ? <CheckCircle2 className="h-5 w-5" /> : i + 1}
                   </div>
                   <span className={`text-xs mt-1 ${active ? 'font-bold text-black dark:text-white' : 'text-gray-500'}`}>
                     {s.title}
@@ -97,7 +96,7 @@ export default function IncentiveChecker() {
           </div>
           <div className="w-full h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-brand-300 to-green-400 transition-all duration-500 rounded-full"
+              className="h-full bg-green-500 transition-all duration-500 rounded-full"
               style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
             />
           </div>
@@ -156,11 +155,11 @@ export default function IncentiveChecker() {
                     onClick={() => update('property_type', pt.value)}
                     className={`p-4 rounded-xl border-2 text-left transition-all ${
                       form.property_type === pt.value
-                        ? 'border-brand-400 bg-brand-50 dark:bg-brand-950 ring-2 ring-brand-200'
+                        ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-800'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500'
                     }`}
                   >
-                    <pt.Icon className="h-6 w-6 text-brand-500" />
+                    <pt.Icon className="h-6 w-6 text-gray-700 dark:text-gray-300" />
                     <p className="mt-2 font-medium text-black dark:text-white text-sm">{pt.label}</p>
                   </button>
                 ))}
@@ -201,11 +200,11 @@ export default function IncentiveChecker() {
                     onClick={() => update('installation_type', it.value)}
                     className={`p-4 rounded-xl border-2 text-center transition-all ${
                       form.installation_type === it.value
-                        ? 'border-brand-400 bg-brand-50 dark:bg-brand-950 ring-2 ring-brand-200'
+                        ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-800'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500'
                     }`}
                   >
-                    <it.Icon className="h-7 w-7 text-brand-500 mx-auto" />
+                    <it.Icon className="h-7 w-7 text-gray-700 dark:text-gray-300 mx-auto" />
                     <p className="mt-2 font-medium text-black dark:text-white text-sm">{it.label}</p>
                   </button>
                 ))}
@@ -220,7 +219,7 @@ export default function IncentiveChecker() {
                 <Euro className="h-5 w-5 text-brand-400" /> Budget & revenus
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Ces informations sont optionnelles mais permettent d'affiner les résultats et d'estimer vos économies.
+                Ces informations sont <strong>optionnelles</strong> mais permettent d'affiner les résultats et d'estimer vos économies.
               </p>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

@@ -117,7 +117,7 @@ export default function MapView() {
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col">
       {/* Toolbar */}
-      <div className="bg-white dark:bg-gray-950 border-b divider px-4 py-3 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-950 border-b divider px-4 py-3 flex items-center justify-between relative z-[1000]">
         <div>
           <h1 className="text-lg font-bold text-black dark:text-white flex items-center gap-2">
             <MapPin className="h-5 w-5 text-brand-300" />

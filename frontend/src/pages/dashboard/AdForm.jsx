@@ -3,7 +3,25 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { adsAPI } from '../../services/api';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Card, PageHeader, LoadingSpinner } from '../../components/ui';
+import { ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const STATUS_OPTIONS = [
+  { value: 'draft', label: 'Brouillon', color: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' },
+  { value: 'active', label: 'Publier', color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' },
+  { value: 'paused', label: 'En pause', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' },
+];
+
+const DEFAULT_IMAGES = {
+  'panneaux-solaires': 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80',
+  'bornes-recharge': 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=800&q=80',
+  'pompe-chaleur': 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80',
+  'isolation': 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80',
+  'chauffe-eau-thermo': 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&q=80',
+  'eolienne': 'https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?w=800&q=80',
+  'audit-energetique': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80',
+  'batterie-stockage': 'https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?w=800&q=80',
+};
 
 export default function AdForm() {
   const { id } = useParams();
@@ -12,9 +30,10 @@ export default function AdForm() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    title: '', slug: '', category: '', description: '', short_description: '',
+    title: '', slug: '', category: '', description: '',
     price: '', price_type: 'quote', city: '', postal_code: '', service_area: '',
-    status: 'draft', duration_estimate: '', warranty_info: '', requirements: ''
+    status: 'draft', duration_estimate: '', warranty_info: '', requirements: '',
+    image_url: '',
   });
 
   useEffect(() => {
@@ -24,12 +43,13 @@ export default function AdForm() {
       adsAPI.getAd(id).then(({ data }) => {
         setForm({
           title: data.title || '', slug: data.slug || '', category: data.category || '',
-          description: data.description || '', short_description: data.short_description || '',
+          description: data.description || '',
           price: data.price || '', price_type: data.price_type || 'quote',
           city: data.city || '', postal_code: data.postal_code || '',
           service_area: data.service_area || '', status: data.status || 'draft',
           duration_estimate: data.duration_estimate || '', warranty_info: data.warranty_info || '',
-          requirements: data.requirements || ''
+          requirements: data.requirements || '',
+          image_url: data.image_url || '',
         });
       }).catch(() => toast.error('Erreur de chargement'))
         .finally(() => setLoading(false));
@@ -44,13 +64,35 @@ export default function AdForm() {
       .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   };
 
+  // When category changes, auto-suggest a title
+  const handleCategoryChange = (e) => {
+    const catId = e.target.value;
+    const cat = categories.find(c => c.id === Number(catId));
+    const newForm = { ...form, category: catId };
+
+    // Auto-generate title from category if title is empty or was auto-generated
+    if (cat && !isEdit && !form.title) {
+      newForm.title = cat.name;
+      newForm.slug = generateSlug(cat.name);
+    }
+
+    // Auto-set default Unsplash image if no image set
+    if (cat && !form.image_url) {
+      newForm.image_url = DEFAULT_IMAGES[cat.slug] || '';
+    }
+
+    setForm(newForm);
+  };
+
+  const isQuoteType = form.price_type === 'quote' || form.price_type === 'free_estimate';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       const data = { ...form };
       if (!data.slug) data.slug = generateSlug(data.title);
-      if (!data.price) delete data.price;
+      if (!data.price || isQuoteType) delete data.price;
       if (data.category) data.category = Number(data.category);
 
       if (isEdit) {
@@ -75,55 +117,63 @@ export default function AdForm() {
 
   if (loading && isEdit) return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
 
+  const inputClass = "w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-300 outline-none bg-white dark:bg-gray-900 text-black dark:text-white";
+
   return (
     <DashboardLayout>
       <PageHeader title={isEdit ? 'Modifier l\'annonce' : 'Nouvelle annonce'} />
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title & Category */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre *</label>
-              <input
-                type="text" required value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value, slug: generateSlug(e.target.value) })}
-                className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-brand-300 outline-none"
-                placeholder="Ex: Installation Panneaux Solaires"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie *</label>
-              <select required value={form.category} onChange={set('category')}
-                className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-brand-300 outline-none">
-                <option value="">Choisir...</option>
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
+          {/* Category first */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie *</label>
+            <select required value={form.category} onChange={handleCategoryChange}
+              className={inputClass}>
+              <option value="">Choisir une catégorie...</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
           </div>
 
-          {/* Short description */}
+          {/* Title (auto-generated from category, editable) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description courte</label>
-            <input type="text" value={form.short_description} onChange={set('short_description')}
-              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-brand-300 outline-none"
-              placeholder="Résumé en une phrase" maxLength={300} />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre *</label>
+            <input
+              type="text" required value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value, slug: generateSlug(e.target.value) })}
+              className={inputClass}
+              placeholder="Ex: Installation Panneaux Solaires"
+            />
           </div>
 
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description complète *</label>
             <textarea required rows={6} value={form.description} onChange={set('description')}
-              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-brand-300 outline-none"
+              className={inputClass}
               placeholder="Détaillez votre service..." />
           </div>
 
-          {/* Price */}
+          {/* Image URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <ImageIcon className="h-4 w-4 inline mr-1" />
+              Image (URL)
+            </label>
+            <input type="url" value={form.image_url} onChange={set('image_url')}
+              className={inputClass}
+              placeholder="https://images.unsplash.com/..." />
+            {form.image_url && (
+              <img src={form.image_url} alt="Aperçu" className="mt-2 h-32 w-full object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
+            )}
+          </div>
+
+          {/* Price type + Price */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de prix</label>
-              <select value={form.price_type} onChange={set('price_type')}
-                className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-brand-300 outline-none">
+              <select value={form.price_type} onChange={(e) => setForm({ ...form, price_type: e.target.value, ...(e.target.value === 'quote' || e.target.value === 'free_estimate' ? { price: '' } : {}) })}
+                className={inputClass}>
                 <option value="quote">Sur devis</option>
                 <option value="fixed">Prix fixe</option>
                 <option value="hourly">Taux horaire</option>
@@ -133,13 +183,14 @@ export default function AdForm() {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prix (€)</label>
               <input type="number" step="0.01" value={form.price} onChange={set('price')}
-                className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-brand-300 outline-none"
-                placeholder="0.00" />
+                className={`${inputClass} ${isQuoteType ? 'opacity-40 cursor-not-allowed' : ''}`}
+                placeholder={isQuoteType ? '—' : '0.00'}
+                disabled={isQuoteType} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Durée estimée</label>
               <input type="text" value={form.duration_estimate} onChange={set('duration_estimate')}
-                className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-brand-300 outline-none"
+                className={inputClass}
                 placeholder="Ex: 2-3 jours" />
             </div>
           </div>
@@ -149,17 +200,17 @@ export default function AdForm() {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ville *</label>
               <input type="text" required value={form.city} onChange={set('city')}
-                className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-brand-300 outline-none" />
+                className={inputClass} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code postal</label>
               <input type="text" value={form.postal_code} onChange={set('postal_code')}
-                className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-brand-300 outline-none" />
+                className={inputClass} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zone d'intervention</label>
               <input type="text" value={form.service_area} onChange={set('service_area')}
-                className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-brand-300 outline-none"
+                className={inputClass}
                 placeholder="Ex: Rhône-Alpes" />
             </div>
           </div>
@@ -168,23 +219,33 @@ export default function AdForm() {
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Garantie</label>
             <textarea rows={2} value={form.warranty_info} onChange={set('warranty_info')}
-              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-brand-300 outline-none" />
+              className={inputClass} />
           </div>
 
-          {/* Status */}
+          {/* Status as buttons */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Statut</label>
-            <select value={form.status} onChange={set('status')}
-              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-brand-300 outline-none md:w-48">
-              <option value="draft">Brouillon</option>
-              <option value="active">Publier</option>
-              <option value="paused">En pause</option>
-            </select>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Statut</label>
+            <div className="flex gap-2">
+              {STATUS_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setForm({ ...form, status: opt.value })}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition border-2 ${
+                    form.status === opt.value
+                      ? `${opt.color} border-current`
+                      : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-400'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Submit */}
-          <div className="flex gap-3 pt-4 border-t">
-            <button type="button" onClick={() => navigate('/dashboard/ads')} className="px-6 py-2.5 border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+            <button type="button" onClick={() => navigate('/dashboard/ads')} className="px-6 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white">
               Annuler
             </button>
             <button type="submit" disabled={loading}

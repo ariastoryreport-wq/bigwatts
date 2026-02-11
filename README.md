@@ -4,6 +4,12 @@ Plateforme de mise en relation entre prestataires de services d'énergie verte e
 
 🔗 **Démo live** : [https://bigwatts.vercel.app](https://bigwatts.vercel.app)
 
+To run the live demo from the repo :
+Run the frontend :
+```cd /home/ariane/bigwatts/frontend && npx vite --host```
+Run the backend :
+```cd /home/ariane/bigwatts/backend && python3 manage.py runserver 0.0.0.0:8000```
+
 ## Architecture
 
 ```

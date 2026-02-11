@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useCountry } from '../../context/CountryContext';
-import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare, Check, FileText, Star, AlertCircle, Settings, Heart, Globe } from 'lucide-react';
+import { useAuthModal } from '../ui/AuthModal';
+import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare, Check, FileText, Star, AlertCircle, Settings, Heart, Globe, AlertTriangle } from 'lucide-react';
 import { notificationsAPI, messagingAPI } from '../../services/api';
 import Logo from '../ui/Logo';
 
@@ -45,15 +46,34 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const { dark, toggle } = useTheme();
   const { countries, currentCountry, switchCountry } = useCountry();
+  const { openLogin, openRegister } = useAuthModal();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
+  const [countryWarning, setCountryWarning] = useState(null); // { code, name, flag } or null
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const notifRef = useRef(null);
   const countryRef = useRef(null);
   const navigate = useNavigate();
+
+  const handleCountrySwitch = (code) => {
+    if (code === currentCountry.code) { setCountryOpen(false); return; }
+    const target = countries.find(c => c.code === code);
+    setCountryOpen(false);
+    setCountryWarning(target);
+  };
+
+  const confirmCountrySwitch = async () => {
+    if (!countryWarning) return;
+    if (isAuthenticated) {
+      await logout();
+      navigate('/');
+    }
+    switchCountry(countryWarning.code);
+    setCountryWarning(null);
+  };
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -192,7 +212,7 @@ export default function Navbar() {
                     {countries.map((c) => (
                       <button
                         key={c.code}
-                        onClick={() => { switchCountry(c.code); setCountryOpen(false); }}
+                        onClick={() => handleCountrySwitch(c.code)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm transition ${
                           c.code === currentCountry.code
                             ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 font-semibold'
@@ -342,10 +362,10 @@ export default function Navbar() {
               </>
             ) : (
               <div className="hidden lg:flex items-center space-x-3">
-                <Link to="/login" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white font-medium transition">Connexion</Link>
-                <Link to="/register" className="bg-black dark:bg-white text-white dark:text-black px-5 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition font-bold">
+                <button onClick={() => openLogin()} className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white font-medium transition">Connexion</button>
+                <button onClick={() => openRegister()} className="bg-black dark:bg-white text-white dark:text-black px-5 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition font-bold">
                   Inscription
-                </Link>
+                </button>
               </div>
             )}
 
@@ -367,7 +387,7 @@ export default function Navbar() {
                 {countries.map((c) => (
                   <button
                     key={c.code}
-                    onClick={() => switchCountry(c.code)}
+                    onClick={() => handleCountrySwitch(c.code)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition ${
                       c.code === currentCountry.code
                         ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 font-semibold border border-brand-200 dark:border-brand-800'
@@ -395,10 +415,46 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link to="/login" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400">Connexion</Link>
-                <Link to="/register" onClick={() => setMobileOpen(false)} className="block py-2 font-bold text-black dark:text-white">Inscription</Link>
+                <button onClick={() => { setMobileOpen(false); openLogin(); }} className="block py-2 text-gray-600 dark:text-gray-400">Connexion</button>
+                <button onClick={() => { setMobileOpen(false); openRegister(); }} className="block py-2 font-bold text-black dark:text-white">Inscription</button>
               </>
             )}
+          </div>
+        </div>
+      )}
+      
+      {/* Country switch warning modal */}
+      {countryWarning && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setCountryWarning(null)}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+            </div>
+            <h3 className="text-lg font-bold text-black dark:text-white mb-2">
+              Changer de pays ?
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+              Passer de {currentCountry.flag_emoji} {currentCountry.name} à {countryWarning.flag_emoji} {countryWarning.name}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              {isAuthenticated 
+                ? 'Vous serez déconnecté(e). Les services, aides et devise seront adaptés au nouveau pays.'
+                : 'Les services, aides et devise seront adaptés au nouveau pays. Votre formulaire d\'aides sera réinitialisé.'}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setCountryWarning(null)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition text-black dark:text-white"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmCountrySwitch}
+                className="flex-1 px-4 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:bg-gray-800 dark:hover:bg-gray-200 transition"
+              >
+                {isAuthenticated ? 'Déconnecter & changer' : 'Confirmer'}
+              </button>
+            </div>
           </div>
         </div>
       )}

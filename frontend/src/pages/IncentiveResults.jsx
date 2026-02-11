@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Euro, Sparkles, Award, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Euro, Sparkles, RefreshCw } from 'lucide-react';
 import { LoadingSpinner, PageHeader } from '../components/ui';
 import { useCountry } from '../context/CountryContext';
 import api from '../services/api';
@@ -108,7 +108,7 @@ export default function IncentiveResults() {
 
         {/* Summary card */}
         {results.length > 0 && (
-          <div className="mt-6 mb-8 bg-gradient-to-r from-green-500 to-brand-400 rounded-2xl p-6 text-white shadow-lg">
+          <div className="mt-6 mb-8 bg-green-500 rounded-2xl p-6 text-white shadow-lg">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <p className="text-green-100 text-sm font-medium">Économies potentielles totales</p>
@@ -118,9 +118,6 @@ export default function IncentiveResults() {
                 <p className="text-green-100 text-sm mt-1">
                   {results.length} programme{results.length > 1 ? 's' : ''} disponible{results.length > 1 ? 's' : ''}
                 </p>
-              </div>
-              <div className="bg-white/20 backdrop-blur rounded-xl p-4">
-                <Award className="h-10 w-10" />
               </div>
             </div>
             {state.estimated_budget && (

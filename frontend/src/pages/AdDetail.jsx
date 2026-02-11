@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { adsAPI, reviewsAPI, favoritesAPI, messagingAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useAuthModal } from '../components/ui/AuthModal';
 import { LoadingSpinner, PriceDisplay, StatusBadge, StarRating, Badge, Card } from '../components/ui';
 import { MapPin, Clock, Shield, Eye, MessageSquare, Heart, Star, Send, ArrowLeft, X, Flag } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -17,6 +18,7 @@ const REPORT_REASONS = [
 export default function AdDetail() {
   const { id } = useParams();
   const { user, isAuthenticated, isProprietaire } = useAuth();
+  const { openLogin } = useAuthModal();
   const navigate = useNavigate();
   const [ad, setAd] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -48,7 +50,7 @@ export default function AdDetail() {
   }, [id, isAuthenticated]);
 
   const toggleFavorite = async () => {
-    if (!isAuthenticated) { navigate('/login'); return; }
+    if (!isAuthenticated) { openLogin(); return; }
     try {
       const { data } = await favoritesAPI.toggleFavorite({ ad_id: Number(id) });
       setIsFav(data.status === 'added');
@@ -223,9 +225,20 @@ export default function AdDetail() {
                 </button>
               )}
               {!isAuthenticated && (
-                <Link to="/login" className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition font-semibold text-center block">
-                  Connectez-vous pour demander un devis
-                </Link>
+                <>
+                  <button
+                    onClick={() => openLogin()}
+                    className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition font-semibold flex items-center justify-center gap-2"
+                  >
+                    <Send className="h-4 w-4" /> Demander un devis
+                  </button>
+                  <button
+                    onClick={() => openLogin()}
+                    className="w-full border border-brand-300 text-brand-600 dark:text-brand-300 py-3 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/30 transition font-medium flex items-center justify-center gap-2"
+                  >
+                    <MessageSquare className="h-4 w-4" /> Contacter
+                  </button>
+                </>
               )}
               {isAuthenticated && provider?.id !== user?.id && (
                 <button
