@@ -145,6 +145,46 @@ class UserBadge(models.Model):
         return f"{self.user.username} — {self.badge.name}"
 
 
+class ProviderDocument(models.Model):
+    """Documents uploaded by providers for certification verification."""
+
+    class DocType(models.TextChoices):
+        IDENTITY = 'identity', 'Pièce d\'identité'
+        RGE = 'rge', 'Certification RGE'
+        INSURANCE = 'insurance', 'Assurance décennale'
+        QUALIPV = 'qualipv', 'QualiPV / QualiBois'
+        KBIS = 'kbis', 'Extrait Kbis'
+        OTHER = 'other', 'Autre'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'En attente de vérification'
+        APPROVED = 'approved', 'Approuvé'
+        REJECTED = 'rejected', 'Refusé'
+
+    provider = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='documents',
+        limit_choices_to={'role': 'prestataire'}
+    )
+    doc_type = models.CharField(max_length=20, choices=DocType.choices)
+    label = models.CharField(max_length=200)
+    file_url = models.URLField(max_length=500, blank=True, help_text="URL du document (stockage externe)")
+    file_name = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    reviewer_notes = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='reviewed_documents', limit_choices_to={'role': 'customer_service'}
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.get_doc_type_display()} — {self.provider.username}"
+
+
 class Appointment(models.Model):
     """Appointments between providers and property owners."""
 

@@ -36,6 +36,7 @@ import Analytics from './pages/dashboard/Analytics';
 import Appointments from './pages/dashboard/Appointments';
 import Bookings from './pages/dashboard/Bookings';
 import Availability from './pages/dashboard/Availability';
+import Documents from './pages/dashboard/Documents';
 
 // CS pages
 import CSUsers from './pages/dashboard/cs/CSUsers';
@@ -109,6 +110,7 @@ export default function App() {
           <Route path="/dashboard/quotes/received" element={<ProtectedRoute roles={['prestataire']}><ReceivedQuotes /></ProtectedRoute>} />
           <Route path="/dashboard/reviews" element={<ProtectedRoute roles={['prestataire']}><MyReviews /></ProtectedRoute>} />
           <Route path="/dashboard/availability" element={<ProtectedRoute roles={['prestataire']}><Availability /></ProtectedRoute>} />
+          <Route path="/dashboard/documents" element={<ProtectedRoute roles={['prestataire']}><Documents /></ProtectedRoute>} />
 
           {/* Propriétaire */}
           <Route path="/dashboard/quotes" element={<ProtectedRoute roles={['proprietaire']}><MyQuotes /></ProtectedRoute>} />

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from .models import PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge, Appointment
+from .models import PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge, Appointment, ProviderDocument
 
 User = get_user_model()
 
@@ -166,3 +166,17 @@ class AppointmentUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
         fields = ['status', 'date', 'start_time', 'end_time', 'location', 'description']
+
+
+class ProviderDocumentSerializer(serializers.ModelSerializer):
+    doc_type_display = serializers.CharField(source='get_doc_type_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = ProviderDocument
+        fields = [
+            'id', 'doc_type', 'doc_type_display', 'label', 'file_url',
+            'file_name', 'status', 'status_display', 'reviewer_notes',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['status', 'reviewer_notes', 'created_at', 'updated_at']

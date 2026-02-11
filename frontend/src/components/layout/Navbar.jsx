@@ -4,9 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useCountry } from '../../context/CountryContext';
 import { useAuthModal } from '../ui/AuthModal';
-import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare, Check, FileText, Star, AlertCircle, Settings, Heart, Globe, AlertTriangle } from 'lucide-react';
-import { notificationsAPI, messagingAPI } from '../../services/api';
+import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare, Check, FileText, Star, AlertCircle, Settings, Heart, Globe, AlertTriangle, LifeBuoy } from 'lucide-react';
+import { notificationsAPI, messagingAPI, ticketsAPI } from '../../services/api';
 import Logo from '../ui/Logo';
+import toast from 'react-hot-toast';
 
 const NOTIF_ICONS = {
   new_message: MessageSquare,
@@ -441,19 +442,42 @@ export default function Navbar() {
                 ? 'Vous serez déconnecté(e). Les services, aides et devise seront adaptés au nouveau pays.'
                 : 'Les services, aides et devise seront adaptés au nouveau pays. Votre formulaire d\'aides sera réinitialisé.'}
             </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setCountryWarning(null)}
-                className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition text-black dark:text-white"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={confirmCountrySwitch}
-                className="flex-1 px-4 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:bg-gray-800 dark:hover:bg-gray-200 transition"
-              >
-                {isAuthenticated ? 'Déconnecter & changer' : 'Confirmer'}
-              </button>
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setCountryWarning(null)}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition text-black dark:text-white"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={confirmCountrySwitch}
+                  className="flex-1 px-4 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:bg-gray-800 dark:hover:bg-gray-200 transition"
+                >
+                  {isAuthenticated ? 'Déconnecter & changer' : 'Confirmer'}
+                </button>
+              </div>
+              {isAuthenticated && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await ticketsAPI.createTicket({
+                        subject: `Demande de changement de pays : ${currentCountry.name} → ${countryWarning.name}`,
+                        category: 'account',
+                        message: `Je souhaite changer mon pays de ${currentCountry.name} (${currentCountry.code}) vers ${countryWarning.name} (${countryWarning.code}). Merci de mettre à jour mon compte.`,
+                        priority: 'medium',
+                      });
+                      setCountryWarning(null);
+                      toast.success('Ticket envoyé au support ! Nous traiterons votre demande rapidement.');
+                    } catch {
+                      toast.error('Erreur lors de la création du ticket');
+                    }
+                  }}
+                  className="w-full px-4 py-2.5 border border-brand-300 text-brand-600 dark:text-brand-300 rounded-lg text-sm font-medium hover:bg-brand-50 dark:hover:bg-brand-900/20 transition flex items-center justify-center gap-2"
+                >
+                  <LifeBuoy className="h-4 w-4" /> Demander au support de changer mon pays
+                </button>
+              )}
             </div>
           </div>
         </div>

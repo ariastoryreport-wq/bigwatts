@@ -23,13 +23,13 @@ const CATEGORIES = [
     icon: Thermometer,
     label: 'Pompes à Chaleur',
     slug: 'pompe-chaleur',
-    image: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1756482681036-73b894513086?auto=format&fit=crop&w=800&q=80',
   },
   {
     icon: Shield,
     label: 'Isolation Thermique',
     slug: 'isolation',
-    image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1770354992725-41c4acac94eb?auto=format&fit=crop&w=800&q=80',
   },
 ];
 

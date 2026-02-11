@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard, FileText, MessageSquare, Star, Heart,
   ClipboardList, Users, LifeBuoy, Bell, User, Megaphone,
-  BarChart3, Calendar, Briefcase, CalendarDays, CreditCard, Flag
+  BarChart3, Calendar, Briefcase, CalendarDays, CreditCard, Flag, ShieldCheck
 } from 'lucide-react';
 
 export default function DashboardLayout({ children }) {
@@ -20,6 +20,7 @@ export default function DashboardLayout({ children }) {
     { to: '/dashboard/quotes/received', icon: ClipboardList, label: 'Demandes reçues', roles: ['prestataire'] },
     { to: '/dashboard/bookings', icon: Briefcase, label: 'Réservations', roles: ['prestataire', 'proprietaire'] },
     { to: '/dashboard/availability', icon: CalendarDays, label: 'Disponibilités', roles: ['prestataire'] },
+    { to: '/dashboard/documents', icon: ShieldCheck, label: 'Documents', roles: ['prestataire'] },
     { to: '/dashboard/reviews', icon: Star, label: 'Mes avis', roles: ['prestataire'] },
     // Propriétaire
     { to: '/dashboard/quotes', icon: FileText, label: 'Mes demandes', roles: ['proprietaire'] },

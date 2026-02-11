@@ -4,7 +4,7 @@ Usage: python manage.py load_fixtures
 """
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from ads.models import ServiceCategory, Ad
+from ads.models import ServiceCategory, Ad, QuoteRequest
 from accounts.models import PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge
 from reviews.models import Review
 from countries.models import Country
@@ -28,6 +28,10 @@ class Command(BaseCommand):
         # Canada fixtures
         ca_providers = self._canada_providers()
         self._canada_ads(ca_providers)
+        ca_owners = self._canada_owners()
+        # Create completed bookings + reviews for demo
+        self._demo_bookings(providers, owners, ca_providers, ca_owners)
+        self._canada_reviews(ca_providers, ca_owners)
         self.stdout.write(self.style.SUCCESS('\n🎉 Fixtures chargées avec succès!'))
         self._print_accounts()
 
@@ -527,9 +531,20 @@ class Command(BaseCommand):
 
         count = 0
         for r in reviews_data:
+            # Find completed booking for this pair
+            from bookings.models import Booking as BK
+            booking = BK.objects.filter(
+                provider=r['provider'],
+                homeowner=r['author'],
+                status='completed',
+            ).first()
+            defaults = {**r}
+            if booking:
+                defaults['booking'] = booking
+                defaults['is_verified'] = True
             _, created = Review.objects.get_or_create(
                 provider=r['provider'], author=r['author'],
-                defaults=r
+                defaults=defaults
             )
             if created:
                 count += 1
@@ -758,6 +773,203 @@ class Command(BaseCommand):
             if created:
                 count += 1
         self.stdout.write(f'  ✅ {count} annonces canadiennes créées')
+
+    # ──────────────────── Summary ────────────────────
+
+    def _canada_owners(self):
+        """Create Canadian homeowner accounts."""
+        try:
+            ca = Country.objects.get(code='CA')
+        except Country.DoesNotExist:
+            self.stdout.write('  ⚠️  Country CA not found, skipping Canada owners')
+            return []
+
+        owners_data = [
+            {
+                'user': {'username': 'marie_ca', 'email': 'marie.lavoie@email.ca',
+                         'first_name': 'Marie', 'last_name': 'Lavoie',
+                         'city': 'Montréal', 'postal_code': 'H3B 4G5', 'phone': '514-555-7890',
+                         'bio': "Propriétaire d'un duplex à Montréal, intéressée par le solaire et l'isolation."},
+                'profile': {'property_type': 'maison', 'property_surface': 180,
+                            'energy_interests': 'Panneaux solaires, Isolation'},
+            },
+            {
+                'user': {'username': 'david_ca', 'email': 'david.chen@email.ca',
+                         'first_name': 'David', 'last_name': 'Chen',
+                         'city': 'Toronto', 'postal_code': 'M4B 1B3', 'phone': '416-555-2345',
+                         'bio': "Detached home owner in Toronto looking for EV charging and solar solutions."},
+                'profile': {'property_type': 'maison', 'property_surface': 200,
+                            'energy_interests': 'Borne de recharge, Panneaux solaires'},
+            },
+            {
+                'user': {'username': 'sophie_ca', 'email': 'sophie.roy@email.ca',
+                         'first_name': 'Sophie', 'last_name': 'Roy',
+                         'city': 'Vancouver', 'postal_code': 'V5K 0A1', 'phone': '604-555-6789',
+                         'bio': "Townhouse owner in East Vancouver. Looking to switch from gas to heat pump."},
+                'profile': {'property_type': 'maison', 'property_surface': 140,
+                            'energy_interests': 'Pompe à chaleur, Isolation'},
+            },
+            {
+                'user': {'username': 'luc_ca', 'email': 'luc.bergeron@email.ca',
+                         'first_name': 'Luc', 'last_name': 'Bergeron',
+                         'city': 'Québec', 'postal_code': 'G1V 2M2', 'phone': '418-555-4321',
+                         'bio': "Propriétaire d'une maison centenaire à Québec. Projet de rénovation énergétique complète."},
+                'profile': {'property_type': 'maison', 'property_surface': 220,
+                            'energy_interests': 'Isolation, Audit énergétique, Chauffage'},
+            },
+        ]
+
+        owners = []
+        for odata in owners_data:
+            user_data = odata['user']
+            profile_data = odata['profile']
+            user, created = User.objects.get_or_create(
+                username=user_data['username'],
+                defaults={**user_data, 'role': 'proprietaire', 'country': ca}
+            )
+            if created:
+                user.set_password('demo1234')
+                user.save()
+                ProprietaireProfile.objects.create(user=user, **profile_data)
+            owners.append(user)
+        self.stdout.write(f'  ✅ {len(owners)} propriétaires canadiens')
+        return owners
+
+    def _demo_bookings(self, providers, owners, ca_providers, ca_owners):
+        """Create demo QuoteRequests and completed Bookings for review eligibility."""
+        from bookings.models import Booking, AvailabilitySlot
+        from datetime import timedelta
+        from django.utils import timezone
+
+        now = timezone.now()
+        # Pairs: (provider, owner, ad_slug) — must match reviews created in _reviews()
+        pairs = [
+            (providers[0], owners[0], 'installation-panneaux-solaires-residentiel'),
+            (providers[0], owners[2], 'installation-panneaux-solaires-residentiel'),
+            (providers[1], owners[1], 'borne-recharge-domicile'),
+            (providers[1], owners[3], 'borne-recharge-domicile'),
+            (providers[2], owners[4], 'installation-pac-air-eau'),
+            (providers[3], owners[2], 'isolation-thermique-complete'),
+            (providers[4], owners[2], 'audit-energetique-complet'),
+            (providers[5], owners[3], 'autoconsommation-solaire-batterie'),
+            (providers[7], owners[4], 'remplacement-chaudiere-pac'),
+        ]
+
+        # Canada pairs
+        if ca_providers and ca_owners:
+            pairs += [
+                (ca_providers[0], ca_owners[0], 'installation-solaire-residentielle-quebec'),
+                (ca_providers[1], ca_owners[1], 'ev-charger-installation-ontario'),
+                (ca_providers[2], ca_owners[2], 'heat-pump-installation-vancouver'),
+                (ca_providers[3], ca_owners[3], 'isolation-residentielle-quebec'),
+            ]
+
+        count = 0
+        for provider, owner, ad_slug in pairs:
+            try:
+                ad = Ad.objects.get(slug=ad_slug)
+            except Ad.DoesNotExist:
+                continue
+
+            # Create quote if not exists
+            quote, q_created = QuoteRequest.objects.get_or_create(
+                ad=ad,
+                owner=owner,
+                defaults={
+                    'message': f'Demande de devis pour {ad.title}',
+                    'status': 'completed',
+                    'quoted_price': ad.price or 5000,
+                    'provider_response': 'Devis accepté et travaux réalisés.',
+                }
+            )
+            if not q_created:
+                # Already exists, make sure it's completed
+                if quote.status != 'completed':
+                    quote.status = 'completed'
+                    quote.save(update_fields=['status'])
+
+            # Create booking if not exists
+            if not hasattr(quote, 'booking'):
+                # Create a past availability slot
+                slot_start = now - timedelta(days=30 + count * 5)
+                slot_end = slot_start + timedelta(hours=4)
+                slot = AvailabilitySlot.objects.create(
+                    provider=provider,
+                    start=slot_start,
+                    end=slot_end,
+                    is_booked=True,
+                )
+                Booking.objects.create(
+                    quote=quote,
+                    homeowner=owner,
+                    provider=provider,
+                    slot=slot,
+                    status='completed',
+                )
+                count += 1
+
+        self.stdout.write(f'  ✅ {count} réservations complétées (démo)')
+
+    def _canada_reviews(self, ca_providers, ca_owners):
+        """Create reviews from Canadian owners for Canadian providers."""
+        if not ca_providers or not ca_owners:
+            return
+
+        reviews_data = [
+            {'provider': ca_providers[0], 'author': ca_owners[0], 'rating': 5,
+             'title': 'Excellent service solaire!',
+             'comment': "Marc et son équipe ont installé nos panneaux en 2 jours. Le net metering avec Hydro-Québec fonctionne parfaitement. On produit plus qu'on consomme en été!",
+             'quality_rating': 5, 'punctuality_rating': 5, 'price_rating': 4},
+            {'provider': ca_providers[1], 'author': ca_owners[1], 'rating': 5,
+             'title': 'Fast and professional EV charger install',
+             'comment': "Sarah installed our Level 2 charger in half a day. Works perfectly with our Tesla Model Y. She also helped us apply for the Ontario rebate. Highly recommended!",
+             'quality_rating': 5, 'punctuality_rating': 5, 'price_rating': 5},
+            {'provider': ca_providers[2], 'author': ca_owners[2], 'rating': 4,
+             'title': 'Great heat pump, warm all winter',
+             'comment': "James replaced our gas furnace with a heat pump. The house stays warm even in January. Energy bill dropped by 40%. CleanBC rebate covered a big chunk of the cost.",
+             'quality_rating': 5, 'punctuality_rating': 4, 'price_rating': 4},
+            {'provider': ca_providers[3], 'author': ca_owners[3], 'rating': 5,
+             'title': 'Isolation parfaite pour nos hivers!',
+             'comment': "Julie a isolé notre maison centenaire avec de la mousse giclée. La différence est incroyable: plus de courants d'air et la facture de chauffage a baissé de moitié. Travail impeccable.",
+             'quality_rating': 5, 'punctuality_rating': 5, 'price_rating': 5},
+        ]
+
+        # Link reviews to completed bookings
+        from bookings.models import Booking
+
+        count = 0
+        for r in reviews_data:
+            # Find the completed booking for this pair
+            booking = Booking.objects.filter(
+                provider=r['provider'],
+                homeowner=r['author'],
+                status='completed',
+            ).first()
+
+            review_defaults = {**r}
+            if booking:
+                review_defaults['booking'] = booking
+                review_defaults['is_verified'] = True
+
+            _, created = Review.objects.get_or_create(
+                provider=r['provider'], author=r['author'],
+                defaults=review_defaults
+            )
+            if created:
+                count += 1
+
+        # Update CA provider stats
+        from django.db.models import Avg
+        for p in ca_providers:
+            reviews = Review.objects.filter(provider=p)
+            if reviews.exists():
+                avg = reviews.aggregate(avg=Avg('rating'))['avg'] or 0
+                PrestaireProfile.objects.filter(user=p).update(
+                    total_reviews=reviews.count(),
+                    average_rating=round(avg, 2)
+                )
+
+        self.stdout.write(f'  ✅ {count} avis canadiens créés')
 
     # ──────────────────── Summary ────────────────────
 

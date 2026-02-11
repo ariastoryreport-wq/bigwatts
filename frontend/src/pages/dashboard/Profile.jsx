@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useCountry } from '../../context/CountryContext';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { PageHeader, LoadingSpinner, StarRating, Card } from '../../components/ui';
-import { Star, ShieldCheck, Upload, Clock } from 'lucide-react';
+import { Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Profile() {
@@ -210,48 +210,6 @@ export default function Profile() {
             Enregistrer
           </button>
         </form>
-      )}
-
-      {/* Certification & Verification placeholder (prestataire only) */}
-      {isPrestataire && (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
-              <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-black dark:text-white">Vérification & Certifications</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Augmentez la confiance des clients</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            {[
-              { label: 'Vérification d\'identité', status: 'coming_soon' },
-              { label: 'Certification RGE', status: 'coming_soon' },
-              { label: 'Assurance décennale', status: 'coming_soon' },
-              { label: 'QualiPV / QualiBois', status: 'coming_soon' },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-3 p-3 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-                <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                  <Clock className="h-4 w-4 text-gray-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</p>
-                  <p className="text-xs text-gray-400">Bientôt disponible</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <Upload className="h-5 w-5 text-gray-400 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Upload de documents</p>
-              <p className="text-xs text-gray-400">L'envoi de justificatifs sera bientôt disponible pour valider vos certifications.</p>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Password */}

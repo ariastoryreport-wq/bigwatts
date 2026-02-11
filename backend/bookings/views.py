@@ -29,6 +29,34 @@ class AvailabilitySlotListCreateView(generics.ListCreateAPIView):
             return [IsPrestataire()]
         return [permissions.IsAuthenticated()]
 
+    def perform_create(self, serializer):
+        """Create slot with overlap detection."""
+        start = serializer.validated_data['start']
+        end = serializer.validated_data['end']
+        provider = self.request.user
+
+        # Prevent slots in the past
+        from django.utils import timezone
+        if start < timezone.now():
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'detail': 'Impossible de créer un créneau dans le passé.'})
+
+        if end <= start:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'detail': 'La fin doit être après le début.'})
+
+        # Check for overlapping slots
+        overlapping = AvailabilitySlot.objects.filter(
+            provider=provider,
+            start__lt=end,
+            end__gt=start,
+        )
+        if overlapping.exists():
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'detail': 'Ce créneau chevauche un créneau existant.'})
+
+        serializer.save(provider=provider)
+
     def get_queryset(self):
         provider_id = self.request.query_params.get('provider')
         quote_id = self.request.query_params.get('quote')

@@ -2,11 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { bookingsAPI } from '../../services/api';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Card, PageHeader, LoadingSpinner } from '../../components/ui';
-import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, AlertTriangle, GripVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7h–20h
-const SLOT_HEIGHT = 48; // px per hour
+const HOURS = Array.from({ length: 14 }, (_, i) => i + 7);
+const SLOT_HEIGHT = 48;
 const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
@@ -34,6 +34,8 @@ export default function Availability() {
   const [loading, setLoading] = useState(true);
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [dragging, setDragging] = useState(null);
+  const [movingSlot, setMovingSlot] = useState(null);
+  const [collisionWarning, setCollisionWarning] = useState(false);
   const gridRef = useRef(null);
 
   const fetchSlots = useCallback(() => {
@@ -57,8 +59,8 @@ export default function Availability() {
   const weekLabel = (() => {
     const f = weekDays[0], l = weekDays[6];
     return f.getMonth() === l.getMonth()
-      ? `${f.getDate()} – ${l.getDate()} ${MONTHS_FR[f.getMonth()]} ${f.getFullYear()}`
-      : `${f.getDate()} ${MONTHS_FR[f.getMonth()]} – ${l.getDate()} ${MONTHS_FR[l.getMonth()]} ${l.getFullYear()}`;
+      ? `${f.getDate()} \u2013 ${l.getDate()} ${MONTHS_FR[f.getMonth()]} ${f.getFullYear()}`
+      : `${f.getDate()} ${MONTHS_FR[f.getMonth()]} \u2013 ${l.getDate()} ${MONTHS_FR[l.getMonth()]} ${l.getFullYear()}`;
   })();
 
   const daySlots = (day) => slots.filter(s => isSameDay(new Date(s.start), day));
@@ -71,80 +73,159 @@ export default function Availability() {
     return { hour: Math.max(7, Math.min(21, h)), min: m };
   }, []);
 
+  const checkCollision = useCallback((dayIdx, startMin, endMin, excludeSlotId = null) => {
+    const day = weekDays[dayIdx];
+    const existing = daySlots(day).filter(s => s.id !== excludeSlotId);
+    for (const slot of existing) {
+      const st = new Date(slot.start), en = new Date(slot.end);
+      const sMin = st.getHours() * 60 + st.getMinutes();
+      const eMin = en.getHours() * 60 + en.getMinutes();
+      if (startMin < eMin && endMin > sMin) return true;
+    }
+    return false;
+  }, [weekDays, slots]);
+
   const handleMouseDown = (e, dayIdx) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || movingSlot) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const { hour, min } = yToTime(e.clientY - rect.top);
     setDragging({ dayIdx, sH: hour, sM: min, eH: hour, eM: min + 15 });
+    setCollisionWarning(false);
   };
 
   const handleMouseMove = useCallback((e) => {
+    if (movingSlot) {
+      const cols = gridRef.current?.querySelectorAll('[data-day-col]');
+      if (!cols?.[movingSlot.dayIdx]) return;
+      const rect = cols[movingSlot.dayIdx].getBoundingClientRect();
+      const y = Math.max(0, Math.min(e.clientY - rect.top, HOURS.length * SLOT_HEIGHT));
+      const { hour, min } = yToTime(y);
+      const newStartMin = hour * 60 + min - movingSlot.offsetMinutes;
+      const duration = movingSlot.durationMin;
+      const startMin = Math.max(7 * 60, Math.min(newStartMin, 21 * 60 - duration));
+      const endMin = startMin + duration;
+      const sH = Math.floor(startMin / 60), sM = startMin % 60;
+      const eH = Math.floor(endMin / 60), eM = endMin % 60;
+      setCollisionWarning(checkCollision(movingSlot.dayIdx, startMin, endMin, movingSlot.slot.id));
+      setMovingSlot(prev => ({ ...prev, sH, sM, eH, eM }));
+      return;
+    }
     if (!dragging) return;
     const cols = gridRef.current?.querySelectorAll('[data-day-col]');
     if (!cols?.[dragging.dayIdx]) return;
     const rect = cols[dragging.dayIdx].getBoundingClientRect();
     const y = Math.max(0, Math.min(e.clientY - rect.top, HOURS.length * SLOT_HEIGHT));
     const { hour, min } = yToTime(y);
+    const s = Math.min(dragging.sH * 60 + dragging.sM, hour * 60 + min);
+    const e2 = Math.max(dragging.sH * 60 + dragging.sM, hour * 60 + min);
+    setCollisionWarning(checkCollision(dragging.dayIdx, s, e2 + 15));
     setDragging(p => ({ ...p, eH: hour, eM: min }));
-  }, [dragging, yToTime]);
+  }, [dragging, movingSlot, yToTime, checkCollision]);
 
   const handleMouseUp = useCallback(async () => {
+    if (movingSlot) {
+      const { slot, sH, sM, eH, eM, dayIdx } = movingSlot;
+      setMovingSlot(null);
+      setCollisionWarning(false);
+      const startMin = sH * 60 + sM, endMin = eH * 60 + eM;
+      if (checkCollision(dayIdx, startMin, endMin, slot.id)) {
+        toast.error('Collision : ce cr\u00e9neau chevauche un autre.');
+        return;
+      }
+      const day = weekDays[dayIdx];
+      const ds = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+      try {
+        await bookingsAPI.deleteSlot(slot.id);
+        await bookingsAPI.createSlot({ start: `${ds}T${fmt(sH,sM)}:00`, end: `${ds}T${fmt(eH,eM)}:00` });
+        toast.success('Cr\u00e9neau d\u00e9plac\u00e9 !');
+        fetchSlots();
+      } catch (err) {
+        toast.error(err.response?.data?.detail || 'Erreur lors du d\u00e9placement.');
+        fetchSlots();
+      }
+      return;
+    }
     if (!dragging) return;
     let { dayIdx, sH, sM, eH, eM } = dragging;
     setDragging(null);
+    setCollisionWarning(false);
     let s = sH * 60 + sM, e2 = eH * 60 + eM;
     if (e2 < s) [s, e2] = [e2, s];
     if (e2 - s < 15) return;
     sH = Math.floor(s / 60); sM = s % 60; eH = Math.floor(e2 / 60); eM = e2 % 60;
+    if (checkCollision(dayIdx, s, e2)) {
+      toast.error('Collision : ce cr\u00e9neau chevauche un cr\u00e9neau existant.');
+      return;
+    }
     const day = weekDays[dayIdx];
-    const yyyy = day.getFullYear();
-    const mm = String(day.getMonth() + 1).padStart(2, '0');
-    const dd = String(day.getDate()).padStart(2, '0');
-    const ds = `${yyyy}-${mm}-${dd}`;
-    const start = `${ds}T${fmt(sH, sM)}:00`, end = `${ds}T${fmt(eH, eM)}:00`;
-    if (new Date(start) < new Date()) { toast.error('Impossible de créer un créneau dans le passé.'); return; }
-    try { await bookingsAPI.createSlot({ start, end }); toast.success('Créneau ajouté !'); fetchSlots(); }
+    const ds = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+    const start = `${ds}T${fmt(sH,sM)}:00`, end = `${ds}T${fmt(eH,eM)}:00`;
+    if (new Date(start) < new Date()) { toast.error('Impossible de cr\u00e9er un cr\u00e9neau dans le pass\u00e9.'); return; }
+    try { await bookingsAPI.createSlot({ start, end }); toast.success('Cr\u00e9neau ajout\u00e9 !'); fetchSlots(); }
     catch (err) {
       const msg = err.response?.data?.detail || err.response?.data?.error
         || err.response?.data?.start?.[0] || err.response?.data?.end?.[0]
-        || err.response?.data?.non_field_errors?.[0]
-        || 'Erreur lors de la création. Vérifiez que le backend est accessible.';
+        || err.response?.data?.non_field_errors?.[0] || 'Erreur lors de la cr\u00e9ation.';
       toast.error(msg);
     }
-  }, [dragging, weekDays, fetchSlots]);
+  }, [dragging, movingSlot, weekDays, fetchSlots, checkCollision]);
 
   useEffect(() => {
-    if (!dragging) return;
+    if (!dragging && !movingSlot) return;
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     return () => { window.removeEventListener('mousemove', handleMouseMove); window.removeEventListener('mouseup', handleMouseUp); };
-  }, [dragging, handleMouseMove, handleMouseUp]);
+  }, [dragging, movingSlot, handleMouseMove, handleMouseUp]);
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();
-    if (!confirm('Supprimer ce créneau ?')) return;
-    try { await bookingsAPI.deleteSlot(id); toast.success('Créneau supprimé'); fetchSlots(); }
+    if (!confirm('Supprimer ce cr\u00e9neau ?')) return;
+    try { await bookingsAPI.deleteSlot(id); toast.success('Cr\u00e9neau supprim\u00e9'); fetchSlots(); }
     catch (err) { toast.error(err.response?.data?.detail || 'Erreur.'); }
   };
 
-  const renderSlot = (slot) => {
+  const handleStartMove = (e, slot, dayIdx) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (slot.is_booked) return;
+    const st = new Date(slot.start), en = new Date(slot.end);
+    const sH = st.getHours(), sM = st.getMinutes(), eH = en.getHours(), eM = en.getMinutes();
+    const durationMin = (eH * 60 + eM) - (sH * 60 + sM);
+    const cols = gridRef.current?.querySelectorAll('[data-day-col]');
+    if (!cols?.[dayIdx]) return;
+    const rect = cols[dayIdx].getBoundingClientRect();
+    const { hour, min } = yToTime(e.clientY - rect.top);
+    const offsetMinutes = hour * 60 + min - (sH * 60 + sM);
+    setMovingSlot({ slot, dayIdx, sH, sM, eH, eM, durationMin, offsetMinutes });
+    setCollisionWarning(false);
+  };
+
+  const renderSlot = (slot, dayIdx) => {
+    const isBeingMoved = movingSlot?.slot.id === slot.id;
     const st = new Date(slot.start), en = new Date(slot.end);
     const sMin = st.getHours() * 60 + st.getMinutes() - 420;
     const eMin = en.getHours() * 60 + en.getMinutes() - 420;
     const top = (sMin / 60) * SLOT_HEIGHT;
     const height = Math.max(((eMin - sMin) / 60) * SLOT_HEIGHT, 12);
-    const label = `${fmt(st.getHours(), st.getMinutes())} – ${fmt(en.getHours(), en.getMinutes())}`;
+    const label = `${fmt(st.getHours(), st.getMinutes())} \u2013 ${fmt(en.getHours(), en.getMinutes())}`;
     return (
-      <div key={slot.id} title={`${label}${slot.is_booked ? ' (Réservé)' : ''}`}
-        className={`absolute left-1 right-1 rounded-md px-2 py-1 text-xs cursor-default group overflow-hidden border ${
+      <div key={slot.id} title={`${label}${slot.is_booked ? ' (R\u00e9serv\u00e9)' : ''}`}
+        className={`absolute left-1 right-1 rounded-md px-2 py-1 text-xs group overflow-hidden border transition-opacity ${
+          isBeingMoved ? 'opacity-30' : ''} ${
           slot.is_booked
-            ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200'
-            : 'bg-emerald-100 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200'
+            ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 cursor-default'
+            : 'bg-emerald-100 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 cursor-grab'
         }`} style={{ top: `${top}px`, height: `${height}px` }}>
         <div className="flex items-center justify-between h-full">
-          <div className="truncate">
-            <span className="font-medium">{label}</span>
-            {height >= 36 && <span className="block text-[10px] opacity-70">{slot.is_booked ? 'Réservé' : 'Disponible'}</span>}
+          <div className="flex items-center gap-1 truncate flex-1 min-w-0">
+            {!slot.is_booked && (
+              <GripVertical className="h-3 w-3 text-emerald-400 dark:text-emerald-600 flex-shrink-0 cursor-grab opacity-0 group-hover:opacity-100 transition"
+                onMouseDown={(e) => handleStartMove(e, slot, dayIdx)} />
+            )}
+            <div className="truncate">
+              <span className="font-medium">{label}</span>
+              {height >= 36 && <span className="block text-[10px] opacity-70">{slot.is_booked ? 'R\u00e9serv\u00e9' : 'Disponible'}</span>}
+            </div>
           </div>
           {!slot.is_booked && (
             <button onClick={(e) => handleDelete(e, slot.id)}
@@ -158,6 +239,21 @@ export default function Availability() {
   };
 
   const renderDragPreview = (dayIdx) => {
+    if (movingSlot && movingSlot.dayIdx === dayIdx) {
+      const sMin = movingSlot.sH * 60 + movingSlot.sM - 420;
+      const eMin = movingSlot.eH * 60 + movingSlot.eM - 420;
+      const top = (sMin / 60) * SLOT_HEIGHT, h = Math.max(((eMin - sMin) / 60) * SLOT_HEIGHT, 4);
+      return (
+        <div className={`absolute left-1 right-1 rounded-md border-2 z-10 pointer-events-none flex items-center justify-center ${
+          collisionWarning ? 'bg-red-200/60 dark:bg-red-700/40 border-red-400 border-dashed' : 'bg-emerald-200/60 dark:bg-emerald-700/40 border-emerald-400 border-dashed'
+        }`} style={{ top: `${top}px`, height: `${h}px` }}>
+          {h >= 24 && <span className={`text-[11px] font-semibold ${collisionWarning ? 'text-red-700 dark:text-red-200' : 'text-emerald-700 dark:text-emerald-200'}`}>
+            {collisionWarning && <AlertTriangle className="h-3 w-3 inline mr-1" />}
+            {fmt(movingSlot.sH, movingSlot.sM)} \u2013 {fmt(movingSlot.eH, movingSlot.eM)}
+          </span>}
+        </div>
+      );
+    }
     if (!dragging || dragging.dayIdx !== dayIdx) return null;
     const s = dragging.sH * 60 + dragging.sM, e2 = dragging.eH * 60 + dragging.eM;
     const topM = Math.min(s, e2) - 420, botM = Math.max(s, e2) - 420;
@@ -165,9 +261,13 @@ export default function Availability() {
     const sH2 = Math.floor((topM + 420) / 60), sM2 = (topM + 420) % 60;
     const eH2 = Math.floor((botM + 420) / 60), eM2 = (botM + 420) % 60;
     return (
-      <div className="absolute left-1 right-1 rounded-md bg-brand-200/60 dark:bg-brand-700/40 border-2 border-brand-400 dark:border-brand-500 border-dashed z-10 pointer-events-none flex items-center justify-center"
-        style={{ top: `${top}px`, height: `${h}px` }}>
-        {h >= 24 && <span className="text-[11px] font-semibold text-brand-700 dark:text-brand-200">{fmt(sH2, sM2)} – {fmt(eH2, eM2)}</span>}
+      <div className={`absolute left-1 right-1 rounded-md border-2 z-10 pointer-events-none flex items-center justify-center ${
+        collisionWarning ? 'bg-red-200/60 dark:bg-red-700/40 border-red-400 border-dashed' : 'bg-brand-200/60 dark:bg-brand-700/40 border-brand-400 border-dashed'
+      }`} style={{ top: `${top}px`, height: `${h}px` }}>
+        {h >= 24 && <span className={`text-[11px] font-semibold ${collisionWarning ? 'text-red-700 dark:text-red-200' : 'text-brand-700 dark:text-brand-200'}`}>
+          {collisionWarning && <AlertTriangle className="h-3 w-3 inline mr-1" />}
+          {fmt(sH2, sM2)} \u2013 {fmt(eH2, eM2)}
+        </span>}
       </div>
     );
   };
@@ -176,9 +276,7 @@ export default function Availability() {
 
   return (
     <DashboardLayout>
-      <PageHeader title="Mes disponibilités" description="Cliquez et glissez sur le calendrier pour créer des créneaux" />
-
-      {/* Week nav */}
+      <PageHeader title="Mes disponibilit\u00e9s" description="Glissez pour cr\u00e9er \u00b7 Poign\u00e9e pour d\u00e9placer \u00b7 Croix pour supprimer" />
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <button onClick={prevWeek} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition"><ChevronLeft className="h-5 w-5" /></button>
@@ -187,35 +285,35 @@ export default function Availability() {
         </div>
         <h2 className="text-lg font-bold text-black dark:text-white">{weekLabel}</h2>
       </div>
-
+      {collisionWarning && (
+        <div className="mb-3 flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span>Ce cr\u00e9neau chevauche un cr\u00e9neau existant \u2014 il ne pourra pas \u00eatre enregistr\u00e9.</span>
+        </div>
+      )}
       {loading ? <LoadingSpinner /> : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto" ref={gridRef}>
             <div className="min-w-[700px]">
-              {/* Header */}
               <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-gray-200 dark:border-gray-800">
                 <div className="p-2" />
                 {weekDays.map((day, i) => {
                   const isToday = isSameDay(day, new Date());
                   const isPast = day < today;
+                  const slotCount = daySlots(day).length;
                   return (
                     <div key={i} className={`p-2 text-center border-l border-gray-200 dark:border-gray-800 ${isPast ? 'opacity-40' : ''}`}>
                       <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{DAYS_FR[i]}</div>
-                      <div className={`text-lg font-bold mt-0.5 ${isToday ? 'text-white bg-brand-500 w-8 h-8 rounded-full flex items-center justify-center mx-auto' : 'text-black dark:text-white'}`}>
-                        {day.getDate()}
-                      </div>
+                      <div className={`text-lg font-bold mt-0.5 ${isToday ? 'text-white bg-brand-500 w-8 h-8 rounded-full flex items-center justify-center mx-auto' : 'text-black dark:text-white'}`}>{day.getDate()}</div>
+                      {slotCount > 0 && <div className="text-[10px] text-gray-400 mt-0.5">{slotCount} cr\u00e9neau{slotCount > 1 ? 'x' : ''}</div>}
                     </div>
                   );
                 })}
               </div>
-
-              {/* Grid */}
               <div className="grid grid-cols-[60px_repeat(7,1fr)] relative">
                 <div className="relative">
                   {HOURS.map(h => (
-                    <div key={h} className="border-b border-gray-100 dark:border-gray-800/50 text-[11px] text-gray-400 dark:text-gray-500 pr-2 text-right flex items-start justify-end pt-0.5" style={{ height: `${SLOT_HEIGHT}px` }}>
-                      {fmt(h)}
-                    </div>
+                    <div key={h} className="border-b border-gray-100 dark:border-gray-800/50 text-[11px] text-gray-400 dark:text-gray-500 pr-2 text-right flex items-start justify-end pt-0.5" style={{ height: `${SLOT_HEIGHT}px` }}>{fmt(h)}</div>
                   ))}
                 </div>
                 {weekDays.map((day, dayIdx) => {
@@ -230,7 +328,7 @@ export default function Availability() {
                           <div className="absolute left-0 right-0 border-b border-dashed border-gray-50 dark:border-gray-800/30" style={{ top: `${SLOT_HEIGHT / 2}px` }} />
                         </div>
                       ))}
-                      {daySlots(day).map(renderSlot)}
+                      {daySlots(day).map(slot => renderSlot(slot, dayIdx))}
                       {renderDragPreview(dayIdx)}
                     </div>
                   );
@@ -240,12 +338,11 @@ export default function Availability() {
           </div>
         </Card>
       )}
-
-      {/* Legend */}
-      <div className="flex items-center gap-6 mt-4 text-sm text-gray-500 dark:text-gray-400">
+      <div className="flex flex-wrap items-center gap-6 mt-4 text-sm text-gray-500 dark:text-gray-400">
         <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-700" /> Disponible</div>
-        <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700" /> Réservé</div>
+        <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700" /> R\u00e9serv\u00e9</div>
         <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-brand-200/60 dark:bg-brand-700/40 border-2 border-dashed border-brand-400 dark:border-brand-500" /> Nouveau (glisser)</div>
+        <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-red-200/60 dark:bg-red-700/40 border-2 border-dashed border-red-400 dark:border-red-500" /> Collision</div>
       </div>
     </DashboardLayout>
   );

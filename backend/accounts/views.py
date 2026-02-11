@@ -407,6 +407,30 @@ class AnalyticsView(APIView):
                 reviews.values('rating').annotate(count=Count('id')).order_by('rating')
             )
 
+            # Monthly revenue (last 6 months, from completed quotes)
+            monthly_revenue = []
+            for i in range(6):
+                month_start = (now - timedelta(days=30 * (5 - i))).replace(day=1)
+                if i < 5:
+                    month_end = (now - timedelta(days=30 * (4 - i))).replace(day=1)
+                else:
+                    month_end = now + timedelta(days=1)
+                rev = quotes.filter(
+                    status='completed',
+                    updated_at__gte=month_start,
+                    updated_at__lt=month_end,
+                    quoted_price__isnull=False,
+                ).aggregate(total=Sum('quoted_price'))['total'] or 0
+                monthly_revenue.append({
+                    'month': month_start.strftime('%b %Y'),
+                    'amount': float(rev),
+                })
+
+            total_revenue = float(
+                quotes.filter(status='completed', quoted_price__isnull=False)
+                .aggregate(total=Sum('quoted_price'))['total'] or 0
+            )
+
             data = {
                 'total_views': ads.aggregate(total=Sum('views_count'))['total'] or 0,
                 'total_inquiries': ads.aggregate(total=Sum('inquiries_count'))['total'] or 0,
@@ -419,6 +443,8 @@ class AnalyticsView(APIView):
                 'average_rating': float(reviews.aggregate(avg=Avg('rating'))['avg'] or 0),
                 'total_reviews': reviews.count(),
                 'monthly_quotes': monthly_quotes,
+                'monthly_revenue': monthly_revenue,
+                'total_revenue': total_revenue,
                 'rating_distribution': rating_dist,
                 'top_ads': list(ads.filter(status='active').order_by('-views_count')[:5].values(
                     'id', 'title', 'views_count', 'inquiries_count'
@@ -455,3 +481,27 @@ class AnalyticsView(APIView):
             data = {}
 
         return Response(data)
+
+
+# ──────────────────── Provider Documents ────────────────────
+
+class ProviderDocumentListCreateView(generics.ListCreateAPIView):
+    """GET/POST /api/auth/documents/ — list & upload provider documents."""
+    from .serializers import ProviderDocumentSerializer
+    serializer_class = ProviderDocumentSerializer
+
+    def get_queryset(self):
+        return self.request.user.documents.all()
+
+    def perform_create(self, serializer):
+        if not self.request.user.is_prestataire:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Seuls les prestataires peuvent envoyer des documents.")
+        serializer.save(provider=self.request.user)
+
+
+class ProviderDocumentDeleteView(generics.DestroyAPIView):
+    """DELETE /api/auth/documents/<id>/ — delete own pending document."""
+
+    def get_queryset(self):
+        return self.request.user.documents.filter(status='pending')

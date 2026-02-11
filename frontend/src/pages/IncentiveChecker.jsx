@@ -112,8 +112,7 @@ export default function IncentiveChecker() {
               </h2>
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Pays sélectionné</p>
-                <p className="text-lg font-bold text-black dark:text-white flex items-center gap-2">
-                  <span className="text-2xl">{selectedCountryObj?.flag_emoji}</span>
+                <p className="text-lg font-bold text-black dark:text-white">
                   {selectedCountryObj?.name || 'France'}
                 </p>
               </div>
@@ -260,7 +259,7 @@ export default function IncentiveChecker() {
             <button
               onClick={handleNext}
               disabled={!canNext()}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black font-bold hover:bg-gray-800 dark:hover:bg-gray-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {step === STEPS.length - 1 ? (
                 <>

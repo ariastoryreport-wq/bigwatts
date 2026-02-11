@@ -92,6 +92,10 @@ export const authAPI = {
   getAppointments: (params) => api.get('/auth/appointments/', { params }),
   createAppointment: (data) => api.post('/auth/appointments/create/', data),
   updateAppointment: (id, data) => api.patch(`/auth/appointments/${id}/`, data),
+  // Documents
+  getDocuments: () => api.get('/auth/documents/'),
+  createDocument: (data) => api.post('/auth/documents/', data),
+  deleteDocument: (id) => api.delete(`/auth/documents/${id}/`),
   // CS
   csGetUsers: (params) => api.get('/auth/cs/users/', { params }),
   csGetUser: (id) => api.get(`/auth/cs/users/${id}/`),
@@ -105,8 +109,14 @@ export const adsAPI = {
   getAds: (params) => api.get('/ads/', { params }),
   getAd: (id) => api.get(`/ads/${id}/`),
   getMyAds: () => api.get('/ads/my/'),
-  createAd: (data) => api.post('/ads/create/', data),
-  updateAd: (id, data) => api.patch(`/ads/${id}/update/`, data),
+  createAd: (data) => {
+    if (data instanceof FormData) return api.post('/ads/create/', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+    return api.post('/ads/create/', data);
+  },
+  updateAd: (id, data) => {
+    if (data instanceof FormData) return api.patch(`/ads/${id}/update/`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
+    return api.patch(`/ads/${id}/update/`, data);
+  },
   deleteAd: (id) => api.delete(`/ads/${id}/delete/`),
   // Quotes
   createQuote: (data) => api.post('/ads/quotes/', data),

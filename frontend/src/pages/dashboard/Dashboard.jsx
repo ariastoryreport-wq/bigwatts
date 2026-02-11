@@ -7,12 +7,13 @@ import { Card, LoadingSpinner } from '../../components/ui';
 import {
   Megaphone, FileText, MessageSquare, Star, Heart, Users,
   LifeBuoy, TrendingUp, ClipboardList, Briefcase,
-  PlusCircle, ArrowRight, AlertCircle, CheckCircle2,
+  PlusCircle, ArrowRight, AlertCircle, CheckCircle2, Euro,
 } from 'lucide-react';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,6 +21,11 @@ export default function Dashboard() {
       .then(({ data }) => setStats(data))
       .catch(() => {})
       .finally(() => setLoading(false));
+    if (user?.role === 'prestataire') {
+      authAPI.getAnalytics()
+        .then(({ data }) => setAnalytics(data))
+        .catch(() => {});
+    }
   }, []);
 
   /* ─── Stat card ─── */
@@ -125,6 +131,48 @@ export default function Dashboard() {
             <QuickAction icon={FileText} label="Mon profil public" description="Modifier mes informations" to="/dashboard/profile" />
           </div>
         </div>
+
+        {/* Revenue graph */}
+        {analytics?.monthly_revenue && (
+          <div>
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Revenus</h2>
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 flex items-center justify-center">
+                    <Euro className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-black dark:text-white">
+                      {(analytics.total_revenue || 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Revenus totaux (prestations terminées)</p>
+                  </div>
+                </div>
+              </div>
+              {(() => {
+                const data = analytics.monthly_revenue;
+                const maxVal = Math.max(...data.map(d => d.amount), 1);
+                return (
+                  <div className="flex items-end gap-2 h-40">
+                    {data.map((item, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                        <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300">
+                          {item.amount > 0 ? `${Math.round(item.amount)}€` : ''}
+                        </span>
+                        <div
+                          className="w-full rounded-t-md bg-gradient-to-t from-green-500 to-green-400 dark:from-green-600 dark:to-green-500 min-h-[4px] transition-all"
+                          style={{ height: `${Math.max((item.amount / maxVal) * 100, 3)}%` }}
+                        />
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 truncate w-full text-center">{item.month}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </Card>
+          </div>
+        )}
       </div>
     );
   };

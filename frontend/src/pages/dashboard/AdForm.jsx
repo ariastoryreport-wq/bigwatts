@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { adsAPI } from '../../services/api';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Card, PageHeader, LoadingSpinner } from '../../components/ui';
-import { ImageIcon, Sun, Zap, Thermometer, Layers, Droplet, Wind, ClipboardList, Battery, HelpCircle } from 'lucide-react';
+import { ImageIcon, Sun, Zap, Thermometer, Layers, Droplet, Wind, ClipboardList, Battery, HelpCircle, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const STATUS_OPTIONS = [
@@ -40,6 +40,8 @@ export default function AdForm() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [imageFiles, setImageFiles] = useState({ image_1: null, image_2: null, image_3: null });
+  const [imagePreviews, setImagePreviews] = useState({ image_1: null, image_2: null, image_3: null });
   const [form, setForm] = useState({
     title: '', slug: '', category: '', description: '',
     price: '', price_type: 'quote', city: '', postal_code: '', service_area: '',
@@ -100,16 +102,33 @@ export default function AdForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      const data = { ...form };
-      if (!data.slug) data.slug = generateSlug(data.title);
-      if (!data.price || isQuoteType) delete data.price;
-      if (data.category) data.category = Number(data.category);
+      const hasFiles = Object.values(imageFiles).some(f => f !== null);
+      let payload;
+
+      if (hasFiles) {
+        payload = new FormData();
+        const data = { ...form };
+        if (!data.slug) data.slug = generateSlug(data.title);
+        if (!data.price || isQuoteType) delete data.price;
+        if (data.category) data.category = Number(data.category);
+        Object.entries(data).forEach(([k, v]) => {
+          if (v !== '' && v !== null && v !== undefined) payload.append(k, v);
+        });
+        Object.entries(imageFiles).forEach(([k, file]) => {
+          if (file) payload.append(k, file);
+        });
+      } else {
+        payload = { ...form };
+        if (!payload.slug) payload.slug = generateSlug(payload.title);
+        if (!payload.price || isQuoteType) delete payload.price;
+        if (payload.category) payload.category = Number(payload.category);
+      }
 
       if (isEdit) {
-        await adsAPI.updateAd(id, data);
+        await adsAPI.updateAd(id, payload);
         toast.success('Annonce mise à jour');
       } else {
-        await adsAPI.createAd(data);
+        await adsAPI.createAd(payload);
         toast.success('Annonce créée');
       }
       navigate('/dashboard/ads');
@@ -197,6 +216,48 @@ export default function AdForm() {
             {form.image_url && (
               <img src={form.image_url} alt="Aperçu" className="mt-2 h-32 w-full object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
             )}
+          </div>
+
+          {/* File Upload Images */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <Upload className="h-4 w-4 inline mr-1" />
+              Photos (upload)
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              {['image_1', 'image_2', 'image_3'].map((key, idx) => (
+                <div key={key} className="relative">
+                  {imagePreviews[key] ? (
+                    <div className="relative group">
+                      <img src={imagePreviews[key]} alt={`Photo ${idx + 1}`}
+                        className="h-28 w-full object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
+                      <button type="button" onClick={() => {
+                        setImageFiles(p => ({ ...p, [key]: null }));
+                        setImagePreviews(p => ({ ...p, [key]: null }));
+                      }}
+                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:border-brand-400 dark:hover:border-brand-600 hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition">
+                      <Upload className="h-5 w-5 text-gray-400 mb-1" />
+                      <span className="text-xs text-gray-400">Photo {idx + 1}</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 5 * 1024 * 1024) { toast.error('Max 5 Mo par image'); return; }
+                        setImageFiles(p => ({ ...p, [key]: file }));
+                        const reader = new FileReader();
+                        reader.onload = (ev) => setImagePreviews(p => ({ ...p, [key]: ev.target.result }));
+                        reader.readAsDataURL(file);
+                      }} />
+                    </label>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Formats acceptés : JPG, PNG, WebP · Max 5 Mo par image</p>
           </div>
 
           {/* Price type + Price */}

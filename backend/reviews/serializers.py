@@ -11,7 +11,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = '__all__'
-        read_only_fields = ['author', 'is_verified', 'provider_response', 'response_date', 'created_at', 'updated_at']
+        read_only_fields = ['author', 'booking', 'is_verified', 'provider_response', 'response_date', 'created_at', 'updated_at']
     
     def create(self, validated_data):
         validated_data['author'] = self.context['request'].user

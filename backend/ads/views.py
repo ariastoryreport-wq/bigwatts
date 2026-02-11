@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions, status, filters
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django_filters.rest_framework import DjangoFilterBackend
@@ -83,12 +84,14 @@ class AdCreateView(generics.CreateAPIView):
     """POST /api/ads/create/ - Create a new ad (providers only)."""
     serializer_class = AdCreateUpdateSerializer
     permission_classes = [IsPrestataire]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
 
 class AdUpdateView(generics.UpdateAPIView):
     """PATCH /api/ads/<id>/update/ - Update an ad."""
     serializer_class = AdCreateUpdateSerializer
     permission_classes = [IsPrestataire, IsAdOwner]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     
     def get_queryset(self):
         return Ad.objects.filter(provider=self.request.user)

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge, Appointment
+from .models import User, PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge, Appointment, ProviderDocument
 
 
 @admin.register(User)
@@ -45,3 +45,10 @@ class AppointmentAdmin(admin.ModelAdmin):
     list_display = ('title', 'provider', 'owner', 'date', 'start_time', 'status')
     list_filter = ('status', 'date')
     search_fields = ('title', 'provider__username', 'owner__username')
+
+
+@admin.register(ProviderDocument)
+class ProviderDocumentAdmin(admin.ModelAdmin):
+    list_display = ('provider', 'doc_type', 'label', 'status', 'created_at')
+    list_filter = ('doc_type', 'status')
+    search_fields = ('provider__username', 'label')

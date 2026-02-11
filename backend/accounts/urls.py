@@ -23,6 +23,10 @@ urlpatterns = [
     path('appointments/', views.AppointmentListView.as_view(), name='appointment-list'),
     path('appointments/create/', views.AppointmentCreateView.as_view(), name='appointment-create'),
     path('appointments/<int:pk>/', views.AppointmentUpdateView.as_view(), name='appointment-update'),
+
+    # Documents
+    path('documents/', views.ProviderDocumentListCreateView.as_view(), name='document-list-create'),
+    path('documents/<int:pk>/', views.ProviderDocumentDeleteView.as_view(), name='document-delete'),
     
     # Public
     path('providers/', views.ProviderListView.as_view(), name='provider-list'),
