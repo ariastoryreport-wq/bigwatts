@@ -7,6 +7,24 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30s timeout (Render cold start can take a while)
+});
+
+// Retry logic for failed requests (handles Render.com cold starts)
+api.interceptors.response.use(null, async (error) => {
+  const config = error.config;
+  if (!config || config._retryCount >= 2) return Promise.reject(error);
+
+  const isNetworkOrServerError =
+    !error.response || error.response.status >= 500;
+
+  if (isNetworkOrServerError && config.method === 'get') {
+    config._retryCount = (config._retryCount || 0) + 1;
+    const delay = config._retryCount * 2000; // 2s, then 4s
+    await new Promise((r) => setTimeout(r, delay));
+    return api(config);
+  }
+  return Promise.reject(error);
 });
 
 // Request interceptor - add JWT token
