@@ -84,7 +84,7 @@ export default function CSAds() {
                     <td className="px-5 py-3 text-sm text-gray-600 dark:text-gray-400">{ad.provider_name || `#${ad.provider}`}</td>
                     <td className="px-5 py-3 text-sm text-gray-600 dark:text-gray-400">{ad.category_name || '–'}</td>
                     <td className="px-5 py-3 text-sm">
-                      {ad.price ? <PriceDisplay price={ad.price} priceType={ad.price_type} /> : <span className="text-gray-400">–</span>}
+                      {ad.price ? <PriceDisplay price={ad.price} priceMax={ad.price_max} priceType={ad.price_type} /> : <span className="text-gray-400">–</span>}
                     </td>
                     <td className="px-5 py-3"><StatusBadge status={ad.status} /></td>
                     <td className="px-5 py-3 text-sm text-gray-500 dark:text-gray-400">{ad.views_count || 0}</td>

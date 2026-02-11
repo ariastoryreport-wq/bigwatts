@@ -151,7 +151,8 @@ export default function AdDetail() {
         <div className="lg:col-span-2 space-y-6">
           {/* Images carousel */}
           {(() => {
-            const images = [ad.image_1, ad.image_2, ad.image_3, ad.image_url].filter(Boolean);
+            const urlImages = ad.image_url ? ad.image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
+            const images = [ad.image_1, ad.image_2, ad.image_3, ...urlImages].filter(Boolean);
             if (images.length === 0) return (
               <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
                 <div className="w-full h-full flex items-center justify-center text-6xl">⚡</div>
@@ -184,7 +185,7 @@ export default function AdDetail() {
             </div>
 
             <div className="mb-6">
-              <PriceDisplay price={ad.price} priceType={ad.price_type} currency={ad.currency || 'EUR'} currencySymbol={ad.currency_symbol || '€'} />
+              <PriceDisplay price={ad.price} priceMax={ad.price_max} priceType={ad.price_type} currency={ad.currency || 'EUR'} currencySymbol={ad.currency_symbol || '€'} />
             </div>
 
             <div className="prose max-w-none text-gray-700 dark:text-gray-300">

@@ -95,16 +95,20 @@ export function PageHeader({ title, description, action }) {
   );
 }
 
-export function PriceDisplay({ price, priceType, currency = 'EUR', currencySymbol }) {
+export function PriceDisplay({ price, priceMax, priceType, currency = 'EUR', currencySymbol }) {
   if (!price && priceType === 'quote') return <span className="text-brand-600 dark:text-brand-300 font-semibold">Sur devis</span>;
   if (!price && priceType === 'free_estimate') return <span className="text-brand-600 dark:text-brand-300 font-semibold">Estimation gratuite</span>;
   if (!price) return <span className="text-gray-400">Prix non renseigné</span>;
-  let formatted;
-  try {
-    formatted = new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(price);
-  } catch {
-    formatted = `${currencySymbol || '€'}${Number(price).toFixed(2)}`;
+  const fmt = (v) => {
+    try {
+      return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(v);
+    } catch {
+      return `${currencySymbol || '€'}${Number(v).toFixed(2)}`;
+    }
+  };
+  if (priceType === 'fixed' && priceMax) {
+    return <span className="text-black dark:text-white font-bold text-lg">{fmt(price)} – {fmt(priceMax)}</span>;
   }
-  const suffix = priceType === 'hourly' ? '/h' : '';
-  return <span className="text-black dark:text-white font-bold text-lg">{formatted}{suffix}</span>;
+  const suffix = priceType === 'hourly' ? ' / heure' : '';
+  return <span className="text-black dark:text-white font-bold text-lg">{fmt(price)}{suffix}</span>;
 }

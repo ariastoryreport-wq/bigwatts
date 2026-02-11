@@ -8,13 +8,17 @@ export default function AdCard({ ad }) {
       <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300">
         {/* Image */}
         <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
-          {(ad.image_1 || ad.image_url) ? (
-            <img src={ad.image_1 || ad.image_url} alt={ad.title} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="text-4xl">⚡</span>
-            </div>
-          )}
+          {(() => {
+            const firstUrl = ad.image_url ? ad.image_url.split(',')[0].trim() : '';
+            const thumb = ad.image_1 || firstUrl;
+            return thumb ? (
+              <img src={thumb} alt={ad.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-4xl">⚡</span>
+              </div>
+            );
+          })()}
           {ad.category_name && (
             <div className="absolute top-3 left-3">
               <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-black/80 text-white border border-white/10 backdrop-blur-sm">
@@ -35,7 +39,7 @@ export default function AdCard({ ad }) {
           )}
 
           <div className="flex items-center justify-between mb-3">
-            <PriceDisplay price={ad.price} priceType={ad.price_type} currency={ad.currency || 'EUR'} currencySymbol={ad.currency_symbol || '€'} />
+            <PriceDisplay price={ad.price} priceMax={ad.price_max} priceType={ad.price_type} currency={ad.currency || 'EUR'} currencySymbol={ad.currency_symbol || '€'} />
             {ad.provider_rating > 0 && (
               <div className="flex items-center text-sm text-gray-500">
                 <Star className="h-4 w-4 fill-brand-300 text-brand-300 mr-1" />

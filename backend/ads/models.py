@@ -45,6 +45,7 @@ class Ad(models.Model):
     short_description = models.CharField(max_length=300, blank=True)
     
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    price_max = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Prix max pour fourchette (prix fixe)")
     price_type = models.CharField(max_length=20, choices=PriceType.choices, default=PriceType.QUOTE)
     
     city = models.CharField(max_length=100)

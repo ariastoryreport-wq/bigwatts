@@ -7,6 +7,7 @@ import { PageHeader, LoadingSpinner, StarRating, Card } from '../../components/u
 import { Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CityAutocomplete from '../../components/ui/CityAutocomplete';
+import PostalCodeAutocomplete from '../../components/ui/PostalCodeAutocomplete';
 
 export default function Profile() {
   const { user, updateUser, isPrestataire, isProprietaire } = useAuth();
@@ -131,7 +132,13 @@ export default function Profile() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code postal</label>
-            <input className={inputClass} value={form.postal_code} onChange={(e) => setForm({ ...form, postal_code: e.target.value })} autoComplete="postal-code" />
+            <PostalCodeAutocomplete
+              value={form.postal_code}
+              onChange={(val) => setForm(f => ({ ...f, postal_code: val }))}
+              onCityResolved={(city) => setForm(f => ({ ...f, city: city }))}
+              className={inputClass}
+              compact
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Adresse</label>

@@ -5,6 +5,7 @@ import { useCountry } from '../../context/CountryContext';
 import { Eye, EyeOff, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CityAutocomplete from './CityAutocomplete';
+import PostalCodeAutocomplete from './PostalCodeAutocomplete';
 
 /* ─── Auth Modal Context ─── */
 const AuthModalContext = createContext(null);
@@ -282,7 +283,13 @@ function AuthModal() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Code postal</label>
-                  <input type="text" value={regForm.postal_code} onChange={setReg('postal_code')} className={inputClass} autoComplete="postal-code" />
+                  <PostalCodeAutocomplete
+                    value={regForm.postal_code}
+                    onChange={(val) => setRegForm(f => ({ ...f, postal_code: val }))}
+                    onCityResolved={(city) => setRegForm(f => ({ ...f, city: city }))}
+                    className={inputClass}
+                    compact
+                  />
                 </div>
               </div>
 

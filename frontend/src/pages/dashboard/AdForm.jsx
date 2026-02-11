@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { adsAPI } from '../../services/api';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Card, PageHeader, LoadingSpinner } from '../../components/ui';
-import { ImageIcon, Sun, Zap, Thermometer, Layers, Droplet, Wind, ClipboardList, Battery, HelpCircle, Upload, X } from 'lucide-react';
+import { ImageIcon, Sun, Zap, Thermometer, Layers, Droplet, Wind, ClipboardList, Battery, HelpCircle, Upload, X, Plus, Link2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CityAutocomplete from '../../components/ui/CityAutocomplete';
+import PostalCodeAutocomplete from '../../components/ui/PostalCodeAutocomplete';
 
 const STATUS_OPTIONS = [
   { value: 'draft', label: 'Brouillon', color: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' },
@@ -45,11 +46,11 @@ export default function AdForm() {
   const [imagePreviews, setImagePreviews] = useState({ image_1: null, image_2: null, image_3: null });
   const [existingImages, setExistingImages] = useState({ image_1: null, image_2: null, image_3: null });
   const [imagesToClear, setImagesToClear] = useState(new Set());
+  const [imageUrls, setImageUrls] = useState(['']);
   const [form, setForm] = useState({
     title: '', slug: '', category: '', description: '',
-    price: '', price_type: 'quote', city: '', postal_code: '', service_area: '',
-    status: 'draft', duration_estimate: '', warranty_info: '', requirements: '',
-    image_url: '',
+    price: '', price_max: '', price_type: 'quote', city: '', postal_code: '', service_area: '',
+    status: 'draft', warranty_info: '', requirements: '',
   });
 
   useEffect(() => {
@@ -60,13 +61,16 @@ export default function AdForm() {
         setForm({
           title: data.title || '', slug: data.slug || '', category: data.category || '',
           description: data.description || '',
-          price: data.price || '', price_type: data.price_type || 'quote',
+          price: data.price || '', price_max: data.price_max || '', price_type: data.price_type || 'quote',
           city: data.city || '', postal_code: data.postal_code || '',
           service_area: data.service_area || '', status: data.status || 'draft',
-          duration_estimate: data.duration_estimate || '', warranty_info: data.warranty_info || '',
+          warranty_info: data.warranty_info || '',
           requirements: data.requirements || '',
-          image_url: data.image_url || '',
         });
+        // Load existing image URLs into array
+        if (data.image_url) {
+          setImageUrls(data.image_url.split(',').map(u => u.trim()).filter(Boolean).concat(['']));
+        }
         // Load existing uploaded images for preview
         setExistingImages({
           image_1: data.image_1 || null,
@@ -99,7 +103,8 @@ export default function AdForm() {
 
     // Always auto-set default image from category
     if (cat) {
-      newForm.image_url = DEFAULT_IMAGES[cat.slug] || '';
+      const defaultUrl = DEFAULT_IMAGES[cat.slug] || '';
+      if (defaultUrl) setImageUrls([defaultUrl, '']);
     }
 
     setForm(newForm);
@@ -115,11 +120,15 @@ export default function AdForm() {
       const hasClearImages = imagesToClear.size > 0;
       let payload;
 
+      // Combine image URLs into comma-separated string
+      const combinedImageUrl = imageUrls.filter(u => u.trim()).join(',');
+
       if (hasFiles || hasClearImages) {
         payload = new FormData();
-        const data = { ...form };
+        const data = { ...form, image_url: combinedImageUrl };
         if (!data.slug) data.slug = generateSlug(data.title);
-        if (!data.price || isQuoteType) delete data.price;
+        if (!data.price || isQuoteType) { delete data.price; delete data.price_max; }
+        if (data.price_type !== 'fixed') delete data.price_max;
         if (data.category) data.category = Number(data.category);
         Object.entries(data).forEach(([k, v]) => {
           if (v !== '' && v !== null && v !== undefined) payload.append(k, v);
@@ -132,9 +141,10 @@ export default function AdForm() {
           if (!imageFiles[key]) payload.append(key, '');
         });
       } else {
-        payload = { ...form };
+        payload = { ...form, image_url: combinedImageUrl };
         if (!payload.slug) payload.slug = generateSlug(payload.title);
-        if (!payload.price || isQuoteType) delete payload.price;
+        if (!payload.price || isQuoteType) { delete payload.price; delete payload.price_max; }
+        if (payload.price_type !== 'fixed') delete payload.price_max;
         if (payload.category) payload.category = Number(payload.category);
       }
 
@@ -219,18 +229,56 @@ export default function AdForm() {
               placeholder="Détaillez votre service..." />
           </div>
 
-          {/* Image URL */}
+          {/* Image URLs (multiple) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              <ImageIcon className="h-4 w-4 inline mr-1" />
-              Image (URL)
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <Link2 className="h-4 w-4 inline mr-1" />
+              Images (URL)
             </label>
-            <input type="url" value={form.image_url} onChange={set('image_url')}
-              className={inputClass}
-              placeholder="https://images.unsplash.com/..." />
-            {form.image_url && (
-              <img src={form.image_url} alt="Aperçu" className="mt-2 h-32 w-full object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
-            )}
+            <div className="space-y-2">
+              {imageUrls.map((url, idx) => (
+                <div key={idx} className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    <input
+                      type="url"
+                      value={url}
+                      onChange={(e) => {
+                        const next = [...imageUrls];
+                        next[idx] = e.target.value;
+                        setImageUrls(next);
+                      }}
+                      className={inputClass}
+                      placeholder="https://images.unsplash.com/..."
+                    />
+                    {url && (
+                      <img src={url} alt={`URL ${idx + 1}`} className="mt-1.5 h-24 w-full object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
+                    )}
+                  </div>
+                  {/* Delete button — always shown if there's content or more than 1 row */}
+                  {(url || imageUrls.length > 1) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = imageUrls.filter((_, i) => i !== idx);
+                        if (next.length === 0) next.push('');
+                        setImageUrls(next);
+                      }}
+                      className="mt-2 p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                      title="Supprimer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setImageUrls([...imageUrls, ''])}
+                className="flex items-center gap-1.5 text-sm text-brand-600 dark:text-brand-300 hover:text-brand-700 dark:hover:text-brand-200 font-medium mt-1"
+              >
+                <Plus className="h-4 w-4" /> Ajouter une URL d'image
+              </button>
+            </div>
           </div>
 
           {/* File Upload Images */}
@@ -289,29 +337,48 @@ export default function AdForm() {
           </div>
 
           {/* Price type + Price */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de prix</label>
-              <select value={form.price_type} onChange={(e) => setForm({ ...form, price_type: e.target.value, ...(e.target.value === 'quote' || e.target.value === 'free_estimate' ? { price: '' } : {}) })}
-                className={inputClass}>
-                <option value="quote">Sur devis</option>
-                <option value="fixed">Prix fixe</option>
-                <option value="hourly">Taux horaire</option>
-                <option value="free_estimate">Estimation gratuite</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prix (€)</label>
-              <input type="number" step="0.01" value={form.price} onChange={set('price')}
-                className={`${inputClass} ${isQuoteType ? 'opacity-40 cursor-not-allowed' : ''}`}
-                placeholder={isQuoteType ? '—' : '0.00'}
-                disabled={isQuoteType} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Durée estimée</label>
-              <input type="text" value={form.duration_estimate} onChange={set('duration_estimate')}
-                className={inputClass}
-                placeholder="Ex: 2-3 jours" />
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de prix</label>
+                <select value={form.price_type} onChange={(e) => setForm({ ...form, price_type: e.target.value, ...(e.target.value === 'quote' || e.target.value === 'free_estimate' ? { price: '', price_max: '' } : { price_max: '' }) })}
+                  className={inputClass}>
+                  <option value="quote">Sur devis</option>
+                  <option value="fixed">Prix fixe</option>
+                  <option value="hourly">Taux horaire</option>
+                  <option value="free_estimate">Estimation gratuite</option>
+                </select>
+              </div>
+
+              {/* Conditional price inputs based on type */}
+              {form.price_type === 'fixed' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fourchette de prix (€)</label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0">Entre</span>
+                    <input type="number" step="0.01" value={form.price} onChange={set('price')}
+                      className={inputClass}
+                      placeholder="Min" />
+                    <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0">et</span>
+                    <input type="number" step="0.01" value={form.price_max} onChange={(e) => setForm({ ...form, price_max: e.target.value })}
+                      className={inputClass}
+                      placeholder="Max" />
+                    <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0">€</span>
+                  </div>
+                </div>
+              )}
+
+              {form.price_type === 'hourly' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Taux horaire</label>
+                  <div className="flex items-center gap-2">
+                    <input type="number" step="0.01" value={form.price} onChange={set('price')}
+                      className={inputClass}
+                      placeholder="0.00" />
+                    <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0 font-medium">€ / heure</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -329,8 +396,13 @@ export default function AdForm() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code postal</label>
-              <input type="text" value={form.postal_code} onChange={set('postal_code')}
-                className={inputClass} autoComplete="postal-code" />
+              <PostalCodeAutocomplete
+                value={form.postal_code}
+                onChange={(val) => setForm(f => ({ ...f, postal_code: val }))}
+                onCityResolved={(city) => setForm(f => ({ ...f, city: city }))}
+                className={inputClass}
+                compact
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zone d'intervention</label>

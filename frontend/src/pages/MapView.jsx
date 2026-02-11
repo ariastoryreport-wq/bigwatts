@@ -157,7 +157,7 @@ export default function MapView() {
                 </button>
                 {(selectedAd.image_1 || selectedAd.image_url) && (
                   <img
-                    src={selectedAd.image_1 || selectedAd.image_url}
+                    src={selectedAd.image_1 || (selectedAd.image_url || '').split(',')[0].trim()}
                     alt={selectedAd.title}
                     className="w-full h-32 object-cover rounded-lg mb-3"
                   />
@@ -169,7 +169,7 @@ export default function MapView() {
                 </Link>
                 {selectedAd.category_name && <Badge variant="primary" className="mb-2">{selectedAd.category_name}</Badge>}
                 <div className="flex items-center justify-between mt-2">
-                  <PriceDisplay price={selectedAd.price} priceType={selectedAd.price_type} />
+                  <PriceDisplay price={selectedAd.price} priceMax={selectedAd.price_max} priceType={selectedAd.price_type} />
                   <div className="flex items-center text-sm text-muted">
                     <MapPin className="h-3.5 w-3.5 mr-1" /> {selectedAd.city}
                   </div>
@@ -195,7 +195,7 @@ export default function MapView() {
             {ads.map(ad => (
               <Link key={ad.id} to={`/services/${ad.id}`} className="card-hover p-4 flex gap-4 group block">
                 {(ad.image_1 || ad.image_url) && (
-                  <img src={ad.image_1 || ad.image_url} alt="" className="w-24 h-24 rounded-lg object-cover shrink-0" />
+                  <img src={ad.image_1 || (ad.image_url || '').split(',')[0].trim()} alt="" className="w-24 h-24 rounded-lg object-cover shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-black dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-300 transition truncate">
@@ -208,7 +208,7 @@ export default function MapView() {
                     )}
                   </div>
                   <div className="mt-2">
-                    <PriceDisplay price={ad.price} priceType={ad.price_type} />
+                    <PriceDisplay price={ad.price} priceMax={ad.price_max} priceType={ad.price_type} />
                   </div>
                 </div>
               </Link>
