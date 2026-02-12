@@ -25,8 +25,6 @@ import Onboarding from './pages/dashboard/Onboarding';
 import MyAds from './pages/dashboard/MyAds';
 import AdForm from './pages/dashboard/AdForm';
 import MyQuotes from './pages/dashboard/MyQuotes';
-import Messages from './pages/dashboard/Messages';
-import ConversationView from './pages/dashboard/ConversationView';
 import Favorites from './pages/dashboard/Favorites';
 import MyReviews from './pages/dashboard/MyReviews';
 import Notifications from './pages/dashboard/Notifications';
@@ -95,8 +93,7 @@ export default function App() {
           {/* Dashboard - All authenticated */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/dashboard/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-          <Route path="/dashboard/messages/:id" element={<ProtectedRoute><ConversationView /></ProtectedRoute>} />
+
           <Route path="/dashboard/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           <Route path="/dashboard/tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
           <Route path="/dashboard/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />

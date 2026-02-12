@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { adsAPI, reviewsAPI, favoritesAPI, messagingAPI } from '../services/api';
+import { adsAPI, reviewsAPI, favoritesAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useAuthModal } from '../components/ui/AuthModal';
 import { LoadingSpinner, PriceDisplay, StatusBadge, StarRating, Badge, Card } from '../components/ui';
-import { MapPin, Clock, Shield, Eye, MessageSquare, Heart, Star, Send, ArrowLeft, X, Flag, Pencil, ChevronLeft, ChevronRight, Phone, Mail, Lock, Globe } from 'lucide-react';
+import { MapPin, Clock, Shield, Eye, Heart, Star, Send, ArrowLeft, X, Flag, Pencil, ChevronLeft, ChevronRight, Phone, Mail, Lock, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const REPORT_REASONS = [
@@ -57,9 +57,7 @@ export default function AdDetail() {
   const [quoteForm, setQuoteForm] = useState({ message: '', desired_timeframe: 'unknown' });
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
   const [duplicateQuoteId, setDuplicateQuoteId] = useState(null);
-  const [showContactForm, setShowContactForm] = useState(false);
-  const [contactMsg, setContactMsg] = useState('');
-  const [sendingContact, setSendingContact] = useState(false);
+
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
@@ -438,14 +436,7 @@ export default function AdDetail() {
                   <Send className="h-4 w-4" /> Demander un devis
                 </button>
               )}
-              {isProprietaire && provider?.id !== user?.id && (
-                <button
-                  onClick={() => setShowContactForm(true)}
-                  className="w-full border border-brand-300 text-brand-600 dark:text-brand-300 py-3 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/30 transition font-medium flex items-center justify-center gap-2"
-                >
-                  <MessageSquare className="h-4 w-4" /> Contacter
-                </button>
-              )}
+
               {!isAuthenticated && (
                 <>
                   <button
@@ -454,12 +445,7 @@ export default function AdDetail() {
                   >
                     <Send className="h-4 w-4" /> Demander un devis
                   </button>
-                  <button
-                    onClick={() => openRegister(null, 'proprietaire')}
-                    className="w-full border border-brand-300 text-brand-600 dark:text-brand-300 py-3 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/30 transition font-medium flex items-center justify-center gap-2"
-                  >
-                    <MessageSquare className="h-4 w-4" /> Contacter
-                  </button>
+
                 </>
               )}
               {isAuthenticated && provider?.id !== user?.id && (
@@ -528,8 +514,6 @@ export default function AdDetail() {
         </div>
       )}
 
-      {/* Contact Modal */}
-
       {/* Duplicate quote warning modal */}
       {showDuplicateWarning && (
         <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowDuplicateWarning(false)}>
@@ -570,57 +554,7 @@ export default function AdDetail() {
         </div>
       )}
 
-      {showContactForm && (
-        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowContactForm(false)}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md border border-gray-200 dark:border-gray-800" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-black dark:text-white">Contacter {profile?.company_name || provider?.first_name}</h3>
-              <button onClick={() => setShowContactForm(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              À propos de : <span className="font-medium text-gray-700 dark:text-gray-300">{ad?.title}</span>
-            </p>
-            <textarea
-              className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-300 bg-white dark:bg-gray-800 text-black dark:text-white resize-none"
-              rows={4}
-              placeholder="Écrivez votre message..."
-              value={contactMsg}
-              onChange={e => setContactMsg(e.target.value)}
-            />
-            <div className="flex gap-3 mt-4">
-              <button
-                type="button"
-                onClick={() => setShowContactForm(false)}
-                className="flex-1 border border-gray-200 dark:border-gray-800 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white"
-              >
-                Annuler
-              </button>
-              <button
-                disabled={!contactMsg.trim() || sendingContact}
-                onClick={async () => {
-                  try {
-                    setSendingContact(true);
-                    const { data } = await messagingAPI.sendMessage({ recipient_id: provider.id, content: contactMsg.trim(), ad_id: ad.id });
-                    setShowContactForm(false);
-                    setContactMsg('');
-                    toast.success('Message envoyé !');
-                    navigate(`/dashboard/messages?conv=${data.conversation_id}`);
-                  } catch (err) {
-                    toast.error(err.response?.data?.error || "Erreur lors de l'envoi du message");
-                  } finally {
-                    setSendingContact(false);
-                  }
-                }}
-                className="flex-1 bg-black dark:bg-white text-white dark:text-black py-2.5 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 font-medium disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <Send className="h-4 w-4" /> {sendingContact ? 'Envoi...' : 'Envoyer'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Report Modal */}
       {showReportModal && (

@@ -391,7 +391,7 @@ export default function Dashboard() {
           service: c.last_message?.content || 'Nouveau message',
           time: null,
           actionLabel: 'Lire',
-          to: '/dashboard/messages',
+          to: '/dashboard',
         };
       }),
       ...pendingQuotes.map(q => ({

@@ -21,14 +21,14 @@ const NOTIF_ICONS = {
 function resolveLink(notification, userRole) {
   const link = notification.link || '';
   const type = notification.notification_type;
-  if (link.startsWith('/dashboard/messages/')) return link;
+  if (link.startsWith('/dashboard/messages')) return '/dashboard';
   if (link.startsWith('/dashboard/bookings') || link.includes('booking')) return '/dashboard';
   if (link.startsWith('/dashboard/quotes/') || type === 'quote_request' || type === 'quote_response') {
     if (userRole === 'proprietaire') return '/dashboard/quotes';
     if (userRole === 'prestataire') return '/dashboard';
     return link;
   }
-  if (type === 'new_message') return '/dashboard/messages';
+  if (type === 'new_message') return '/dashboard';
   if (type === 'new_review') {
     if (userRole === 'prestataire') return '/dashboard/reviews';
     return '/dashboard';
