@@ -1463,6 +1463,12 @@ function ProviderRequestDetail({ quote, booking, onRefresh, onBookingStatus, onA
                       <p className="text-sm text-blue-600 dark:text-blue-400">
                         Le client choisit un créneau pour planifier l'intervention. Vous serez notifié dès qu'il aura réservé.
                       </p>
+                      <Link
+                        to="/dashboard/availability"
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 dark:text-blue-300 hover:underline"
+                      >
+                        <Calendar className="h-3.5 w-3.5" /> Gérer mes créneaux
+                      </Link>
                     </div>
                   </div>
                 );
