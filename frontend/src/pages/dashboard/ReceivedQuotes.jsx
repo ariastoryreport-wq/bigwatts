@@ -353,12 +353,12 @@ function RequestDetail({ quote, onRefresh }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Prix ou fourchette de prix *
+                Prix *
               </label>
               <div className="relative">
                 <input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   className={inputClass}
                   value={quoteData.quoted_price}
                   onChange={(e) => setQuoteData({ ...quoteData, quoted_price: e.target.value })}

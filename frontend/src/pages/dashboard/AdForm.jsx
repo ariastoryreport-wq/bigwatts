@@ -384,17 +384,12 @@ export default function AdForm() {
               {/* Conditional price inputs based on type */}
               {form.price_type === 'fixed' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fourchette de prix (€)</label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0">Entre</span>
-                    <input type="number" step="0.01" value={form.price} onChange={set('price')}
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prix (€)</label>
+                  <div className="relative">
+                    <input type="text" inputMode="decimal" value={form.price} onChange={set('price')}
                       className={inputClass}
-                      placeholder="Min" />
-                    <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0">et</span>
-                    <input type="number" step="0.01" value={form.price_max} onChange={(e) => setForm({ ...form, price_max: e.target.value })}
-                      className={inputClass}
-                      placeholder="Max" />
-                    <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0">€</span>
+                      placeholder="ex: 5000" />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">€</span>
                   </div>
                 </div>
               )}
@@ -403,7 +398,7 @@ export default function AdForm() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Taux horaire</label>
                   <div className="flex items-center gap-2">
-                    <input type="number" step="0.01" value={form.price} onChange={set('price')}
+                    <input type="text" inputMode="decimal" value={form.price} onChange={set('price')}
                       className={inputClass}
                       placeholder="0.00" />
                     <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0 font-medium">€ / heure</span>

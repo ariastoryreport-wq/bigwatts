@@ -1343,9 +1343,9 @@ function ProviderRequestDetail({ quote, booking, onRefresh, onBookingStatus, onA
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">Prix ou fourchette de prix *</label>
+              <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">Prix *</label>
               <div className="relative">
-                <input type="number" step="0.01" className={inputClass} value={quoteData.quoted_price} onChange={(e) => setQuoteData({ ...quoteData, quoted_price: e.target.value })} placeholder="ex: 5000" />
+                <input type="text" inputMode="decimal" className={inputClass} value={quoteData.quoted_price} onChange={(e) => setQuoteData({ ...quoteData, quoted_price: e.target.value })} placeholder="ex: 5000" />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">€</span>
               </div>
             </div>
