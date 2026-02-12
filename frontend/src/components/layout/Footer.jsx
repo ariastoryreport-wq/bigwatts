@@ -85,7 +85,9 @@ export default function Footer() {
                   <ul className="space-y-1.5 mb-3">
                     {countries.map((c) => (
                       <li key={c.code} className="flex items-center gap-2.5 py-1.5 text-sm text-gray-400">
+                        <span className="text-lg">{c.flag_emoji}</span>
                         <span>{c.name}</span>
+                        <span className="text-xs text-gray-500 ml-auto">{c.currency}</span>
                       </li>
                     ))}
                   </ul>

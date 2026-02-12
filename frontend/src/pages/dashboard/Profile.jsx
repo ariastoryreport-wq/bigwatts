@@ -325,10 +325,13 @@ export default function Profile() {
         {/* Country */}
         <div>
           <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
-            <span className="text-base">{(() => { const c = countries.find(ct => ct.code === user.country_code); return c ? c.flag_emoji : '🌍'; })()}</span>
             Pays du compte
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-1 flex items-center gap-2">
+            <span className="text-xl">{(() => { const c = countries.find(ct => ct.code === user.country_code); return c ? c.flag_emoji : '🌍'; })()}</span>
+            <span className="font-medium text-black dark:text-white">{(() => { const c = countries.find(ct => ct.code === user.country_code); return c ? c.name : user.country_code || 'Non défini'; })()}</span>
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
             Votre pays détermine les services, prestataires et aides auxquels vous avez accès.
           </p>
           <button
