@@ -103,10 +103,20 @@ class QuoteRequest(models.Model):
         related_name='quote_requests', limit_choices_to={'role': 'proprietaire'}
     )
     
+    class Timeframe(models.TextChoices):
+        ASAP = 'asap', 'Le plus tôt possible'
+        THREE_MONTHS = '3months', "D'ici 3 mois"
+        SIX_MONTHS = '6months', "D'ici 6 mois"
+        ONE_YEAR = '1year', "D'ici 1 an"
+        UNKNOWN = 'unknown', 'Je ne sais pas'
+
     message = models.TextField(help_text="Description du besoin")
     property_address = models.TextField(blank=True)
     preferred_date = models.DateField(null=True, blank=True)
     budget_indication = models.CharField(max_length=100, blank=True)
+    desired_timeframe = models.CharField(
+        max_length=20, choices=Timeframe.choices, default=Timeframe.UNKNOWN, blank=True
+    )
     
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     provider_response = models.TextField(blank=True)

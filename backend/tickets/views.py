@@ -39,11 +39,11 @@ class TicketRespondView(generics.CreateAPIView):
         response = serializer.save(author=self.request.user, ticket=ticket)
         
         # Notify the other party
-        from notifications.models import Notification
+        from notifications.utils import create_notification
         if self.request.user == ticket.created_by:
             # User responded, notify CS
             if ticket.assigned_to:
-                Notification.objects.create(
+                create_notification(
                     recipient=ticket.assigned_to,
                     notification_type='ticket_update',
                     title=f'Réponse sur ticket #{ticket.pk}',
@@ -52,7 +52,7 @@ class TicketRespondView(generics.CreateAPIView):
                 )
         else:
             # CS responded, notify user
-            Notification.objects.create(
+            create_notification(
                 recipient=ticket.created_by,
                 notification_type='ticket_update',
                 title=f'Réponse sur votre ticket #{ticket.pk}',

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { adsAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { isProfileComplete } from './Onboarding';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Card, PageHeader, LoadingSpinner } from '../../components/ui';
-import { ImageIcon, Sun, Zap, Thermometer, Layers, Droplet, Wind, ClipboardList, Battery, HelpCircle, Upload, X, Plus, Link2 } from 'lucide-react';
+import { ImageIcon, Sun, Zap, Thermometer, Layers, Droplet, Wind, ClipboardList, Battery, HelpCircle, Upload, X, Plus, Link2, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CityAutocomplete from '../../components/ui/CityAutocomplete';
 import PostalCodeAutocomplete from '../../components/ui/PostalCodeAutocomplete';
@@ -40,6 +42,8 @@ export default function AdForm() {
   const { id } = useParams();
   const isEdit = !!id;
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const profileComplete = isProfileComplete(user);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState({ image_1: null, image_2: null, image_3: null });
@@ -114,6 +118,10 @@ export default function AdForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isEdit && !profileComplete) {
+      toast.error('Veuillez compléter votre profil avant de créer une annonce');
+      return;
+    }
     setLoading(true);
     try {
       const hasFiles = Object.values(imageFiles).some(f => f !== null);
@@ -175,6 +183,29 @@ export default function AdForm() {
   return (
     <DashboardLayout>
       <PageHeader title={isEdit ? 'Modifier l\'annonce' : 'Nouvelle annonce'} />
+
+      {/* Block new ad creation if profile is incomplete */}
+      {!isEdit && !profileComplete && (
+        <Card className="p-5 mb-6 border-l-4 border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/10">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
+                Profil incomplet
+              </h3>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
+                Vous devez compléter votre profil (nom, prénom, téléphone) avant de pouvoir publier une annonce.
+              </p>
+              <Link
+                to="/dashboard/profile"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-semibold hover:bg-yellow-700 transition"
+              >
+                Compléter mon profil
+              </Link>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">

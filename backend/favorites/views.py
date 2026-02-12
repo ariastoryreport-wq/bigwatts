@@ -43,13 +43,13 @@ class ToggleFavoriteView(APIView):
         else:
             fav = Favorite.objects.create(**filters)
             # Notify the provider or ad owner that someone liked them
-            from notifications.models import Notification
+            from notifications.utils import create_notification
             from django.contrib.auth import get_user_model
             User = get_user_model()
             if provider_id:
                 try:
                     target = User.objects.get(pk=provider_id)
-                    Notification.objects.create(
+                    create_notification(
                         recipient=target,
                         notification_type='favorite',
                         title='Nouveau favori !',
@@ -62,7 +62,7 @@ class ToggleFavoriteView(APIView):
                 from ads.models import Ad
                 try:
                     ad = Ad.objects.get(pk=ad_id)
-                    Notification.objects.create(
+                    create_notification(
                         recipient=ad.provider,
                         notification_type='favorite',
                         title='Nouveau favori !',

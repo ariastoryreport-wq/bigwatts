@@ -4,7 +4,7 @@ import { adsAPI, reviewsAPI, favoritesAPI, messagingAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext';
 import { useAuthModal } from '../components/ui/AuthModal';
 import { LoadingSpinner, PriceDisplay, StatusBadge, StarRating, Badge, Card } from '../components/ui';
-import { MapPin, Clock, Shield, Eye, MessageSquare, Heart, Star, Send, ArrowLeft, X, Flag, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Clock, Shield, Eye, MessageSquare, Heart, Star, Send, ArrowLeft, X, Flag, Pencil, ChevronLeft, ChevronRight, Phone, Mail, Lock, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const REPORT_REASONS = [
@@ -47,14 +47,16 @@ function ImageCarousel({ images, alt }) {
 export default function AdDetail() {
   const { id } = useParams();
   const { user, isAuthenticated, isProprietaire } = useAuth();
-  const { openLogin } = useAuthModal();
+  const { openLogin, openRegister } = useAuthModal();
   const navigate = useNavigate();
   const [ad, setAd] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFav, setIsFav] = useState(false);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
-  const [quoteForm, setQuoteForm] = useState({ message: '', preferred_date: '', budget_indication: '' });
+  const [quoteForm, setQuoteForm] = useState({ message: '', desired_timeframe: 'unknown' });
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+  const [duplicateQuoteId, setDuplicateQuoteId] = useState(null);
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactMsg, setContactMsg] = useState('');
   const [sendingContact, setSendingContact] = useState(false);
@@ -100,13 +102,29 @@ export default function AdDetail() {
     } catch { toast.error('Erreur'); }
   };
 
+  const handleRequestQuote = async () => {
+    if (!isAuthenticated) { openLogin(); return; }
+    try {
+      const { data } = await adsAPI.checkDuplicateQuote(Number(id));
+      if (data.has_active) {
+        setDuplicateQuoteId(data.quote_id);
+        setShowDuplicateWarning(true);
+      } else {
+        setShowQuoteForm(true);
+      }
+    } catch {
+      // If check fails, just show the form
+      setShowQuoteForm(true);
+    }
+  };
+
   const submitQuote = async (e) => {
     e.preventDefault();
     try {
       await adsAPI.createQuote({ ad: Number(id), ...quoteForm });
       toast.success('Demande de devis envoyée !');
       setShowQuoteForm(false);
-      setQuoteForm({ message: '', preferred_date: '', budget_indication: '' });
+      setQuoteForm({ message: '', desired_timeframe: 'unknown' });
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erreur lors de l\'envoi');
     }
@@ -340,6 +358,68 @@ export default function AdDetail() {
               </div>
             )}
 
+            {/* Provider bio & contact info */}
+            {provider.bio && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">À propos</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{provider.bio}</p>
+              </div>
+            )}
+
+            {/* Contact info — visible if opted in, blurred if not authenticated */}
+            {(provider.show_email_on_ad || provider.show_phone_on_ad) && (
+              <div className="mb-4 space-y-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Contact</p>
+                {provider.show_email_on_ad && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                    {isAuthenticated ? (
+                      <a href={`mailto:${provider.contact_email}`} className="text-brand-600 dark:text-brand-400 hover:underline truncate">
+                        {provider.contact_email}
+                      </a>
+                    ) : (
+                      <button onClick={openLogin} className="flex items-center gap-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+                        <span className="blur-[5px] select-none pointer-events-none">email@example.com</span>
+                        <Lock className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
+                {provider.show_phone_on_ad && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                    {isAuthenticated ? (
+                      <a href={`tel:${provider.contact_phone}`} className="text-brand-600 dark:text-brand-400 hover:underline">
+                        {provider.contact_phone}
+                      </a>
+                    ) : (
+                      <button onClick={openLogin} className="flex items-center gap-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+                        <span className="blur-[5px] select-none pointer-events-none">+33 6 12 34 56</span>
+                        <Lock className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
+                {!isAuthenticated && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    Connectez-vous pour voir les coordonnées
+                  </p>
+                )}
+              </div>
+            )}
+
+            {profile.website && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Site web</p>
+                <div className="flex items-center gap-2 text-sm">
+                  <Globe className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                  <a href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} target="_blank" rel="noopener noreferrer" className="text-brand-600 dark:text-brand-400 hover:underline truncate">
+                    {profile.website.replace(/^https?:\/\//, '')}
+                  </a>
+                </div>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="space-y-3">
               {isAuthenticated && provider?.id === user?.id && (
@@ -352,7 +432,7 @@ export default function AdDetail() {
               )}
               {isProprietaire && provider?.id !== user?.id && (
                 <button
-                  onClick={() => setShowQuoteForm(true)}
+                  onClick={handleRequestQuote}
                   className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition font-semibold flex items-center justify-center gap-2"
                 >
                   <Send className="h-4 w-4" /> Demander un devis
@@ -369,13 +449,13 @@ export default function AdDetail() {
               {!isAuthenticated && (
                 <>
                   <button
-                    onClick={() => openLogin()}
+                    onClick={() => openRegister(null, 'proprietaire')}
                     className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition font-semibold flex items-center justify-center gap-2"
                   >
                     <Send className="h-4 w-4" /> Demander un devis
                   </button>
                   <button
-                    onClick={() => openLogin()}
+                    onClick={() => openRegister(null, 'proprietaire')}
                     className="w-full border border-brand-300 text-brand-600 dark:text-brand-300 py-3 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/30 transition font-medium flex items-center justify-center gap-2"
                   >
                     <MessageSquare className="h-4 w-4" /> Contacter
@@ -399,7 +479,7 @@ export default function AdDetail() {
       {showQuoteForm && (
         <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 rounded-lg max-w-lg w-full p-6 border border-gray-200 dark:border-gray-800">
-            <h3 className="text-lg font-bold mb-4">Demander un devis</h3>
+            <h3 className="text-lg font-bold mb-4 text-black dark:text-white">Demander un devis</h3>
             <form onSubmit={submitQuote} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Décrivez votre besoin *</label>
@@ -411,25 +491,28 @@ export default function AdDetail() {
                   placeholder="Type de logement, surface, besoins spécifiques..."
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date souhaitée</label>
-                  <input
-                    type="date"
-                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-lg outline-none focus:ring-2 focus:ring-brand-300 bg-white dark:bg-gray-900 text-black dark:text-white"
-                    value={quoteForm.preferred_date}
-                    onChange={(e) => setQuoteForm({ ...quoteForm, preferred_date: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Budget indicatif</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-lg outline-none focus:ring-2 focus:ring-brand-300 bg-white dark:bg-gray-900 text-black dark:text-white"
-                    value={quoteForm.budget_indication}
-                    onChange={(e) => setQuoteForm({ ...quoteForm, budget_indication: e.target.value })}
-                    placeholder="ex: 5000-10000€"
-                  />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quel est le délai souhaité pour l'installation ?</label>
+                <div className="space-y-2">
+                  {[
+                    { value: 'asap', label: 'Le plus tôt possible' },
+                    { value: '3months', label: "D'ici 3 mois" },
+                    { value: '6months', label: "D'ici 6 mois" },
+                    { value: '1year', label: "D'ici 1 an" },
+                    { value: 'unknown', label: 'Je ne sais pas' },
+                  ].map((opt) => (
+                    <label key={opt.value} className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="radio"
+                        name="desired_timeframe"
+                        value={opt.value}
+                        checked={quoteForm.desired_timeframe === opt.value}
+                        onChange={(e) => setQuoteForm({ ...quoteForm, desired_timeframe: e.target.value })}
+                        className="w-4 h-4 text-brand-600 border-gray-300 focus:ring-brand-300"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-black dark:group-hover:text-white transition">{opt.label}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
@@ -446,6 +529,47 @@ export default function AdDetail() {
       )}
 
       {/* Contact Modal */}
+
+      {/* Duplicate quote warning modal */}
+      {showDuplicateWarning && (
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowDuplicateWarning(false)}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-sm border border-gray-200 dark:border-gray-800 shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                <Flag className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Demande en cours</h3>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Vous avez déjà une demande de devis en cours pour cette annonce.
+            </p>
+            <Link
+              to="/dashboard"
+              className="block w-full text-center text-sm text-brand-600 dark:text-brand-400 hover:underline mb-4"
+            >
+              Voir ma demande en cours →
+            </Link>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+              Voulez-vous vraiment envoyer une nouvelle demande ?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDuplicateWarning(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => { setShowDuplicateWarning(false); setShowQuoteForm(true); }}
+                className="flex-1 px-4 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-xl text-sm font-bold hover:bg-gray-800 dark:hover:bg-gray-200 transition"
+              >
+                Oui, continuer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showContactForm && (
         <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowContactForm(false)}>
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md border border-gray-200 dark:border-gray-800" onClick={e => e.stopPropagation()}>

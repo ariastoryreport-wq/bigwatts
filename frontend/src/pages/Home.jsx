@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Search, Sun, Zap, Thermometer, Shield, ArrowRight, Star, MapPin, CheckCircle, FileText, CreditCard } from 'lucide-react';
 import { adsAPI } from '../services/api';
 import { useCountry } from '../context/CountryContext';
+import { useAuthModal } from '../components/ui/AuthModal';
 import AdCard from '../components/cards/AdCard';
 import CountryPickerModal from '../components/ui/CountryPickerModal';
 import CityAutocomplete from '../components/ui/CityAutocomplete';
@@ -51,6 +52,7 @@ export default function Home() {
   const [latestAds, setLatestAds] = useState([]);
   const [searchCity, setSearchCity] = useState('');
   const { countryCode } = useCountry();
+  const { openRegister } = useAuthModal();
   const navigate = useNavigate();
 
   const handleSearch = () => {
@@ -271,12 +273,12 @@ export default function Home() {
           <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
             Rejoignez BigWatts et accédez à des milliers de propriétaires à la recherche de vos services.
           </p>
-          <Link
-            to="/register"
+          <button
+            onClick={() => openRegister(null, 'prestataire')}
             className="inline-flex items-center bg-brand-300 text-black px-10 py-4 rounded-lg font-bold text-lg hover:bg-brand-200 transition"
           >
             Inscrivez-vous gratuitement <ArrowRight className="ml-2 h-5 w-5" />
-          </Link>
+          </button>
         </div>
       </section>
     </div>

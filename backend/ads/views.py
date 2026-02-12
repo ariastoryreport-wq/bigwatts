@@ -2,6 +2,7 @@ from rest_framework import generics, permissions, status, filters
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, F
 
@@ -34,6 +35,7 @@ class AdListView(generics.ListAPIView):
         
         category = self.request.query_params.get('category')
         city = self.request.query_params.get('city')
+        region = self.request.query_params.get('region')
         price_min = self.request.query_params.get('price_min')
         price_max = self.request.query_params.get('price_max')
         price_type = self.request.query_params.get('price_type')
@@ -51,6 +53,8 @@ class AdListView(generics.ListAPIView):
             qs = qs.filter(category__slug=category)
         if city:
             qs = qs.filter(city__icontains=city)
+        if region:
+            qs = qs.filter(provider__region__icontains=region)
         if price_min:
             qs = qs.filter(price__gte=price_min)
         if price_max:
@@ -147,8 +151,8 @@ class QuoteRequestCreateView(generics.CreateAPIView):
         # Increment inquiries count
         Ad.objects.filter(pk=quote.ad_id).update(inquiries_count=F('inquiries_count') + 1)
         # Create notification for provider
-        from notifications.models import Notification
-        Notification.objects.create(
+        from notifications.utils import create_notification
+        create_notification(
             recipient=quote.ad.provider,
             notification_type='quote_request',
             title='Nouvelle demande de devis',
@@ -204,9 +208,9 @@ class QuoteRespondView(generics.UpdateAPIView):
     def perform_update(self, serializer):
         quote = serializer.save()
         # Notify owner
-        from notifications.models import Notification
+        from notifications.utils import create_notification
         status_labels = dict(QuoteRequest.Status.choices)
-        Notification.objects.create(
+        create_notification(
             recipient=quote.owner,
             notification_type='quote_response',
             title='Réponse à votre demande de devis',
@@ -242,17 +246,153 @@ class OwnerQuoteDecisionView(generics.UpdateAPIView):
         quote.save(update_fields=['status', 'updated_at'])
 
         # Notify provider
-        from notifications.models import Notification
+        from notifications.utils import create_notification
         action_label = 'accepté' if decision == 'accept' else 'refusé'
-        Notification.objects.create(
+        create_notification(
             recipient=quote.ad.provider,
             notification_type='quote_response',
             title='Décision sur votre contre-offre',
             message=f'{quote.owner.get_full_name() or quote.owner.username} a {action_label} votre contre-offre pour "{quote.ad.title}".',
-            link=f'/dashboard/received-quotes'
+            link=f'/dashboard'
         )
 
         return Response({'status': quote.status})
+
+
+class QuoteAbandonView(APIView):
+    """POST /api/ads/quotes/<id>/abandon/ - Either party cancels/abandons a quote request."""
+
+    def post(self, request, pk):
+        user = request.user
+        try:
+            quote = QuoteRequest.objects.select_related('ad', 'ad__provider', 'owner').get(pk=pk)
+        except QuoteRequest.DoesNotExist:
+            return Response({'error': 'Demande introuvable.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Verify user is a participant
+        if user != quote.owner and user != quote.ad.provider:
+            return Response({'error': 'Non autorisé.'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Can only abandon active quotes
+        if quote.status in ('cancelled', 'completed', 'declined'):
+            return Response({'error': 'Cette demande est déjà terminée.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Cancel associated booking if any
+        if hasattr(quote, 'booking') and quote.booking.status not in ('cancelled', 'completed'):
+            booking = quote.booking
+            booking.status = 'cancelled'
+            booking.save(update_fields=['status', 'updated_at'])
+            if booking.slot:
+                booking.slot.is_booked = False
+                booking.slot.save(update_fields=['is_booked'])
+
+        quote.status = 'cancelled'
+        quote.save(update_fields=['status', 'updated_at'])
+
+        # Notify the other party
+        from notifications.utils import create_notification
+        other = quote.owner if user == quote.ad.provider else quote.ad.provider
+        abandoner_name = user.get_full_name() or user.username
+        create_notification(
+            recipient=other,
+            notification_type='system',
+            title='Demande abandonnée',
+            message=f'{abandoner_name} a abandonné la demande pour "{quote.ad.title}".',
+            link='/dashboard',
+        )
+
+        return Response({'status': 'cancelled'})
+
+
+class QuoteDuplicateCheckView(APIView):
+    """GET /api/ads/quotes/check-duplicate/?ad=<id> - Check if user already has an active quote for this ad."""
+    permission_classes = [IsProprietaire]
+
+    def get(self, request):
+        ad_id = request.query_params.get('ad')
+        if not ad_id:
+            return Response({'has_active': False})
+
+        active_quote = QuoteRequest.objects.filter(
+            owner=request.user,
+            ad_id=ad_id,
+            status__in=['pending', 'counter_offer', 'accepted'],
+        ).first()
+
+        if active_quote:
+            return Response({'has_active': True, 'quote_id': active_quote.pk})
+        return Response({'has_active': False})
+
+
+class QuoteAbandonView(APIView):
+    """POST /api/ads/quotes/<id>/abandon/ - Either party abandons a quote request."""
+
+    def post(self, request, pk):
+        user = request.user
+        try:
+            quote = QuoteRequest.objects.select_related('ad', 'ad__provider', 'owner').get(pk=pk)
+        except QuoteRequest.DoesNotExist:
+            return Response({'error': 'Demande introuvable.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Only owner or provider can abandon
+        if user != quote.owner and user != quote.ad.provider:
+            return Response({'error': 'Non autorisé.'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Can only abandon active quotes
+        if quote.status in ('cancelled', 'completed'):
+            return Response(
+                {'error': 'Cette demande est déjà terminée ou annulée.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Cancel associated booking if any
+        if hasattr(quote, 'booking') and quote.booking.status not in ('cancelled', 'completed'):
+            booking = quote.booking
+            booking.status = 'cancelled'
+            booking.save(update_fields=['status', 'updated_at'])
+            if booking.slot:
+                booking.slot.is_booked = False
+                booking.slot.save(update_fields=['is_booked'])
+
+        quote.status = 'cancelled'
+        quote.save(update_fields=['status', 'updated_at'])
+
+        # Notify the other party
+        from notifications.utils import create_notification
+        other = quote.owner if user == quote.ad.provider else quote.ad.provider
+        who = user.get_full_name() or user.username
+        create_notification(
+            recipient=other,
+            notification_type='system',
+            title='Demande abandonnée',
+            message=f'{who} a abandonné la demande pour "{quote.ad.title}".',
+            link='/dashboard',
+        )
+
+        return Response({'status': 'cancelled'})
+
+
+class QuoteDuplicateCheckView(APIView):
+    """GET /api/ads/quotes/check-duplicate/?ad=ID - Check if user has active quote for this ad."""
+
+    def get(self, request):
+        ad_id = request.query_params.get('ad')
+        if not ad_id:
+            return Response({'has_active': False})
+
+        existing = QuoteRequest.objects.filter(
+            owner=request.user,
+            ad_id=ad_id,
+            status__in=['pending', 'counter_offer', 'accepted'],
+        ).first()
+
+        if existing:
+            return Response({
+                'has_active': True,
+                'quote_id': existing.pk,
+                'status': existing.status,
+            })
+        return Response({'has_active': False})
 
 
 # --- CS Views ---

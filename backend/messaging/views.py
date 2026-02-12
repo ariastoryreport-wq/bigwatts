@@ -205,8 +205,8 @@ class SendMessageView(APIView):
         conversation.save()  # Update updated_at
 
         # Create notification
-        from notifications.models import Notification
-        Notification.objects.create(
+        from notifications.utils import create_notification
+        create_notification(
             recipient=recipient,
             notification_type='new_message',
             title='Nouveau message',
@@ -248,9 +248,9 @@ class ConversationMessagesView(generics.ListCreateAPIView):
         conversation.save()  # Update updated_at
 
         # Notify other participants
-        from notifications.models import Notification
+        from notifications.utils import create_notification
         for participant in conversation.participants.exclude(pk=self.request.user.pk):
-            Notification.objects.create(
+            create_notification(
                 recipient=participant,
                 notification_type='new_message',
                 title='Nouveau message',
@@ -369,10 +369,10 @@ class ReportUserView(APIView):
             ).update(is_content_hidden=True)
 
         # Create notification to CS staff
-        from notifications.models import Notification
+        from notifications.utils import create_notification
         cs_users = User.objects.filter(role='customer_service')
         for cs in cs_users:
-            Notification.objects.create(
+            create_notification(
                 recipient=cs,
                 notification_type='system',
                 title='Nouveau signalement',
@@ -499,8 +499,8 @@ class CSReportActionView(APIView):
             report.is_content_hidden = True
             report.status = 'resolved'
         elif action == 'warn_user':
-            from notifications.models import Notification
-            Notification.objects.create(
+            from notifications.utils import create_notification
+            create_notification(
                 recipient=target,
                 notification_type='system',
                 title='Avertissement de modération',

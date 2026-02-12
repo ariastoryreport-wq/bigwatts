@@ -91,6 +91,11 @@ export default function ProviderDetail() {
                 {profile.company_name || `${provider.first_name} ${provider.last_name}`}
               </h1>
               {provider.is_verified && <CheckCircle className="h-5 w-5 text-brand-600 dark:text-brand-300" />}
+              {profile.is_certified && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
+                  <ShieldCheck className="h-3.5 w-3.5" /> Certifié
+                </span>
+              )}
             </div>
 
             {provider.bio && <p className="text-gray-600 dark:text-gray-400 mb-4">{provider.bio}</p>}
@@ -108,9 +113,6 @@ export default function ProviderDetail() {
               {profile.completed_projects > 0 && (
                 <span className="flex items-center text-gray-500 dark:text-gray-400"><Briefcase className="h-4 w-4 mr-1" />{profile.completed_projects} projets</span>
               )}
-              {profile.years_experience > 0 && (
-                <span className="flex items-center text-gray-500 dark:text-gray-400"><Award className="h-4 w-4 mr-1" />{profile.years_experience} ans d'exp.</span>
-              )}
               {profile.website && (
                 <a href={profile.website} target="_blank" rel="noreferrer" className="flex items-center text-brand-600 dark:text-brand-300 hover:text-brand-700 dark:hover:text-brand-200">
                   <Globe className="h-4 w-4 mr-1" />Site web
@@ -118,28 +120,6 @@ export default function ProviderDetail() {
               )}
             </div>
 
-            {/* Certifications */}
-            {profile.certifications && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Certifications</p>
-                <div className="flex flex-wrap gap-2">
-                  {profile.certifications.split(',').map((c, i) => (
-                    <Badge key={i} variant="success">{c.trim()}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {profile.specialties && (
-              <div className="mt-3">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Spécialités</p>
-                <div className="flex flex-wrap gap-2">
-                  {profile.specialties.split(',').map((s, i) => (
-                    <Badge key={i} variant="primary">{s.trim()}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Badges */}
             {badges.length > 0 && (

@@ -2,9 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { useCountry } from '../../context/CountryContext';
 import { useAuthModal } from '../ui/AuthModal';
-import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare, Check, FileText, Star, AlertCircle, Settings, Heart, Globe, AlertTriangle } from 'lucide-react';
+import { Menu, X, Bell, User, LogOut, ChevronDown, Moon, Sun, MessageSquare, Check, FileText, Star, AlertCircle, Settings, Heart } from 'lucide-react';
 import { notificationsAPI, messagingAPI } from '../../services/api';
 import Logo from '../ui/Logo';
 import toast from 'react-hot-toast';
@@ -23,10 +22,10 @@ function resolveLink(notification, userRole) {
   const link = notification.link || '';
   const type = notification.notification_type;
   if (link.startsWith('/dashboard/messages/')) return link;
-  if (link.startsWith('/dashboard/bookings') || link.includes('booking')) return '/dashboard/bookings';
+  if (link.startsWith('/dashboard/bookings') || link.includes('booking')) return '/dashboard';
   if (link.startsWith('/dashboard/quotes/') || type === 'quote_request' || type === 'quote_response') {
     if (userRole === 'proprietaire') return '/dashboard/quotes';
-    if (userRole === 'prestataire') return '/dashboard/quotes/received';
+    if (userRole === 'prestataire') return '/dashboard';
     return link;
   }
   if (type === 'new_message') return '/dashboard/messages';
@@ -46,33 +45,14 @@ function resolveLink(notification, userRole) {
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const { dark, toggle } = useTheme();
-  const { countries, currentCountry, switchCountry } = useCountry();
   const { openLogin, openRegister } = useAuthModal();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [countryOpen, setCountryOpen] = useState(false);
-  const [countryWarning, setCountryWarning] = useState(null); // { code, name, flag } or null
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const notifRef = useRef(null);
-  const countryRef = useRef(null);
   const navigate = useNavigate();
-
-  const handleCountrySwitch = (code) => {
-    // Authenticated users cannot switch country — it's locked to their account
-    if (isAuthenticated) return;
-    if (code === currentCountry.code) { setCountryOpen(false); return; }
-    const target = countries.find(c => c.code === code);
-    setCountryOpen(false);
-    setCountryWarning(target);
-  };
-
-  const confirmCountrySwitch = async () => {
-    if (!countryWarning) return;
-    switchCountry(countryWarning.code);
-    setCountryWarning(null);
-  };
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -108,7 +88,6 @@ export default function Navbar() {
   useEffect(() => {
     const handler = (e) => {
       if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
-      if (countryRef.current && !countryRef.current.contains(e.target)) setCountryOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -137,16 +116,13 @@ export default function Navbar() {
 
   const dashboardLinks = () => {
     const base = [
-      { to: '/dashboard', label: 'Tableau de bord' },
-      { to: '/dashboard/messages', label: 'Messages' },
+      { to: '/dashboard', label: user?.role === 'proprietaire' ? 'Mes demandes' : 'Tableau de bord' },
       { to: '/dashboard/profile', label: 'Mon profil' },
     ];
     if (user?.role === 'prestataire') {
       return [
         ...base,
         { to: '/dashboard/ads', label: 'Mes annonces' },
-        { to: '/dashboard/quotes/received', label: 'Demandes reçues' },
-        { to: '/dashboard/bookings', label: 'Réservations' },
         { to: '/dashboard/availability', label: 'Disponibilités' },
         { to: '/dashboard/reviews', label: 'Mes avis' },
       ];
@@ -154,8 +130,6 @@ export default function Navbar() {
     if (user?.role === 'proprietaire') {
       return [
         ...base,
-        { to: '/dashboard/quotes', label: 'Mes demandes' },
-        { to: '/dashboard/bookings', label: 'Réservations' },
         { to: '/dashboard/favorites', label: 'Favoris' },
       ];
     }
@@ -177,73 +151,23 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2">
-              <Logo />
-              <span className="font-display text-3xl font-bold text-black dark:text-white tracking-tight">BIGWATTS</span>
+              <Logo className="h-6 sm:h-8" />
+              <span className="font-display text-xl sm:text-3xl font-bold text-black dark:text-white tracking-tight">BIGWATTS</span>
             </Link>
             {/* Desktop links */}
             <div className="hidden lg:flex ml-10 space-x-6">
               <Link to="/services" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Services</Link>
-              <Link to="/providers" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Prestataires</Link>
               <Link to="/map" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Carte</Link>
               <Link to="/incentives" className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition font-medium">Aides</Link>
             </div>
           </div>
 
           {/* Right side */}
-          <div className="flex items-center space-x-3">
-            {/* Country indicator (static for logged-in, switcher for anonymous) */}
-            {countries.length > 1 && !isAuthenticated && (
-              <div className="relative" ref={countryRef}>
-                <button
-                  onClick={() => { setCountryOpen(!countryOpen); setNotifOpen(false); setProfileOpen(false); }}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-sm"
-                  title="Changer de pays"
-                >
-                  <span className="text-lg leading-none">{currentCountry.flag_emoji}</span>
-                  <span className="hidden lg:inline font-medium">{currentCountry.code}</span>
-                  <ChevronDown className="h-3.5 w-3.5" />
-                </button>
-                {countryOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 z-[60] overflow-hidden py-1">
-                    <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-800">
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Pays / Région</p>
-                    </div>
-                    {countries.map((c) => (
-                      <button
-                        key={c.code}
-                        onClick={() => handleCountrySwitch(c.code)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm transition ${
-                          c.code === currentCountry.code
-                            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 font-semibold'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                        }`}
-                      >
-                        <span className="text-lg">{c.flag_emoji}</span>
-                        <div>
-                          <span className="block">{c.name}</span>
-                          <span className="text-xs text-gray-400">{c.currency} ({c.currency_symbol})</span>
-                        </div>
-                        {c.code === currentCountry.code && (
-                          <Check className="h-4 w-4 ml-auto text-brand-500" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            {/* Static country flag for authenticated users */}
-            {isAuthenticated && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-gray-500 dark:text-gray-400" title={currentCountry.name}>
-                <span className="text-lg leading-none">{currentCountry.flag_emoji}</span>
-                <span className="hidden lg:inline font-medium">{currentCountry.code}</span>
-              </div>
-            )}
-
+          <div className="flex items-center space-x-1 sm:space-x-3">
             {/* Dark mode toggle */}
             <button
               onClick={toggle}
-              className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              className="p-1.5 sm:p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition"
               title={dark ? 'Mode clair' : 'Mode sombre'}
             >
               {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -255,7 +179,7 @@ export default function Navbar() {
                 <div className="relative" ref={notifRef}>
                   <button
                     onClick={openNotifDropdown}
-                    className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition"
+                    className="relative p-1.5 sm:p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition"
                   >
                     <Bell className="h-5 w-5" />
                     {unreadCount > 0 && (
@@ -326,13 +250,13 @@ export default function Navbar() {
                 <div className="relative">
                   <button
                     onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }}
-                    className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition"
+                    className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition"
                   >
-                    <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center">
-                      <User className="h-4 w-4 text-brand-700 dark:text-brand-300" />
-                    </div>
-                    <span className="hidden lg:block text-sm font-medium">{user.first_name || user.username}</span>
-                    <ChevronDown className="h-4 w-4" />
+                    <span className="hidden lg:block text-sm font-medium mr-1">{user.first_name || user.username}</span>
+                    <span className="flex items-center gap-0.5 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                      <User className="h-5 w-5" />
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </span>
                   </button>
 
                   {profileOpen && (
@@ -376,7 +300,7 @@ export default function Navbar() {
             )}
 
             {/* Mobile menu button */}
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 text-gray-500">
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-1.5 sm:p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition">
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
@@ -387,40 +311,13 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="lg:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
           <div className="px-4 py-3 space-y-2">
-            {/* Mobile country switcher — only for anonymous */}
-            {countries.length > 1 && !isAuthenticated && (
-              <div className="flex items-center gap-2 py-2 border-b border-gray-200 dark:border-gray-800 mb-2">
-                {countries.map((c) => (
-                  <button
-                    key={c.code}
-                    onClick={() => handleCountrySwitch(c.code)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition ${
-                      c.code === currentCountry.code
-                        ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 font-semibold border border-brand-200 dark:border-brand-800'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    <span className="text-base">{c.flag_emoji}</span>
-                    <span>{c.code}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {/* Mobile static country flag for authenticated users */}
-            {isAuthenticated && (
-              <div className="flex items-center gap-2 py-2 border-b border-gray-200 dark:border-gray-800 mb-2 text-sm text-gray-500 dark:text-gray-400">
-                <span className="text-base">{currentCountry.flag_emoji}</span>
-                <span>{currentCountry.name}</span>
-              </div>
-            )}
             <Link to="/services" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Services</Link>
-            <Link to="/providers" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Prestataires</Link>
             <Link to="/map" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Carte</Link>
             <Link to="/incentives" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">Aides</Link>
             {isAuthenticated ? (
               <>
                 <hr className="border-gray-200 dark:border-gray-800" />
-                <Link to="/dashboard" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white font-medium">Tableau de bord</Link>
+                <Link to="/dashboard" onClick={() => setMobileOpen(false)} className="block py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white font-medium">{user?.role === 'proprietaire' ? 'Mes demandes' : 'Tableau de bord'}</Link>
                 <button onClick={handleLogout} className="block py-2 text-red-500">Déconnexion</button>
               </>
             ) : (
@@ -429,40 +326,6 @@ export default function Navbar() {
                 <button onClick={() => { setMobileOpen(false); openRegister(); }} className="block py-2 font-bold text-black dark:text-white">Inscription</button>
               </>
             )}
-          </div>
-        </div>
-      )}
-      
-      {/* Country switch warning modal (anonymous users only) */}
-      {countryWarning && !isAuthenticated && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setCountryWarning(null)}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-sm w-full p-6 text-center border border-gray-200 dark:border-gray-800" onClick={e => e.stopPropagation()}>
-            <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-            </div>
-            <h3 className="text-lg font-bold text-black dark:text-white mb-2">
-              Changer de pays ?
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-              Passer de {currentCountry.flag_emoji} {currentCountry.name} à {countryWarning.flag_emoji} {countryWarning.name}
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Les services, aides et devise seront adaptés au nouveau pays. Votre formulaire d'aides sera réinitialisé.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setCountryWarning(null)}
-                className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition text-black dark:text-white"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={confirmCountrySwitch}
-                className="flex-1 px-4 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:bg-gray-800 dark:hover:bg-gray-200 transition"
-              >
-                Confirmer
-              </button>
-            </div>
           </div>
         </div>
       )}

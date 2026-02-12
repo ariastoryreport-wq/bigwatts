@@ -62,8 +62,8 @@ class ReviewCreateView(generics.CreateAPIView):
             average_rating=round(avg, 2)
         )
         # Notify provider
-        from notifications.models import Notification
-        Notification.objects.create(
+        from notifications.utils import create_notification
+        create_notification(
             recipient=provider,
             notification_type='new_review',
             title='Nouvel avis reçu',

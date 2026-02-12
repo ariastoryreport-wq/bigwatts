@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge, Appointment, ProviderDocument
+from .models import User, PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge, Appointment, ProviderDocument, Certification, CertificationStatusLog
 
 
 @admin.register(User)
@@ -52,3 +52,18 @@ class ProviderDocumentAdmin(admin.ModelAdmin):
     list_display = ('provider', 'doc_type', 'label', 'status', 'created_at')
     list_filter = ('doc_type', 'status')
     search_fields = ('provider__username', 'label')
+
+
+class CertificationStatusLogInline(admin.TabularInline):
+    model = CertificationStatusLog
+    extra = 0
+    readonly_fields = ('old_status', 'new_status', 'changed_by', 'notes', 'created_at')
+
+
+@admin.register(Certification)
+class CertificationAdmin(admin.ModelAdmin):
+    list_display = ('certification_name', 'user', 'status', 'issuing_authority', 'expiration_date', 'created_at')
+    list_filter = ('status',)
+    search_fields = ('certification_name', 'user__username', 'user__email', 'license_number')
+    readonly_fields = ('created_at', 'updated_at')
+    inlines = [CertificationStatusLogInline]

@@ -26,6 +26,8 @@ class User(AbstractUser):
         help_text="User's country"
     )
     region = models.CharField(max_length=100, blank=True, help_text="Province / Region")
+    show_email_on_ad = models.BooleanField(default=False, help_text="Display email on ad pages")
+    show_phone_on_ad = models.BooleanField(default=False, help_text="Display phone on ad pages")
     last_seen = models.DateTimeField(null=True, blank=True, help_text="Last activity timestamp")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -68,7 +70,7 @@ class PrestaireProfile(models.Model):
     provider_type = models.CharField(max_length=20, choices=ProviderType.choices, default=ProviderType.INDEPENDANT)
     company_name = models.CharField(max_length=200, blank=True)
     siret = models.CharField(max_length=14, blank=True)
-    website = models.URLField(blank=True)
+    website = models.CharField(max_length=200, blank=True)
     years_experience = models.PositiveIntegerField(default=0)
     service_radius_km = models.PositiveIntegerField(default=50, help_text="Rayon d'intervention en km")
     is_available = models.BooleanField(default=True)
@@ -84,6 +86,66 @@ class PrestaireProfile(models.Model):
 
     def __str__(self):
         return f"Profil prestataire: {self.user.username}"
+
+    @property
+    def is_certified(self):
+        """Provider has at least one approved, non-expired certification."""
+        return self.user.certifications.filter(
+            status=Certification.Status.APPROVED
+        ).exists()
+
+
+class Certification(models.Model):
+    """Professional certification record for verification."""
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'En attente'
+        APPROVED = 'approved', 'Approuvé'
+        REJECTED = 'rejected', 'Refusé'
+        EXPIRED = 'expired', 'Expiré'
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='certifications',
+        limit_choices_to={'role': 'prestataire'}
+    )
+    certification_name = models.CharField(max_length=200, help_text="Nom de la certification (ex: RGE QualiSol)")
+    license_number = models.CharField(max_length=100, blank=True, help_text="Numéro de licence / certificat")
+    issuing_authority = models.CharField(max_length=200, blank=True, help_text="Organisme émetteur")
+    expiration_date = models.DateField(null=True, blank=True, help_text="Date d'expiration")
+    document = models.FileField(upload_to='certifications/%Y/%m/', blank=True, null=True, help_text="Document justificatif")
+    document_name = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    verification_date = models.DateTimeField(null=True, blank=True, help_text="Date de vérification par l'admin")
+    reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='reviewed_certifications',
+        limit_choices_to={'role': 'customer_service'}
+    )
+    review_notes = models.TextField(blank=True, help_text="Notes de vérification (visibles par le prestataire)")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.certification_name} — {self.user.username} ({self.get_status_display()})"
+
+
+class CertificationStatusLog(models.Model):
+    """Audit log for certification status changes."""
+    certification = models.ForeignKey(Certification, on_delete=models.CASCADE, related_name='status_logs')
+    old_status = models.CharField(max_length=20, blank=True)
+    new_status = models.CharField(max_length=20)
+    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.certification} : {self.old_status} → {self.new_status}"
 
 
 class ProprietaireProfile(models.Model):
@@ -102,6 +164,10 @@ class ProprietaireProfile(models.Model):
     property_surface = models.PositiveIntegerField(null=True, blank=True, help_text="Surface en m²")
     energy_interests = models.TextField(blank=True, help_text="Intérêts énergie séparés par des virgules")
     budget_range = models.CharField(max_length=50, blank=True)
+    saved_incentive_results = models.JSONField(
+        default=None, null=True, blank=True,
+        help_text="Résultats d'aides sauvegardés depuis le simulateur"
+    )
 
     def __str__(self):
         return f"Profil propriétaire: {self.user.username}"
@@ -173,6 +239,7 @@ class ProviderDocument(models.Model):
     )
     doc_type = models.CharField(max_length=20, choices=DocType.choices)
     label = models.CharField(max_length=200)
+    document = models.FileField(upload_to='documents/%Y/%m/', blank=True, null=True, help_text="Fichier uploadé")
     file_url = models.URLField(max_length=500, blank=True, help_text="URL du document (stockage externe)")
     file_name = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)

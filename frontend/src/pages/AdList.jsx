@@ -9,7 +9,7 @@ import CityAutocomplete from '../components/ui/CityAutocomplete';
 
 export default function AdList() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { countryCode } = useCountry();
+  const { countryCode, countries } = useCountry();
   const [ads, setAds] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,10 +17,14 @@ export default function AdList() {
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
 
+  const userCountry = countries.find((c) => c.code === countryCode);
+  const countryRegions = userCountry?.regions || [];
+
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
     city: searchParams.get('city') || '',
     category: searchParams.get('category') || '',
+    region: searchParams.get('region') || '',
     ordering: searchParams.get('ordering') || '-created_at',
   });
 
@@ -34,6 +38,7 @@ export default function AdList() {
     if (filters.search) params.search = filters.search;
     if (filters.city) params.city = filters.city;
     if (filters.category) params.category = filters.category;
+    if (filters.region) params.region = filters.region;
     if (filters.ordering) params.ordering = filters.ordering;
 
     adsAPI.getAds(params)
@@ -51,12 +56,12 @@ export default function AdList() {
   };
 
   const clearFilters = () => {
-    setFilters({ search: '', city: '', category: '', ordering: '-created_at' });
+    setFilters({ search: '', city: '', category: '', region: '', ordering: '-created_at' });
     setSearchParams({});
     setPage(1);
   };
 
-  const hasActiveFilters = filters.search || filters.city || filters.category;
+  const hasActiveFilters = filters.search || filters.city || filters.category || filters.region;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -96,7 +101,7 @@ export default function AdList() {
 
         {/* Extended filters */}
         {showFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <select
               className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg outline-none"
               value={filters.category}
@@ -105,6 +110,16 @@ export default function AdList() {
               <option value="">Toutes catégories</option>
               {categories.map((c) => (
                 <option key={c.slug} value={c.slug}>{c.name}</option>
+              ))}
+            </select>
+            <select
+              className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg outline-none"
+              value={filters.region}
+              onChange={(e) => applyFilter('region', e.target.value)}
+            >
+              <option value="">Toutes régions</option>
+              {(countryRegions || []).map((r) => (
+                <option key={r} value={r}>{r}</option>
               ))}
             </select>
             <select

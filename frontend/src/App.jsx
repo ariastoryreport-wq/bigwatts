@@ -21,10 +21,10 @@ import IncentiveResults from './pages/IncentiveResults';
 
 // Dashboard
 import Dashboard from './pages/dashboard/Dashboard';
+import Onboarding from './pages/dashboard/Onboarding';
 import MyAds from './pages/dashboard/MyAds';
 import AdForm from './pages/dashboard/AdForm';
 import MyQuotes from './pages/dashboard/MyQuotes';
-import ReceivedQuotes from './pages/dashboard/ReceivedQuotes';
 import Messages from './pages/dashboard/Messages';
 import ConversationView from './pages/dashboard/ConversationView';
 import Favorites from './pages/dashboard/Favorites';
@@ -34,7 +34,6 @@ import Profile from './pages/dashboard/Profile';
 import MyTickets from './pages/dashboard/MyTickets';
 import Analytics from './pages/dashboard/Analytics';
 import Appointments from './pages/dashboard/Appointments';
-import Bookings from './pages/dashboard/Bookings';
 import Availability from './pages/dashboard/Availability';
 import Documents from './pages/dashboard/Documents';
 
@@ -43,6 +42,7 @@ import CSUsers from './pages/dashboard/cs/CSUsers';
 import CSTickets from './pages/dashboard/cs/CSTickets';
 import CSAds from './pages/dashboard/cs/CSAds';
 import CSReports from './pages/dashboard/cs/CSReports';
+import CSCertifications from './pages/dashboard/cs/CSCertifications';
 
 function ProtectedRoute({ children, roles }) {
   const { isAuthenticated, user, loading } = useAuth();
@@ -101,13 +101,13 @@ export default function App() {
           <Route path="/dashboard/tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
           <Route path="/dashboard/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/dashboard/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
-          <Route path="/dashboard/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
 
           {/* Prestataire */}
+          <Route path="/dashboard/onboarding" element={<ProtectedRoute roles={['prestataire']}><Onboarding /></ProtectedRoute>} />
           <Route path="/dashboard/ads" element={<ProtectedRoute roles={['prestataire']}><MyAds /></ProtectedRoute>} />
           <Route path="/dashboard/ads/new" element={<ProtectedRoute roles={['prestataire']}><AdForm /></ProtectedRoute>} />
           <Route path="/dashboard/ads/:id/edit" element={<ProtectedRoute roles={['prestataire']}><AdForm /></ProtectedRoute>} />
-          <Route path="/dashboard/quotes/received" element={<ProtectedRoute roles={['prestataire']}><ReceivedQuotes /></ProtectedRoute>} />
+
           <Route path="/dashboard/reviews" element={<ProtectedRoute roles={['prestataire']}><MyReviews /></ProtectedRoute>} />
           <Route path="/dashboard/availability" element={<ProtectedRoute roles={['prestataire']}><Availability /></ProtectedRoute>} />
           <Route path="/dashboard/documents" element={<ProtectedRoute roles={['prestataire']}><Documents /></ProtectedRoute>} />
@@ -121,6 +121,7 @@ export default function App() {
           <Route path="/dashboard/cs/tickets" element={<ProtectedRoute roles={['customer_service']}><CSTickets /></ProtectedRoute>} />
           <Route path="/dashboard/cs/ads" element={<ProtectedRoute roles={['customer_service']}><CSAds /></ProtectedRoute>} />
           <Route path="/dashboard/cs/reports" element={<ProtectedRoute roles={['customer_service']}><CSReports /></ProtectedRoute>} />
+          <Route path="/dashboard/cs/certifications" element={<ProtectedRoute roles={['customer_service']}><CSCertifications /></ProtectedRoute>} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />

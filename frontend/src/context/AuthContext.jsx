@@ -61,6 +61,15 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
+  const googleLogin = async ({ token, role, country_code }) => {
+    const { data } = await authAPI.googleAuth({ token, role, country_code });
+    localStorage.setItem('tokens', JSON.stringify(data.tokens));
+    localStorage.setItem('user', JSON.stringify(data.user));
+    setUser(data.user);
+    syncCountry(data.user);
+    return data.user;
+  };
+
   const logout = async () => {
     const tokens = JSON.parse(localStorage.getItem('tokens') || '{}');
     try {
@@ -81,7 +90,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, loading, login, register, logout, updateUser, fetchUser,
+      user, loading, login, register, googleLogin, logout, updateUser, fetchUser,
       isAuthenticated: !!user,
       isPrestataire: user?.role === 'prestataire',
       isProprietaire: user?.role === 'proprietaire',

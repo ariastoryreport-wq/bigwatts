@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q, Avg, Count, Sum
 from django.utils import timezone
 from datetime import timedelta
+import requests as http_requests
 
 from .serializers import (
     RegisterSerializer, UserSerializer, UserUpdateSerializer,
@@ -14,11 +15,72 @@ from .serializers import (
     PrestaireProfileSerializer, ProprietaireProfileSerializer,
     ProviderBadgeSerializer, UserBadgeSerializer,
     AppointmentSerializer, AppointmentUpdateSerializer,
+    CertificationSerializer, CertificationReviewSerializer, CertificationStatusLogSerializer,
 )
 from .permissions import IsCustomerService, IsOwnerOrReadOnly
-from .models import PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge, Appointment
+from .models import PrestaireProfile, ProprietaireProfile, ProviderBadge, UserBadge, Appointment, Certification, CertificationStatusLog
 
 User = get_user_model()
+
+
+def _cancel_active_demands(user):
+    """Cancel all active quote requests for a user and notify the other party."""
+    from ads.models import QuoteRequest
+    from bookings.models import Booking
+    from notifications.utils import create_notification
+
+    # Quotes where user is the owner (proprietaire)
+    active_owner_quotes = QuoteRequest.objects.filter(
+        owner=user,
+        status__in=['pending', 'counter_offer', 'accepted'],
+    ).select_related('ad', 'ad__provider')
+
+    for quote in active_owner_quotes:
+        # Cancel associated booking if any
+        if hasattr(quote, 'booking') and quote.booking.status not in ('cancelled', 'completed'):
+            booking = quote.booking
+            booking.status = 'cancelled'
+            booking.save(update_fields=['status', 'updated_at'])
+            if booking.slot:
+                booking.slot.is_booked = False
+                booking.slot.save(update_fields=['is_booked'])
+
+        quote.status = 'cancelled'
+        quote.save(update_fields=['status', 'updated_at'])
+
+        create_notification(
+            recipient=quote.ad.provider,
+            notification_type='system',
+            title='Demande annulée',
+            message=f'La demande pour "{quote.ad.title}" a été annulée car le compte du client a été supprimé.',
+            link='/dashboard',
+        )
+
+    # Quotes where user is the provider (prestataire) — via their ads
+    active_provider_quotes = QuoteRequest.objects.filter(
+        ad__provider=user,
+        status__in=['pending', 'counter_offer', 'accepted'],
+    ).select_related('ad', 'owner')
+
+    for quote in active_provider_quotes:
+        if hasattr(quote, 'booking') and quote.booking.status not in ('cancelled', 'completed'):
+            booking = quote.booking
+            booking.status = 'cancelled'
+            booking.save(update_fields=['status', 'updated_at'])
+            if booking.slot:
+                booking.slot.is_booked = False
+                booking.slot.save(update_fields=['is_booked'])
+
+        quote.status = 'cancelled'
+        quote.save(update_fields=['status', 'updated_at'])
+
+        create_notification(
+            recipient=quote.owner,
+            notification_type='system',
+            title='Demande annulée',
+            message=f'La demande pour "{quote.ad.title}" a été annulée car le compte du prestataire a été supprimé.',
+            link='/dashboard',
+        )
 
 
 class RegisterView(generics.CreateAPIView):
@@ -39,6 +101,84 @@ class RegisterView(generics.CreateAPIView):
                 'access': str(refresh.access_token),
             }
         }, status=status.HTTP_201_CREATED)
+
+
+class GoogleAuthView(APIView):
+    """POST /api/auth/google/ – Sign in or register via Google OAuth."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        token = request.data.get('token')
+        role = request.data.get('role', 'proprietaire')
+        country_code = request.data.get('country_code', 'FR')
+        if not token:
+            return Response({'error': 'Token requis.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify the Google id_token
+        try:
+            resp = http_requests.get(
+                'https://oauth2.googleapis.com/tokeninfo',
+                params={'id_token': token},
+                timeout=5,
+            )
+            if resp.status_code != 200:
+                return Response({'error': 'Token Google invalide.'}, status=status.HTTP_401_UNAUTHORIZED)
+            payload = resp.json()
+        except Exception:
+            return Response({'error': 'Impossible de vérifier le token Google.'}, status=status.HTTP_502_BAD_GATEWAY)
+
+        email = payload.get('email')
+        if not email:
+            return Response({'error': 'Email non disponible.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Existing user? → login
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            user = None
+
+        if user is None:
+            # Auto-generate username
+            base = email.split('@')[0].lower()
+            base = ''.join(c if c.isalnum() or c == '_' else '' for c in base) or 'user'
+            username = base
+            suffix = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base}{suffix}"
+                suffix += 1
+
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=None,  # no password – OAuth only
+                first_name=payload.get('given_name', ''),
+                last_name=payload.get('family_name', ''),
+                role=role,
+            )
+            user.set_unusable_password()
+            # Assign country
+            from countries.models import Country
+            try:
+                user.country = Country.objects.get(code=country_code)
+            except Country.DoesNotExist:
+                pass
+            user.save()
+            # Create role profile
+            if user.role == User.Role.PRESTATAIRE:
+                from .models import PrestaireProfile
+                PrestaireProfile.objects.create(user=user)
+            elif user.role == User.Role.PROPRIETAIRE:
+                from .models import ProprietaireProfile
+                ProprietaireProfile.objects.create(user=user)
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'user': UserSerializer(user).data,
+            'tokens': {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }
+        })
 
 
 class LoginView(APIView):
@@ -127,7 +267,6 @@ class DeleteAccountView(APIView):
     """POST /api/auth/delete-account/ - Permanently delete user account."""
 
     def post(self, request):
-        password = request.data.get('password', '')
         confirm = request.data.get('confirm', False)
 
         if not confirm:
@@ -136,13 +275,10 @@ class DeleteAccountView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not request.user.check_password(password):
-            return Response(
-                {'error': 'Mot de passe incorrect.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         user = request.user
+
+        # Cancel all active demands and notify other parties
+        _cancel_active_demands(user)
 
         # Anonymize related data instead of cascading delete
         from ads.models import Ad
@@ -195,6 +331,26 @@ class ProprietaireProfileUpdateView(generics.UpdateAPIView):
         return profile
 
 
+class SaveIncentiveResultsView(APIView):
+    """POST /api/auth/me/saved-aides/ — Save/clear incentive results for proprietaire."""
+
+    def post(self, request):
+        if not request.user.is_proprietaire:
+            return Response({'error': 'Réservé aux propriétaires.'}, status=status.HTTP_403_FORBIDDEN)
+        profile, _ = ProprietaireProfile.objects.get_or_create(user=request.user)
+        profile.saved_incentive_results = request.data
+        profile.save(update_fields=['saved_incentive_results'])
+        return Response({'status': 'ok'})
+
+    def delete(self, request):
+        if not request.user.is_proprietaire:
+            return Response({'error': 'Réservé aux propriétaires.'}, status=status.HTTP_403_FORBIDDEN)
+        profile, _ = ProprietaireProfile.objects.get_or_create(user=request.user)
+        profile.saved_incentive_results = None
+        profile.save(update_fields=['saved_incentive_results'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class PublicUserView(generics.RetrieveAPIView):
     """GET /api/auth/users/<id>/ - Public user profile."""
     queryset = User.objects.filter(is_active=True)
@@ -227,8 +383,7 @@ class ProviderListView(generics.ListAPIView):
             qs = qs.filter(
                 Q(first_name__icontains=search) |
                 Q(last_name__icontains=search) |
-                Q(prestataire_profile__company_name__icontains=search) |
-                Q(prestataire_profile__specialties__icontains=search)
+                Q(prestataire_profile__company_name__icontains=search)
             )
         if available == 'true':
             qs = qs.filter(prestataire_profile__is_available=True)
@@ -241,11 +396,13 @@ class CSUserListView(generics.ListAPIView):
     """GET /api/auth/cs/users/ - All users (CS only)."""
     serializer_class = UserSerializer
     permission_classes = [IsCustomerService]
+    pagination_class = None
     
     def get_queryset(self):
         qs = User.objects.all()
         role = self.request.query_params.get('role')
         search = self.request.query_params.get('search')
+        include_deleted = self.request.query_params.get('include_deleted')
         if role:
             qs = qs.filter(role=role)
         if search:
@@ -255,14 +412,42 @@ class CSUserListView(generics.ListAPIView):
                 Q(first_name__icontains=search) |
                 Q(last_name__icontains=search)
             )
+        # By default, exclude soft-deleted (inactive) users
+        if include_deleted != 'true':
+            qs = qs.filter(is_active=True)
         return qs
 
 
-class CSUserDetailView(generics.RetrieveUpdateAPIView):
-    """GET/PATCH /api/auth/cs/users/<id>/ - User detail (CS only)."""
+class CSUserDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """GET/PATCH/DELETE /api/auth/cs/users/<id>/ - User detail (CS only)."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsCustomerService]
+
+    def perform_update(self, serializer):
+        # Allow CS to update country via country_code field
+        country_code = self.request.data.get('country_code')
+        if country_code is not None:
+            from countries.models import Country
+            try:
+                country = Country.objects.get(code=country_code)
+                serializer.save(country=country)
+                return
+            except Country.DoesNotExist:
+                pass
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        # Cancel all active demands and notify other parties
+        _cancel_active_demands(instance)
+        # Soft-delete: deactivate and anonymise
+        instance.is_active = False
+        instance.email = f'deleted_{instance.pk}@removed.local'
+        instance.first_name = 'Deleted'
+        instance.last_name = 'User'
+        instance.phone = ''
+        instance.bio = ''
+        instance.save()
 
 
 class DashboardStatsView(APIView):
@@ -356,8 +541,8 @@ class AssignBadgeView(APIView):
             return Response({'error': 'Ce badge est déjà attribué.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Create notification
-        from notifications.models import Notification
-        Notification.objects.create(
+        from notifications.utils import create_notification
+        create_notification(
             recipient=target_user,
             notification_type='system',
             title='Nouveau badge obtenu !',
@@ -390,9 +575,9 @@ class AppointmentCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         appointment = serializer.save()
         # Notify the other party
-        from notifications.models import Notification
+        from notifications.utils import create_notification
         other = appointment.owner if self.request.user == appointment.provider else appointment.provider
-        Notification.objects.create(
+        create_notification(
             recipient=other,
             notification_type='system',
             title='Nouveau rendez-vous',
@@ -411,10 +596,10 @@ class AppointmentUpdateView(generics.UpdateAPIView):
 
     def perform_update(self, serializer):
         appointment = serializer.save()
-        from notifications.models import Notification
+        from notifications.utils import create_notification
         other = appointment.owner if self.request.user == appointment.provider else appointment.provider
         status_labels = dict(Appointment.Status.choices)
-        Notification.objects.create(
+        create_notification(
             recipient=other,
             notification_type='system',
             title='Rendez-vous mis à jour',
@@ -566,3 +751,162 @@ class ProviderDocumentDeleteView(generics.DestroyAPIView):
 
     def get_queryset(self):
         return self.request.user.documents.filter(status='pending')
+
+
+# ──────────────────── Certifications ────────────────────
+
+class CertificationListCreateView(generics.ListCreateAPIView):
+    """GET/POST /api/auth/certifications/ — list & submit certifications."""
+    serializer_class = CertificationSerializer
+
+    def get_queryset(self):
+        return self.request.user.certifications.all()
+
+    def perform_create(self, serializer):
+        if not self.request.user.is_prestataire:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Seuls les prestataires peuvent soumettre des certifications.")
+        cert = serializer.save(user=self.request.user)
+        # Create audit log
+        CertificationStatusLog.objects.create(
+            certification=cert,
+            old_status='',
+            new_status=Certification.Status.PENDING,
+            changed_by=self.request.user,
+            notes='Certification soumise pour vérification',
+        )
+
+
+class CertificationDetailView(generics.RetrieveDestroyAPIView):
+    """GET/DELETE /api/auth/certifications/<id>/ — view or delete own certification."""
+    serializer_class = CertificationSerializer
+
+    def get_queryset(self):
+        return self.request.user.certifications.all()
+
+    def perform_destroy(self, instance):
+        if instance.status == Certification.Status.APPROVED:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Une certification approuvée ne peut pas être supprimée.")
+        instance.delete()
+
+
+class CertificationLogsView(generics.ListAPIView):
+    """GET /api/auth/certifications/<id>/logs/ — audit logs for a certification."""
+    serializer_class = CertificationStatusLogSerializer
+
+    def get_queryset(self):
+        cert_id = self.kwargs['pk']
+        user = self.request.user
+        # Owners can see their own logs, CS can see all
+        if user.is_customer_service:
+            return CertificationStatusLog.objects.filter(certification_id=cert_id)
+        return CertificationStatusLog.objects.filter(
+            certification_id=cert_id,
+            certification__user=user,
+        )
+
+
+# ──────────────────── CS Certification Admin ────────────────────
+
+class CSCertificationPendingListView(generics.ListAPIView):
+    """GET /api/auth/cs/certifications/pending/ — list all pending certifications."""
+    serializer_class = CertificationSerializer
+    permission_classes = [IsCustomerService]
+
+    def get_queryset(self):
+        qs = Certification.objects.select_related('user', 'reviewed_by')
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        else:
+            qs = qs.filter(status=Certification.Status.PENDING)
+        return qs
+
+
+class CSCertificationAllListView(generics.ListAPIView):
+    """GET /api/auth/cs/certifications/ — list all certifications (any status)."""
+    permission_classes = [IsCustomerService]
+
+    def get_queryset(self):
+        qs = Certification.objects.select_related('user', 'reviewed_by')
+        status_filter = self.request.query_params.get('status')
+        user_id = self.request.query_params.get('user')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if user_id:
+            qs = qs.filter(user_id=user_id)
+        return qs
+
+    def get_serializer_class(self):
+        from rest_framework import serializers as drf_serializers
+
+        class CertificationWithUserSerializer(CertificationSerializer):
+            user_id = drf_serializers.IntegerField(source='user.id', read_only=True)
+            user_name = drf_serializers.SerializerMethodField()
+
+            class Meta(CertificationSerializer.Meta):
+                fields = CertificationSerializer.Meta.fields + ['user_id', 'user_name']
+
+            def get_user_name(self, obj):
+                return obj.user.get_full_name() or obj.user.username
+
+        return CertificationWithUserSerializer
+
+
+class CSCertificationReviewView(APIView):
+    """POST /api/auth/cs/certifications/<id>/review/ — approve or reject."""
+    permission_classes = [IsCustomerService]
+
+    def post(self, request, pk):
+        try:
+            cert = Certification.objects.get(pk=pk)
+        except Certification.DoesNotExist:
+            return Response({'detail': 'Certification introuvable.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CertificationReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        action = serializer.validated_data['action']
+        review_notes = serializer.validated_data.get('review_notes', '')
+        old_status = cert.status
+
+        if action == 'approve':
+            cert.status = Certification.Status.APPROVED
+            cert.verification_date = timezone.now()
+        elif action == 'reject':
+            cert.status = Certification.Status.REJECTED
+
+        cert.reviewed_by = request.user
+        cert.review_notes = review_notes
+        cert.save()
+
+        # Audit log
+        CertificationStatusLog.objects.create(
+            certification=cert,
+            old_status=old_status,
+            new_status=cert.status,
+            changed_by=request.user,
+            notes=review_notes or f"Certification {action}d par {request.user.get_full_name() or request.user.username}",
+        )
+
+        # Notify the provider
+        from notifications.utils import create_notification
+        if action == 'approve':
+            create_notification(
+                recipient=cert.user,
+                notification_type='certification_approved',
+                title='Certification approuvée',
+                message=f'Votre certification "{cert.certification_name}" a été approuvée.',
+                link='/dashboard/profile',
+            )
+        elif action == 'reject':
+            create_notification(
+                recipient=cert.user,
+                notification_type='certification_rejected',
+                title='Certification refusée',
+                message=f'Votre certification "{cert.certification_name}" a été refusée. {review_notes}'.strip(),
+                link='/dashboard/profile',
+            )
+
+        return Response(CertificationSerializer(cert, context={'request': request}).data)

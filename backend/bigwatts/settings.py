@@ -164,3 +164,6 @@ STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
 STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
 DEPOSIT_PERCENT = config('DEPOSIT_PERCENT', default=30, cast=int)
 PLATFORM_FEE_PERCENT = config('PLATFORM_FEE_PERCENT', default=5, cast=int)
+
+# Google OAuth
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='')

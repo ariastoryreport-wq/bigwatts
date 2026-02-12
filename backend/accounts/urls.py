@@ -6,6 +6,7 @@ urlpatterns = [
     path('register/', views.RegisterView.as_view(), name='register'),
     path('login/', views.LoginView.as_view(), name='login'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
+    path('google/', views.GoogleAuthView.as_view(), name='google-auth'),
     
     # Current user
     path('me/', views.MeView.as_view(), name='me'),
@@ -13,6 +14,7 @@ urlpatterns = [
     path('delete-account/', views.DeleteAccountView.as_view(), name='delete-account'),
     path('prestataire-profile/', views.PrestataireProfileUpdateView.as_view(), name='prestataire-profile'),
     path('proprietaire-profile/', views.ProprietaireProfileUpdateView.as_view(), name='proprietaire-profile'),
+    path('me/saved-aides/', views.SaveIncentiveResultsView.as_view(), name='saved-aides'),
     path('dashboard/', views.DashboardStatsView.as_view(), name='dashboard'),
     path('analytics/', views.AnalyticsView.as_view(), name='analytics'),
     
@@ -28,6 +30,11 @@ urlpatterns = [
     # Documents
     path('documents/', views.ProviderDocumentListCreateView.as_view(), name='document-list-create'),
     path('documents/<int:pk>/', views.ProviderDocumentDeleteView.as_view(), name='document-delete'),
+
+    # Certifications
+    path('certifications/', views.CertificationListCreateView.as_view(), name='certification-list-create'),
+    path('certifications/<int:pk>/', views.CertificationDetailView.as_view(), name='certification-detail'),
+    path('certifications/<int:pk>/logs/', views.CertificationLogsView.as_view(), name='certification-logs'),
     
     # Public
     path('providers/', views.ProviderListView.as_view(), name='provider-list'),
@@ -37,4 +44,7 @@ urlpatterns = [
     path('cs/users/', views.CSUserListView.as_view(), name='cs-user-list'),
     path('cs/users/<int:pk>/', views.CSUserDetailView.as_view(), name='cs-user-detail'),
     path('cs/badges/assign/', views.AssignBadgeView.as_view(), name='cs-badge-assign'),
+    path('cs/certifications/', views.CSCertificationAllListView.as_view(), name='cs-certification-list'),
+    path('cs/certifications/pending/', views.CSCertificationPendingListView.as_view(), name='cs-certification-pending'),
+    path('cs/certifications/<int:pk>/review/', views.CSCertificationReviewView.as_view(), name='cs-certification-review'),
 ]

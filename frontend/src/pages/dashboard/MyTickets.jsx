@@ -71,7 +71,7 @@ export default function MyTickets() {
     } catch { toast.error('Erreur'); }
   };
 
-  const inputClass = 'w-full px-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-brand-300 focus:border-transparent outline-none';
+  const inputClass = 'w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-black dark:text-white bg-white dark:bg-gray-800 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-brand-300 focus:border-transparent outline-none';
 
   return (
     <DashboardLayout>

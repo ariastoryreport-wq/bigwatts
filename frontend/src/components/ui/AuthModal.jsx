@@ -1,16 +1,49 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, useRef, createContext, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCountry } from '../../context/CountryContext';
 import { Eye, EyeOff, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+/* ─── Google Identity Services loader ─── */
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
+let _gsiReady = null;
+function loadGoogleScript() {
+  if (_gsiReady) return _gsiReady;
+  _gsiReady = new Promise((resolve) => {
+    if (window.google?.accounts?.id) return resolve();
+    const existing = document.getElementById('google-gsi');
+    if (existing) {
+      // Script tag exists but hasn't loaded yet — poll until ready
+      const poll = setInterval(() => {
+        if (window.google?.accounts?.id) { clearInterval(poll); resolve(); }
+      }, 50);
+      return;
+    }
+    const s = document.createElement('script');
+    s.id = 'google-gsi';
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true;
+    s.defer = true;
+    s.onload = () => {
+      // GSI may need a tick after onload to attach window.google.accounts
+      const poll = setInterval(() => {
+        if (window.google?.accounts?.id) { clearInterval(poll); resolve(); }
+      }, 50);
+    };
+    document.head.appendChild(s);
+  });
+  return _gsiReady;
+}
+
 /* ─── Auth Modal Context ─── */
 const AuthModalContext = createContext(null);
 
 export function AuthModalProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [initialTab, setInitialTab] = useState('login'); // 'login' | 'register'
+  const [initialTab, setInitialTab] = useState('login');
+  const [registerRole, setRegisterRole] = useState('proprietaire');
   const [redirectAfter, setRedirectAfter] = useState(null);
 
   const openLogin = (redirect = null) => {
@@ -19,8 +52,9 @@ export function AuthModalProvider({ children }) {
     setIsOpen(true);
   };
 
-  const openRegister = (redirect = null) => {
+  const openRegister = (redirect = null, role = 'proprietaire') => {
     setInitialTab('register');
+    setRegisterRole(role);
     setRedirectAfter(redirect);
     setIsOpen(true);
   };
@@ -31,7 +65,7 @@ export function AuthModalProvider({ children }) {
   };
 
   return (
-    <AuthModalContext.Provider value={{ isOpen, initialTab, redirectAfter, openLogin, openRegister, close }}>
+    <AuthModalContext.Provider value={{ isOpen, initialTab, registerRole, redirectAfter, openLogin, openRegister, close }}>
       {children}
       <AuthModal />
     </AuthModalContext.Provider>
@@ -44,11 +78,42 @@ export function useAuthModal() {
   return ctx;
 }
 
+/* ─── Google button component ─── */
+function GoogleButton({ label, onToken }) {
+  const divRef = useRef(null);
+  const onTokenRef = useRef(onToken);
+  onTokenRef.current = onToken;           // always fresh without re-triggering effect
+
+  useEffect(() => {
+    if (!divRef.current || !GOOGLE_CLIENT_ID) return;
+    let cancelled = false;
+    loadGoogleScript().then(() => {
+      if (cancelled || !divRef.current) return;
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response) => onTokenRef.current(response.credential),
+      });
+      window.google.accounts.id.renderButton(divRef.current, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        width: divRef.current.offsetWidth,
+        text: label === 'login' ? 'signin_with' : 'signup_with',
+        logo_alignment: 'center',
+      });
+    });
+    return () => { cancelled = true; };
+  }, [label]);
+
+  if (!GOOGLE_CLIENT_ID) return null;
+  return <div ref={divRef} className="w-full" />;
+}
+
 /* ─── Auth Modal Component ─── */
 function AuthModal() {
-  const { isOpen, initialTab, redirectAfter, close } = useContext(AuthModalContext);
-  const { login, register, isAuthenticated } = useAuth();
-  const { countries, countryCode } = useCountry();
+  const { isOpen, initialTab, registerRole, redirectAfter, close } = useContext(AuthModalContext);
+  const { login, register, googleLogin, isAuthenticated } = useAuth();
+  const { countryCode } = useCountry();
   const navigate = useNavigate();
   const [tab, setTab] = useState(initialTab);
 
@@ -57,34 +122,39 @@ function AuthModal() {
   const [showPw, setShowPw] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // Register state
+  // Register state — simplified: email + password only
+  const [regRole, setRegRole] = useState(registerRole);
   const [regForm, setRegForm] = useState({
-    username: '', email: '', password: '', password_confirm: '',
-    first_name: '', last_name: '', role: 'proprietaire',
-    phone: '', region: '', country_code: countryCode,
-    provider_type: 'independant',
+    email: '', password: '', password_confirm: '',
   });
   const [regLoading, setRegLoading] = useState(false);
 
-  // Sync tab with initialTab when modal opens
+  // Sync on open
   useEffect(() => {
     if (isOpen) {
       setTab(initialTab);
+      setRegRole(registerRole);
       setLoginForm({ username: '', password: '' });
       setShowPw(false);
+      setRegForm({ email: '', password: '', password_confirm: '' });
     }
-  }, [isOpen, initialTab]);
+  }, [isOpen, initialTab, registerRole]);
 
   // Close when authenticated
   useEffect(() => {
     if (isAuthenticated && isOpen) {
       close();
-      if (redirectAfter) navigate(redirectAfter);
+      if (regRole === 'prestataire' && tab === 'register') {
+        navigate('/dashboard/onboarding');
+      } else if (redirectAfter) {
+        navigate(redirectAfter);
+      }
     }
   }, [isAuthenticated]);
 
   if (!isOpen) return null;
 
+  /* ─── Handlers ─── */
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginLoading(true);
@@ -108,19 +178,47 @@ function AuthModal() {
     }
     setRegLoading(true);
     try {
-      await register(regForm);
+      await register({
+        email: regForm.email,
+        password: regForm.password,
+        password_confirm: regForm.password_confirm,
+        role: regRole,
+        country_code: countryCode,
+      });
       toast.success('Inscription réussie !');
-      close();
-      if (redirectAfter) navigate(redirectAfter);
     } catch (err) {
       const errors = err.response?.data;
-      if (errors) {
-        toast.error(Object.values(errors).flat().join('. '));
+      if (errors && typeof errors === 'object') {
+        // Show field-specific errors with labels
+        const fieldLabels = { email: 'Email', password: 'Mot de passe', password_confirm: 'Confirmation', username: "Nom d'utilisateur" };
+        const messages = Object.entries(errors)
+          .map(([field, msgs]) => {
+            const label = fieldLabels[field] || field;
+            const text = Array.isArray(msgs) ? msgs.join(' ') : msgs;
+            return `${label} : ${text}`;
+          });
+        messages.forEach((m) => toast.error(m, { duration: 5000 }));
       } else {
         toast.error("Erreur lors de l'inscription");
       }
     } finally {
       setRegLoading(false);
+    }
+  };
+
+  const handleGoogleToken = async (token) => {
+    try {
+      const u = await googleLogin({ token, role: regRole, country_code: countryCode });
+      toast.success('Connexion réussie !');
+      close();
+      // New prestataire → onboarding
+      if (u.role === 'prestataire' && tab === 'register') {
+        navigate('/dashboard/onboarding');
+      } else if (redirectAfter) {
+        navigate(redirectAfter);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Erreur Google');
     }
   };
 
@@ -199,6 +297,17 @@ function AuthModal() {
                 {loginLoading ? 'Connexion...' : 'Se connecter'}
               </button>
 
+              {/* Google */}
+              {GOOGLE_CLIENT_ID && (
+                <>
+                  <div className="relative py-2">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200 dark:border-gray-700" /></div>
+                    <div className="relative flex justify-center"><span className="bg-white dark:bg-gray-900 px-3 text-xs text-gray-400">ou</span></div>
+                  </div>
+                  <GoogleButton label="login" onToken={handleGoogleToken} />
+                </>
+              )}
+
               {/* Demo accounts */}
               <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
                 <p className="text-xs text-gray-400 text-center mb-2">Comptes de démo :</p>
@@ -225,120 +334,76 @@ function AuthModal() {
           {/* ─── Register Tab ─── */}
           {tab === 'register' && (
             <form onSubmit={handleRegister} className="space-y-3">
-              {/* Role selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Je suis :</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: 'proprietaire', label: 'Propriétaire', desc: 'Je cherche des prestataires' },
-                    { value: 'prestataire', label: 'Prestataire', desc: 'Je propose mes services' },
-                  ].map((role) => (
-                    <button
-                      key={role.value} type="button"
-                      onClick={() => setRegForm({ ...regForm, role: role.value })}
-                      className={`p-3 rounded-lg border-2 text-left transition text-sm ${
-                        regForm.role === role.value
-                          ? 'border-brand-300 bg-brand-50 dark:bg-brand-900/30'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-400'
-                      }`}
-                    >
-                      <div className="font-semibold text-black dark:text-white">{role.label}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{role.desc}</div>
-                    </button>
-                  ))}
-                </div>
+              {/* Role title */}
+              <div className="text-center pb-1">
+                <h3 className="text-base font-bold text-black dark:text-white">
+                  {regRole === 'proprietaire'
+                    ? 'Créer un compte propriétaire'
+                    : 'Créer un compte prestataire'}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {regRole === 'proprietaire'
+                    ? 'Trouvez des professionnels pour vos projets énergétiques.'
+                    : 'Proposez vos services aux propriétaires.'}
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Prénom *</label>
-                  <input type="text" required value={regForm.first_name} onChange={setReg('first_name')} className={inputClass} autoComplete="given-name" />
+              {/* Google — top of form */}
+              <GoogleButton label="register" onToken={handleGoogleToken} />
+              {GOOGLE_CLIENT_ID && (
+                <div className="relative py-1">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200 dark:border-gray-700" /></div>
+                  <div className="relative flex justify-center"><span className="bg-white dark:bg-gray-900 px-3 text-xs text-gray-400">ou</span></div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nom *</label>
-                  <input type="text" required value={regForm.last_name} onChange={setReg('last_name')} className={inputClass} autoComplete="family-name" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nom d'utilisateur *</label>
-                <input type="text" required value={regForm.username} onChange={setReg('username')} className={inputClass} autoComplete="username" />
-              </div>
+              )}
 
               <div>
                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Email *</label>
-                <input type="email" required value={regForm.email} onChange={setReg('email')} className={inputClass} autoComplete="email" />
+                <input type="email" required value={regForm.email} onChange={setReg('email')} className={inputClass} placeholder="votre@email.fr" autoComplete="email" />
               </div>
 
-              {/* Region dropdown */}
-              {(() => {
-                const selectedCountry = countries.find((c) => c.code === countryCode);
-                const regionList = selectedCountry?.regions || [];
-                return regionList.length > 0 ? (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Région</label>
-                    <select
-                      value={regForm.region}
-                      onChange={(e) => setRegForm({ ...regForm, region: e.target.value })}
-                      className={inputClass}
-                    >
-                      <option value="">— Sélectionner une région —</option>
-                      {regionList.map((r) => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  </div>
-                ) : null;
-              })()}
-
-              {/* Provider-specific fields */}
-              {regForm.role === 'prestataire' && (
-                <>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Type de prestataire *</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { value: 'independant', label: 'Indépendant' },
-                        { value: 'entreprise', label: 'Entreprise' },
-                      ].map((pt) => (
-                        <button
-                          key={pt.value} type="button"
-                          onClick={() => setRegForm({ ...regForm, provider_type: pt.value })}
-                          className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition ${
-                            regForm.provider_type === pt.value
-                              ? 'border-brand-300 bg-brand-50 dark:bg-brand-900/30 text-black dark:text-white'
-                              : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-400'
-                          }`}
-                        >
-                          {pt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {regForm.provider_type === 'entreprise' && (
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nom de l'entreprise</label>
-                      <input type="text" value={regForm.company_name || ''} onChange={(e) => setRegForm({ ...regForm, company_name: e.target.value })} className={inputClass} autoComplete="organization" />
-                    </div>
-                  )}
-                </>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Mot de passe *</label>
-                  <input type="password" required value={regForm.password} onChange={setReg('password')} className={inputClass} minLength={8} autoComplete="new-password" />
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Mot de passe *</label>
+                <div className="relative">
+                  <input type={showPw ? 'text' : 'password'} required value={regForm.password} onChange={setReg('password')} className={`${inputClass} pr-12`} minLength={8} placeholder="8 caractères minimum" autoComplete="new-password" />
+                  <button type="button" onClick={() => setShowPw(!showPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Confirmer *</label>
-                  <input type="password" required value={regForm.password_confirm} onChange={setReg('password_confirm')} className={inputClass} minLength={8} autoComplete="new-password" />
-                </div>
+                <p className="text-[11px] text-gray-400 mt-1">Min. 8 caractères, pas trop courant (ex: pas "password123")</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Confirmer le mot de passe *</label>
+                <input type="password" required value={regForm.password_confirm} onChange={setReg('password_confirm')} className={inputClass} minLength={8} placeholder="••••••••" autoComplete="new-password" />
               </div>
 
               <button type="submit" disabled={regLoading}
                 className="w-full bg-black dark:bg-white text-white dark:text-black py-2.5 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition font-bold disabled:opacity-50 text-sm mt-1">
                 {regLoading ? 'Inscription...' : 'Créer mon compte'}
               </button>
+
+              {/* Cross-link to other role */}
+              <div className="text-center pt-2">
+                <p className="text-xs text-gray-400">
+                  {regRole === 'proprietaire' ? (
+                    <>
+                      Vous êtes professionnel ?{' '}
+                      <button type="button" onClick={() => setRegRole('prestataire')} className="text-brand-500 hover:text-brand-400 font-semibold underline underline-offset-2">
+                        Inscrivez-vous en tant que prestataire
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      Vous êtes propriétaire ?{' '}
+                      <button type="button" onClick={() => setRegRole('proprietaire')} className="text-brand-500 hover:text-brand-400 font-semibold underline underline-offset-2">
+                        Inscrivez-vous en tant que propriétaire
+                      </button>
+                    </>
+                  )}
+                </p>
+              </div>
             </form>
           )}
         </div>

@@ -90,7 +90,14 @@ class AdCreateUpdateSerializer(serializers.ModelSerializer):
 class QuoteRequestSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source='owner.get_full_name', read_only=True)
     owner_username = serializers.CharField(source='owner.username', read_only=True)
+    owner_id = serializers.IntegerField(source='owner.id', read_only=True)
+    owner_region = serializers.CharField(source='owner.region', read_only=True, default='')
     ad_title = serializers.CharField(source='ad.title', read_only=True)
+    ad_slug = serializers.CharField(source='ad.slug', read_only=True)
+    provider_id = serializers.IntegerField(source='ad.provider.id', read_only=True)
+    provider_name = serializers.CharField(source='ad.provider.get_full_name', read_only=True)
+    provider_username = serializers.CharField(source='ad.provider.username', read_only=True)
+    desired_timeframe_display = serializers.CharField(source='get_desired_timeframe_display', read_only=True)
     
     class Meta:
         model = QuoteRequest

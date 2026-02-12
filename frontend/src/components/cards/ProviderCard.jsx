@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Star, CheckCircle, Briefcase, Award } from 'lucide-react';
+import { MapPin, Star, CheckCircle, Briefcase, Award, ShieldCheck } from 'lucide-react';
 
 export default function ProviderCard({ provider }) {
   const profile = provider.prestataire_profile || {};
@@ -27,6 +27,11 @@ export default function ProviderCard({ provider }) {
               </h3>
               {provider.is_verified && (
                 <CheckCircle className="h-4 w-4 text-brand-500 shrink-0" />
+              )}
+              {profile.is_certified && (
+                <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-green-600 dark:text-green-400 shrink-0">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                </span>
               )}
             </div>
 
@@ -60,16 +65,7 @@ export default function ProviderCard({ provider }) {
               )}
             </div>
 
-            {/* Specialties */}
-            {profile.specialties && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {profile.specialties.split(',').slice(0, 3).map((s, i) => (
-                  <span key={i} className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-md border border-gray-200 dark:border-gray-700">
-                    {s.trim()}
-                  </span>
-                ))}
-              </div>
-            )}
+
           </div>
         </div>
       </div>

@@ -168,13 +168,13 @@ class BookingCreateView(APIView):
         slot.save(update_fields=['is_booked'])
 
         # Notify provider
-        from notifications.models import Notification
-        Notification.objects.create(
+        from notifications.utils import create_notification
+        create_notification(
             recipient=quote.ad.provider,
             notification_type='system',
             title='Nouvelle réservation',
             message=f'{request.user.get_full_name() or request.user.username} a réservé un créneau pour "{quote.ad.title}".',
-            link='/dashboard/bookings'
+            link='/dashboard'
         )
 
         return Response(
@@ -231,15 +231,15 @@ class BookingUpdateView(APIView):
             booking.slot.save(update_fields=['is_booked'])
 
         # Notify other party
-        from notifications.models import Notification
+        from notifications.utils import create_notification
         other = booking.homeowner if user == booking.provider else booking.provider
         status_labels = dict(Booking.Status.choices)
-        Notification.objects.create(
+        create_notification(
             recipient=other,
             notification_type='system',
             title='Réservation mise à jour',
             message=f'La réservation pour "{booking.quote.ad.title}" est maintenant : {status_labels.get(new_status, new_status)}.',
-            link='/dashboard/bookings'
+            link='/dashboard'
         )
 
         return Response(BookingSerializer(booking).data)
@@ -315,13 +315,13 @@ class CreateDepositIntentView(APIView):
             booking.status = 'deposit_paid'
             booking.save(update_fields=['status', 'updated_at'])
             # Notify provider
-            from notifications.models import Notification
-            Notification.objects.create(
+            from notifications.utils import create_notification
+            create_notification(
                 recipient=booking.provider,
                 notification_type='system',
                 title='Acompte re\u00e7u',
                 message=f'L\'acompte de {deposit}\u20ac pour "{booking.quote.ad.title}" a \u00e9t\u00e9 pay\u00e9.',
-                link='/dashboard/bookings'
+                link='/dashboard'
             )
 
         return Response({
@@ -364,13 +364,13 @@ class StripeWebhookView(APIView):
                     booking.save(update_fields=['status', 'updated_at'])
 
                 # Notify
-                from notifications.models import Notification
-                Notification.objects.create(
+                from notifications.utils import create_notification
+                create_notification(
                     recipient=booking.provider,
                     notification_type='system',
                     title='Paiement re\u00e7u',
                     message=f'L\'acompte de {payment.amount}\u20ac pour "{booking.quote.ad.title}" a \u00e9t\u00e9 pay\u00e9.',
-                    link='/dashboard/bookings'
+                    link='/dashboard'
                 )
             except Payment.DoesNotExist:
                 pass

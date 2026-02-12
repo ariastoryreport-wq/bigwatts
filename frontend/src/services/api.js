@@ -45,6 +45,9 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Skip redirect for auth-check requests (handled by AuthContext)
+    const isAuthCheck = originalRequest?.url?.includes('/auth/me');
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const tokens = JSON.parse(localStorage.getItem('tokens') || '{}');
@@ -61,7 +64,9 @@ api.interceptors.response.use(
         } catch (refreshError) {
           localStorage.removeItem('tokens');
           localStorage.removeItem('user');
-          window.location.href = '/login';
+          if (!isAuthCheck) {
+            window.location.href = '/login';
+          }
           return Promise.reject(refreshError);
         }
       }
@@ -76,6 +81,7 @@ export default api;
 export const authAPI = {
   register: (data) => api.post('/auth/register/', data),
   login: (data) => api.post('/auth/login/', data),
+  googleAuth: (data) => api.post('/auth/google/', data),
   logout: (data) => api.post('/auth/logout/', data),
   getMe: () => api.get('/auth/me/'),
   updateMe: (data) => api.patch('/auth/me/', data),
@@ -95,13 +101,30 @@ export const authAPI = {
   updateAppointment: (id, data) => api.patch(`/auth/appointments/${id}/`, data),
   // Documents
   getDocuments: () => api.get('/auth/documents/'),
-  createDocument: (data) => api.post('/auth/documents/', data),
+  createDocument: (data) => api.post('/auth/documents/', data, {
+    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+  }),
   deleteDocument: (id) => api.delete(`/auth/documents/${id}/`),
   // CS
   csGetUsers: (params) => api.get('/auth/cs/users/', { params }),
   csGetUser: (id) => api.get(`/auth/cs/users/${id}/`),
   csUpdateUser: (id, data) => api.patch(`/auth/cs/users/${id}/`, data),
+  csDeleteUser: (id) => api.delete(`/auth/cs/users/${id}/`),
   csAssignBadge: (data) => api.post('/auth/cs/badges/assign/', data),
+  // Saved aides (proprietaire)
+  saveAidesResults: (data) => api.post('/auth/me/saved-aides/', data),
+  clearAidesResults: () => api.delete('/auth/me/saved-aides/'),
+  // Certifications
+  getCertifications: () => api.get('/auth/certifications/'),
+  createCertification: (data) => api.post('/auth/certifications/', data, {
+    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+  }),
+  deleteCertification: (id) => api.delete(`/auth/certifications/${id}/`),
+  getCertificationLogs: (id) => api.get(`/auth/certifications/${id}/logs/`),
+  // CS Certifications
+  csGetPendingCertifications: () => api.get('/auth/cs/certifications/pending/'),
+  csGetAllCertifications: (params) => api.get('/auth/cs/certifications/', { params }),
+  csReviewCertification: (id, data) => api.post(`/auth/cs/certifications/${id}/review/`, data),
 };
 
 // ---- Ads API ----
@@ -126,6 +149,8 @@ export const adsAPI = {
   getQuote: (id) => api.get(`/ads/quotes/${id}/`),
   respondQuote: (id, data) => api.patch(`/ads/quotes/${id}/respond/`, data),
   decideQuote: (id, decision) => api.patch(`/ads/quotes/${id}/decide/`, { decision }),
+  abandonQuote: (id) => api.post(`/ads/quotes/${id}/abandon/`),
+  checkDuplicateQuote: (adId) => api.get('/ads/quotes/check-duplicate/', { params: { ad: adId } }),
   // CS
   csGetAds: (params) => api.get('/ads/cs/all/', { params }),
 };

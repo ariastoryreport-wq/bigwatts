@@ -58,11 +58,12 @@ def seed():
             'username': 'solarpro', 'email': 'solar@demo.fr',
             'first_name': 'Jean', 'last_name': 'Dupont',
             'city': 'Lyon', 'postal_code': '69001',
+            'region': 'Auvergne-Rhône-Alpes',
             'bio': 'Expert en installation de panneaux solaires depuis 10 ans.',
             'profile': {
+                'provider_type': 'entreprise',
                 'company_name': 'SolarPro Lyon',
-                'siret': '12345678901234', 'years_experience': 10,
-                'certifications': 'RGE QualiPV, QualiSol',
+                'years_experience': 10,
                 'specialties': 'Photovoltaïque, Solaire thermique, Autoconsommation',
                 'is_available': True, 'average_rating': 4.5, 'completed_projects': 150
             }
@@ -71,11 +72,12 @@ def seed():
             'username': 'ecocharge', 'email': 'eco@demo.fr',
             'first_name': 'Sophie', 'last_name': 'Martin',
             'city': 'Paris', 'postal_code': '75008',
+            'region': 'Île-de-France',
             'bio': 'Spécialiste bornes de recharge et mobilité électrique.',
             'profile': {
+                'provider_type': 'entreprise',
                 'company_name': 'EcoCharge Paris',
                 'years_experience': 5,
-                'certifications': 'IRVE, Habilitation électrique',
                 'specialties': 'Bornes résidentielles, Bornes copropriété, Wallbox',
                 'is_available': True, 'average_rating': 4.8, 'completed_projects': 200
             }
@@ -84,11 +86,11 @@ def seed():
             'username': 'thermexpert', 'email': 'therm@demo.fr',
             'first_name': 'Pierre', 'last_name': 'Bernard',
             'city': 'Marseille', 'postal_code': '13001',
+            'region': 'Provence-Alpes-Côte d\'Azur',
             'bio': 'Installateur certifié de pompes à chaleur et systèmes thermodynamiques.',
             'profile': {
-                'company_name': 'ThermExpert PACA',
+                'provider_type': 'independant',
                 'years_experience': 15,
-                'certifications': 'RGE QualiPAC, Qualibat',
                 'specialties': 'PAC air/eau, PAC air/air, Chauffe-eau thermodynamique',
                 'is_available': True, 'average_rating': 4.3, 'completed_projects': 320
             }
@@ -112,9 +114,10 @@ def seed():
     # --- Propriétaires ---
     owners_data = [
         {
-            'username': 'proprietaire1', 'email': 'proprio1@demo.fr',
+            'username': 'alice_leroy', 'email': 'proprio1@demo.fr',
             'first_name': 'Alice', 'last_name': 'Leroy',
             'city': 'Lyon', 'postal_code': '69003',
+            'region': 'Auvergne-Rhône-Alpes',
             'bio': 'Propriétaire d\'une maison individuelle, intéressée par le solaire.',
             'profile': {'property_type': 'maison', 'property_surface': 120, 'energy_interests': 'Solaire, Isolation'}
         },
@@ -122,6 +125,7 @@ def seed():
             'username': 'proprietaire2', 'email': 'proprio2@demo.fr',
             'first_name': 'Thomas', 'last_name': 'Moreau',
             'city': 'Paris', 'postal_code': '75015',
+            'region': 'Île-de-France',
             'bio': 'Cherche à installer une borne de recharge en copropriété.',
             'profile': {'property_type': 'appartement', 'property_surface': 80, 'energy_interests': 'Borne de recharge, Économie d\'énergie'}
         },
@@ -219,7 +223,7 @@ def seed():
     print("   Prestataire:  solarpro / demo1234")
     print("   Prestataire:  ecocharge / demo1234")
     print("   Prestataire:  thermexpert / demo1234")
-    print("   Propriétaire: proprietaire1 / demo1234")
+    print("   Propriétaire: alice_leroy / demo1234")
     print("   Propriétaire: proprietaire2 / demo1234")
 
 

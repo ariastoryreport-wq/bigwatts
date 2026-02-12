@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Euro, Sparkles, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Euro, Sparkles, RefreshCw, Bookmark, Check } from 'lucide-react';
 import { LoadingSpinner, PageHeader } from '../components/ui';
 import { useCountry } from '../context/CountryContext';
-import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import api, { authAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const INSTALLATION_LABELS = {
   solar: 'Panneaux solaires',
@@ -26,10 +28,13 @@ export default function IncentiveResults() {
   const { state } = useLocation();
   const navigate = useNavigate();
   const { formatPrice, countries } = useCountry();
+  const { user, isProprietaire, updateUser } = useAuth();
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [totalSavings, setTotalSavings] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   // Get the country info for the results
   const resultCountry = countries.find((c) => c.code === state?.country) || {};
@@ -65,6 +70,33 @@ export default function IncentiveResults() {
     };
     fetchResults();
   }, [state, navigate]);
+
+  const handleSaveResults = async () => {
+    setSaving(true);
+    try {
+      await authAPI.saveAidesResults({
+        results,
+        total_savings: totalSavings,
+        search_params: {
+          country: state.country,
+          region: state.region,
+          installation_type: state.installation_type,
+          property_type: state.property_type,
+          estimated_budget: state.estimated_budget,
+        },
+        saved_at: new Date().toISOString(),
+      });
+      // Update local user data
+      const { data: fresh } = await authAPI.getMe();
+      updateUser(fresh);
+      setSaved(true);
+      toast.success('Résultats sauvegardés dans votre profil');
+    } catch {
+      toast.error('Erreur lors de la sauvegarde');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -125,6 +157,17 @@ export default function IncentiveResults() {
                 Sur un budget estimé de {formatPrice(parseFloat(state.estimated_budget))}.
                 Les aides sont souvent cumulables !
               </p>
+            )}
+            {/* Save button for logged-in proprietaires */}
+            {isProprietaire && (
+              <button
+                onClick={handleSaveResults}
+                disabled={saving || saved}
+                className="mt-4 flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 disabled:bg-white/10 text-white rounded-lg text-sm font-medium transition"
+              >
+                {saved ? <Check className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                {saving ? 'Sauvegarde…' : saved ? 'Sauvegardé dans mon profil' : 'Sauvegarder dans mon profil'}
+              </button>
             )}
           </div>
         )}
