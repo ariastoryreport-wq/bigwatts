@@ -17,7 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <AuthProvider>
             <AuthModalProvider>
               <App />
-              <Toaster position="top-center" />
+              <Toaster position="top-center" toastOptions={{ style: { zIndex: 99999 } }} containerStyle={{ zIndex: 99999 }} />
             </AuthModalProvider>
           </AuthProvider>
         </CountryProvider>
