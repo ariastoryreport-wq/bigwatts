@@ -83,6 +83,121 @@ def _cancel_active_demands(user):
         )
 
 
+def _perform_account_deletion(user):
+    """
+    Comprehensive account deletion for prestataire or propriétaire.
+
+    Strategy:
+    - DELETE: Ads, reviews (written & received), quotes, favorites, badges,
+      documents, certifications, availability slots, appointments, notifications,
+      blocked users, reports, tickets created by user.
+    - ANONYMIZE: Messages (keep conversations but user becomes "Utilisateur supprimé"),
+      bookings (keep completed bookings for financial records).
+    - PRESERVE: Conversation history, completed booking records.
+    """
+    from ads.models import Ad, QuoteRequest
+    from reviews.models import Review
+    from favorites.models import Favorite
+    from bookings.models import Booking, AvailabilitySlot
+    from messaging.models import BlockedUser
+    from notifications.models import Notification, NotificationPreference
+
+    # 1. Cancel all active demands and notify other parties
+    _cancel_active_demands(user)
+
+    # 2. DELETE public content — ads and all associated quotes
+    #    (quotes CASCADE from ads, but delete explicitly for clarity)
+    QuoteRequest.objects.filter(owner=user).update(status='cancelled')
+    user_ads = Ad.objects.filter(provider=user)
+    # Cancel quotes on provider's ads before deleting
+    QuoteRequest.objects.filter(ad__in=user_ads).exclude(
+        status__in=['cancelled', 'completed']
+    ).update(status='cancelled')
+    user_ads.delete()
+
+    # 3. DELETE reviews — both written by and received by the user
+    Review.objects.filter(author=user).delete()
+    Review.objects.filter(provider=user).delete()
+
+    # 4. DELETE favorites — both directions
+    Favorite.objects.filter(user=user).delete()
+    Favorite.objects.filter(provider=user).delete()
+
+    # 5. DELETE badges, documents, certifications
+    UserBadge.objects.filter(user=user).delete()
+    try:
+        from accounts.models import ProviderDocument
+        ProviderDocument.objects.filter(provider=user).delete()
+    except Exception:
+        pass
+    Certification.objects.filter(user=user).delete()
+
+    # 6. DELETE availability slots
+    AvailabilitySlot.objects.filter(provider=user).delete()
+
+    # 7. DELETE appointments
+    Appointment.objects.filter(provider=user).delete()
+    Appointment.objects.filter(owner=user).delete()
+
+    # 8. DELETE notifications and preferences
+    Notification.objects.filter(recipient=user).delete()
+    NotificationPreference.objects.filter(user=user).delete()
+
+    # 9. DELETE blocked users —  both directions
+    BlockedUser.objects.filter(blocker=user).delete()
+    BlockedUser.objects.filter(blocked=user).delete()
+
+    # 10. DELETE tickets created by the user
+    try:
+        from tickets.models import Ticket
+        Ticket.objects.filter(created_by=user).delete()
+    except Exception:
+        pass
+
+    # 11. DELETE provider/proprietaire profiles
+    try:
+        if hasattr(user, 'prestataire_profile'):
+            user.prestataire_profile.delete()
+    except Exception:
+        pass
+    try:
+        if hasattr(user, 'proprietaire_profile'):
+            user.proprietaire_profile.delete()
+    except Exception:
+        pass
+
+    # 12. ANONYMIZE the user row (keep for message FK integrity)
+    #     Messages use sender FK → so the user row must remain.
+    #     Conversations use M2M → user stays in the participant list
+    #     but displays as "Utilisateur supprimé".
+    user.is_active = False
+    user.username = f'deleted_{user.pk}'
+    user.email = f'deleted_{user.pk}@removed.local'
+    user.first_name = 'Utilisateur'
+    user.last_name = 'supprimé'
+    user.phone = ''
+    user.bio = ''
+    user.address = ''
+    user.city = ''
+    user.postal_code = ''
+    user.region = ''
+    user.avatar = None
+    user.set_unusable_password()
+    user.save()
+
+    # 13. Blacklist all outstanding JWT tokens
+    try:
+        from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+        from rest_framework_simplejwt.tokens import RefreshToken as _RT
+        for token in OutstandingToken.objects.filter(user=user):
+            try:
+                _RT(token.token).blacklist()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
 class RegisterView(generics.CreateAPIView):
     """POST /api/auth/register/ - Create a new user account."""
     queryset = User.objects.all()
@@ -276,39 +391,7 @@ class DeleteAccountView(APIView):
             )
 
         user = request.user
-
-        # Cancel all active demands and notify other parties
-        _cancel_active_demands(user)
-
-        # Anonymize related data instead of cascading delete
-        from ads.models import Ad
-        Ad.objects.filter(provider=user).update(status='deleted')
-
-        # Deactivate + anonymize the user
-        user.is_active = False
-        user.email = f'deleted_{user.pk}@removed.local'
-        user.first_name = ''
-        user.last_name = ''
-        user.phone = ''
-        user.bio = ''
-        user.address = ''
-        user.city = ''
-        user.postal_code = ''
-        user.avatar = None
-        user.set_unusable_password()
-        user.save()
-
-        # Blacklist all outstanding tokens
-        try:
-            from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
-            from rest_framework_simplejwt.tokens import RefreshToken as _RT
-            for token in OutstandingToken.objects.filter(user=user):
-                try:
-                    _RT(token.token).blacklist()
-                except Exception:
-                    pass
-        except Exception:
-            pass
+        _perform_account_deletion(user)
 
         return Response({'message': 'Votre compte a été supprimé.'}, status=status.HTTP_200_OK)
 
@@ -438,16 +521,7 @@ class CSUserDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer.save()
 
     def perform_destroy(self, instance):
-        # Cancel all active demands and notify other parties
-        _cancel_active_demands(instance)
-        # Soft-delete: deactivate and anonymise
-        instance.is_active = False
-        instance.email = f'deleted_{instance.pk}@removed.local'
-        instance.first_name = 'Deleted'
-        instance.last_name = 'User'
-        instance.phone = ''
-        instance.bio = ''
-        instance.save()
+        _perform_account_deletion(instance)
 
 
 class DashboardStatsView(APIView):
