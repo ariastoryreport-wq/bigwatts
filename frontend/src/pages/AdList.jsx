@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { adsAPI } from '../services/api';
 import { useCountry } from '../context/CountryContext';
 import AdCard from '../components/cards/AdCard';
 import { LoadingSpinner, EmptyState } from '../components/ui';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X, RefreshCw, AlertCircle } from 'lucide-react';
 import CityAutocomplete from '../components/ui/CityAutocomplete';
 
 export default function AdList() {
@@ -13,6 +13,8 @@ export default function AdList() {
   const [ads, setAds] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
@@ -32,8 +34,9 @@ export default function AdList() {
     adsAPI.getCategories().then(({ data }) => setCategories(data)).catch(() => {});
   }, []);
 
-  useEffect(() => {
+  const fetchAds = useCallback(() => {
     setLoading(true);
+    setError(null);
     const params = { page, country: countryCode };
     if (filters.search) params.search = filters.search;
     if (filters.city) params.city = filters.city;
@@ -45,10 +48,23 @@ export default function AdList() {
       .then(({ data }) => {
         setAds(data.results || data);
         setTotal(data.count || (data.results || data).length);
+        setError(null);
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('Failed to fetch ads:', err);
+        setError('coldstart');
+      })
       .finally(() => setLoading(false));
   }, [filters, page, countryCode]);
+
+  useEffect(() => {
+    fetchAds();
+  }, [fetchAds]);
+
+  const handleRetry = () => {
+    setRetryCount(retryCount + 1);
+    fetchAds();
+  };
 
   const applyFilter = (key, value) => {
     setFilters({ ...filters, [key]: value });
@@ -147,7 +163,37 @@ export default function AdList() {
 
       {/* Results */}
       {loading ? (
-        <LoadingSpinner />
+        <div className="flex flex-col items-center justify-center py-16">
+          <LoadingSpinner />
+          <p className="mt-4 text-gray-500 dark:text-gray-400 text-center">
+            Chargement des services...
+          </p>
+          {retryCount > 0 && (
+            <p className="mt-2 text-sm text-gray-400 dark:text-gray-500 text-center">
+              Le serveur démarre, merci de patienter...
+            </p>
+          )}
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center py-16 px-4">
+          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-full p-4 mb-4">
+            <AlertCircle className="h-8 w-8 text-amber-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Le serveur démarre...
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">
+            Notre serveur gratuit se met en veille après 15 minutes d'inactivité. 
+            Il est en train de redémarrer, cela peut prendre 30 à 60 secondes.
+          </p>
+          <button
+            onClick={handleRetry}
+            className="flex items-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition font-medium"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Réessayer
+          </button>
+        </div>
       ) : ads.length === 0 ? (
         <EmptyState
           title="Aucun service trouvé"

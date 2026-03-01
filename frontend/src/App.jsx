@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useAuthModal } from './components/ui/AuthModal';
 import { useEffect } from 'react';
+import { wakeBackend } from './services/backendWarmup';
 
 // Layout
 import Navbar from './components/layout/Navbar';
@@ -64,6 +65,11 @@ function Spinner() {
 
 export default function App() {
   const { loading } = useAuth();
+
+  // Pre-warm the backend on app initialization (Render.com free tier sleeps after 15 min)
+  useEffect(() => {
+    wakeBackend();
+  }, []);
 
   if (loading) {
     return (

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { wakeBackend, isReady } from './backendWarmup';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -7,20 +8,27 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30s timeout (Render cold start can take a while)
+  timeout: 45000, // 45s timeout (Render cold start can take 30-60s)
 });
 
 // Retry logic for failed requests (handles Render.com cold starts)
 api.interceptors.response.use(null, async (error) => {
   const config = error.config;
-  if (!config || config._retryCount >= 2) return Promise.reject(error);
+  if (!config || config._retryCount >= 3) return Promise.reject(error);
 
   const isNetworkOrServerError =
-    !error.response || error.response.status >= 500;
+    !error.response || error.response.status >= 500 || error.code === 'ECONNABORTED';
 
-  if (isNetworkOrServerError && config.method === 'get') {
+  if (isNetworkOrServerError && ['get', 'post'].includes(config.method)) {
     config._retryCount = (config._retryCount || 0) + 1;
-    const delay = config._retryCount * 2000; // 2s, then 4s
+    
+    // If backend isn't ready, try to wake it up first
+    if (!isReady()) {
+      console.log('🔄 Backend may be sleeping, attempting to wake...');
+      await wakeBackend();
+    }
+    
+    const delay = config._retryCount * 3000; // 3s, 6s, 9s
     await new Promise((r) => setTimeout(r, delay));
     return api(config);
   }

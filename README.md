@@ -148,6 +148,34 @@ Ou ajoutez `python manage.py load_fixtures` dans `entrypoint.sh` (avant le déma
 
 > 💡 **Note** : Le plan gratuit Render met le service en veille après 15 min d'inactivité. Le premier chargement prend ~30-60 secondes.
 
+### Garder le backend éveillé (recommandé)
+
+Le plan gratuit Render met le backend en veille après 15 minutes d'inactivité. Pour éviter les délais de démarrage à froid, configurez un service de cron gratuit pour "pinguer" le backend régulièrement :
+
+#### Option 1 : cron-job.org (recommandé)
+
+1. Créez un compte sur [cron-job.org](https://cron-job.org)
+2. **Create Cronjob** :
+   - **URL** : `https://votre-backend.onrender.com/api/health/`
+   - **Schedule** : Every 14 minutes
+   - **Method** : GET
+3. Sauvegardez
+
+#### Option 2 : UptimeRobot
+
+1. Créez un compte sur [uptimerobot.com](https://uptimerobot.com)
+2. **Add New Monitor** :
+   - **Monitor Type** : HTTP(s)
+   - **URL** : `https://votre-backend.onrender.com/api/health/`
+   - **Monitoring Interval** : 5 minutes
+3. Sauvegardez
+
+#### Option 3 : Render Cron Job (payant)
+
+Si vous passez au plan payant Render, vous pouvez créer un Cron Job interne.
+
+> 🔋 **Important** : Le frontend inclut déjà un mécanisme de "warmup" qui tente de réveiller le backend au chargement de l'application. Mais un service externe reste la meilleure solution pour garantir une disponibilité instantanée.
+
 ---
 
 ## Migration VPS / Production
