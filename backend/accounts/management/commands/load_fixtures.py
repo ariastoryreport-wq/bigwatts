@@ -15,7 +15,18 @@ User = get_user_model()
 class Command(BaseCommand):
     help = 'Load demo fixtures: categories, users, ads, reviews, and badges'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--skip-if-exists',
+            action='store_true',
+            help='Skip fixture loading if categories already exist in the database',
+        )
+
     def handle(self, *args, **options):
+        if options.get('skip_if_exists') and ServiceCategory.objects.exists():
+            self.stdout.write(self.style.SUCCESS('✅ Fixtures already loaded, skipping.'))
+            return
+
         self.stdout.write('🌱 Chargement des fixtures BigWatts...\n')
         self._categories()
         self._staff()
