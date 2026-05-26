@@ -1,0 +1,85 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: bigwatts_test
+          POSTGRES_USER: bigwatts
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Run migrations
+        run: |
+          cd backend
+          python manage.py migrate
+        env:
+          DATABASE_URL: postgres://bigwatts:test_password@localhost:5432/bigwatts_test
+          DEBUG: False
+          SECRET_KEY: test-secret-key
+
+      - name: Run tests
+        run: |
+          cd backend
+          python manage.py test
+        env:
+          DATABASE_URL: postgres://bigwatts:test_password@localhost:5432/bigwatts_test
+          DEBUG: False
+          SECRET_KEY: test-secret-key
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Lint
+        run: |
+          cd frontend
+          npm run lint --if-present
+
+      - name: Build
+        run: |
+          cd frontend
+          npm run build

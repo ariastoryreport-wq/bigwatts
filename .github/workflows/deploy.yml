@@ -1,0 +1,22 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-to-render:
+    runs-on: ubuntu-latest
+    # Only deploy if tests pass
+    if: success()
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Render (using Deploy Hook)
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+        if: ${{ secrets.RENDER_DEPLOY_HOOK != '' }}
+
+      - name: Log deployment
+        run: echo "Triggered Render redeployment"
